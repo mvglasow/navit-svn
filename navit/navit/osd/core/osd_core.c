@@ -2858,14 +2858,13 @@ osd_text_draw(struct osd_priv_common *opc, struct navit *navit, struct vehicle *
 		oti=oti->next;
 	}
 
-	if ( this->last && str && !strcmp(this->last, str) ) {
-		do_draw=0;
-	} else {
+	if ( !this->last || !str || strcmp(this->last, str) ) {
 		do_draw=1;
 		if (this->last)
 			g_free(this->last);
 		this->last = g_strdup(str);
-	}
+	} else if ((opc->osd_item.rel_h) || (opc->osd_item.rel_w) || (opc->osd_item.rel_x) || (opc->osd_item.rel_y))
+		do_draw=1;
 
 	absbegin=str;
 	if (do_draw) {
