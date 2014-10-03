@@ -1434,18 +1434,8 @@ static void
 osd_button_draw(struct osd_priv_common *opc, struct navit *nav)
 {
 	struct osd_button *this = (struct osd_button *)opc->data;
-	struct graphics *gra;
-	gra = navit_get_graphics(nav);
-	this->img = graphics_image_new(gra, this->src);
-	if (!this->img) {
-		dbg(1, "failed to load '%s'\n", this->src);
-		return;
-	}
-	if (!opc->osd_item.w)
-		opc->osd_item.w=this->img->width;
-	if (!opc->osd_item.h)
-		opc->osd_item.h=this->img->height;
 
+	// FIXME: Do we need this check?
 	if(navit_get_blocked(nav)&1)
 	        return;
 
@@ -1454,12 +1444,20 @@ osd_button_draw(struct osd_priv_common *opc, struct navit *nav)
 	if (this->use_overlay) {
 		struct graphics_image *img;
 		img=graphics_image_new(opc->osd_item.gr, this->src);
-		p.x=(opc->osd_item.w-this->img->width)/2;
-		p.y=(opc->osd_item.h-this->img->height)/2;
+		p.x=(opc->osd_item.w-img->width)/2;
+		p.y=(opc->osd_item.h-img->height)/2;
 		osd_std_draw(&opc->osd_item);
 		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, img);
 		graphics_image_free(opc->osd_item.gr, img);
 	} else {
+		struct graphics *gra;
+		gra = navit_get_graphics(nav);
+		this->img = graphics_image_new(gra, this->src);
+		if (!this->img) {
+			dbg(1, "failed to load '%s'\n", this->src);
+			return;
+		}
+
 		osd_std_calculate_sizes(&opc->osd_item, navit_get_width(nav), navit_get_height(nav));
 
 		p = opc->osd_item.p;
@@ -1553,16 +1551,6 @@ osd_button_set_attr(struct osd_priv_common *opc, struct attr* attr)
 		if(navit_get_blocked(nav)&1)
 		        return 1;
 
-		if (this_->use_overlay) {
-			struct graphics_image *img;
-			struct point p;
-			img=graphics_image_new(opc->osd_item.gr, this_->src);
-			p.x=(opc->osd_item.w-this_->img->width)/2;
-			p.y=(opc->osd_item.h-this_->img->height)/2;
-			osd_std_draw(&opc->osd_item);
-			graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, img);
-			graphics_image_free(opc->osd_item.gr, img);
-		} 
 		osd_button_draw(opc,nav);
 		navit_draw(opc->osd_item.navit);
 		return 1;
