@@ -1731,6 +1731,8 @@ osd_nav_next_turn_draw(struct osd_priv_common *opc, struct navit *navit,
 			do_draw = 1;
 		}
 	}
+	if ((opc->osd_item.rel_h) || (opc->osd_item.rel_w) || (opc->osd_item.rel_x) || (opc->osd_item.rel_y))
+		do_draw=1;
 	if (mr)
 		map_rect_destroy(mr);
 
