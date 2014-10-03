@@ -1449,9 +1449,10 @@ osd_button_draw(struct osd_priv_common *opc, struct navit *nav)
 	if(navit_get_blocked(nav)&1)
 	        return;
 
+	struct point p;
+
 	if (this->use_overlay) {
 		struct graphics_image *img;
-		struct point p;
 		img=graphics_image_new(opc->osd_item.gr, this->src);
 		p.x=(opc->osd_item.w-this->img->width)/2;
 		p.y=(opc->osd_item.h-this->img->height)/2;
@@ -1459,13 +1460,18 @@ osd_button_draw(struct osd_priv_common *opc, struct navit *nav)
 		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, img);
 		graphics_image_free(opc->osd_item.gr, img);
 	} else {
-		struct point bp = opc->osd_item.p;
+		osd_std_calculate_sizes(&opc->osd_item, navit_get_width(nav), navit_get_height(nav));
+
+		p = opc->osd_item.p;
+		p.x+=(opc->osd_item.w-this->img->width)/2;
+		p.y+=(opc->osd_item.h-this->img->height)/2;
+
 		if (!opc->osd_item.configured)
 			return;
-		osd_wrap_point(&bp, nav);
+		osd_wrap_point(&p, nav);
 
 		if(this->img)
-			graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &bp, this->img);
+			graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, this->img);
 	}
 }
 

@@ -169,7 +169,7 @@ osd_std_resize(struct osd_item *item)
  * @param h Available screen height in pixels (the height that corresponds to
  * 100%)
  */
-static void
+void
 osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 {
  	if (item->rel_w) {
