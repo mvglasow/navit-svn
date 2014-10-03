@@ -3194,7 +3194,8 @@ osd_gps_status_draw(struct osd_priv_common *opc, struct navit *navit,
 	if (this->strength != strength) {
 		this->strength=strength;
 		do_draw=1;
-	}
+	} else if ((opc->osd_item.rel_h) || (opc->osd_item.rel_w) || (opc->osd_item.rel_x) || (opc->osd_item.rel_y))
+		do_draw=1;
 	if (do_draw) {
 		osd_std_draw(&opc->osd_item);
 		if (this->active) {
