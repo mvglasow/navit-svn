@@ -1434,13 +1434,39 @@ static void
 osd_button_draw(struct osd_priv_common *opc, struct navit *nav)
 {
 	struct osd_button *this = (struct osd_button *)opc->data;
-
-	struct point bp = opc->osd_item.p;
-	if (!opc->osd_item.configured)
+	struct graphics *gra;
+	gra = navit_get_graphics(nav);
+	this->img = graphics_image_new(gra, this->src);
+	if (!this->img) {
+		dbg(1, "failed to load '%s'\n", this->src);
 		return;
-	osd_wrap_point(&bp, nav);
-	if(this->img)
-		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &bp, this->img);
+	}
+	if (!opc->osd_item.w)
+		opc->osd_item.w=this->img->width;
+	if (!opc->osd_item.h)
+		opc->osd_item.h=this->img->height;
+
+	if(navit_get_blocked(nav)&1)
+	        return;
+
+	if (this->use_overlay) {
+		struct graphics_image *img;
+		struct point p;
+		img=graphics_image_new(opc->osd_item.gr, this->src);
+		p.x=(opc->osd_item.w-this->img->width)/2;
+		p.y=(opc->osd_item.h-this->img->height)/2;
+		osd_std_draw(&opc->osd_item);
+		graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &p, img);
+		graphics_image_free(opc->osd_item.gr, img);
+	} else {
+		struct point bp = opc->osd_item.p;
+		if (!opc->osd_item.configured)
+			return;
+		osd_wrap_point(&bp, nav);
+
+		if(this->img)
+			graphics_draw_image(opc->osd_item.gr, opc->osd_item.graphic_bg, &bp, this->img);
+	}
 }
 
 static void
