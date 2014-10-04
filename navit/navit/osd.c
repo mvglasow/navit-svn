@@ -208,9 +208,11 @@ osd_std_calculate_sizes_and_redraw(struct osd_item *item, struct osd_priv *priv,
 	osd_std_calculate_sizes(item, w, h);
 
 	osd_std_resize(item);
+	item->do_draw=1;
 	if (item->meth.draw) {
 		if (navit_get_attr(item->navit, attr_vehicle, &vehicle_attr, NULL)) {
 			item->meth.draw(priv, item->navit, vehicle_attr.u.vehicle);
+			item->do_draw=0;
 		}
 	}
 }

@@ -55,6 +55,7 @@ struct osd_item {
 	char *command;
 	struct command_saved *enable_cs;
 	char *accesskey;
+	int do_draw; /**< Whether the item needs to be redrawn. */
 };
 
 /* prototypes */

@@ -1698,7 +1698,7 @@ osd_nav_next_turn_draw(struct osd_priv_common *opc, struct navit *navit,
 	struct nav_next_turn *this = (struct nav_next_turn *)opc->data;
 
 	struct point p;
-	int do_draw = 0;
+	int do_draw = opc->osd_item.do_draw;
 	struct navigation *nav = NULL;
 	struct map *map = NULL;
 	struct map_rect *mr = NULL;
@@ -1731,8 +1731,6 @@ osd_nav_next_turn_draw(struct osd_priv_common *opc, struct navit *navit,
 			do_draw = 1;
 		}
 	}
-	if ((opc->osd_item.rel_h) || (opc->osd_item.rel_w) || (opc->osd_item.rel_x) || (opc->osd_item.rel_y))
-		do_draw=1;
 	if (mr)
 		map_rect_destroy(mr);
 
@@ -2726,7 +2724,7 @@ osd_text_draw(struct osd_priv_common *opc, struct navit *navit, struct vehicle *
 	struct osd_text *this = (struct osd_text *)opc->data;
 	struct point p, p2[4];
 	char *str,*last,*next,*value,*absbegin;
-	int do_draw = 0;
+	int do_draw = opc->osd_item.do_draw;
 	struct attr attr, vehicle_attr, maxspeed_attr, imperial_attr;
 	struct navigation *nav = NULL;
 	struct tracking *tracking = NULL;
@@ -2865,8 +2863,7 @@ osd_text_draw(struct osd_priv_common *opc, struct navit *navit, struct vehicle *
 		if (this->last)
 			g_free(this->last);
 		this->last = g_strdup(str);
-	} else if ((opc->osd_item.rel_h) || (opc->osd_item.rel_w) || (opc->osd_item.rel_x) || (opc->osd_item.rel_y))
-		do_draw=1;
+	}
 
 	absbegin=str;
 	if (do_draw) {
@@ -3160,7 +3157,7 @@ osd_gps_status_draw(struct osd_priv_common *opc, struct navit *navit,
 	struct gps_status *this = (struct gps_status *)opc->data;
 
 	struct point p;
-	int do_draw = 0;
+	int do_draw = opc->osd_item.do_draw;
 	struct graphics_image *gr_image;
 	char *image;
 	struct attr attr, vehicle_attr;
@@ -3196,8 +3193,7 @@ osd_gps_status_draw(struct osd_priv_common *opc, struct navit *navit,
 	if (this->strength != strength) {
 		this->strength=strength;
 		do_draw=1;
-	} else if ((opc->osd_item.rel_h) || (opc->osd_item.rel_w) || (opc->osd_item.rel_x) || (opc->osd_item.rel_y))
-		do_draw=1;
+	}
 	if (do_draw) {
 		osd_std_draw(&opc->osd_item);
 		if (this->active) {
