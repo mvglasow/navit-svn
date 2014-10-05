@@ -1851,20 +1851,16 @@ osd_nav_toggle_announcer_draw(struct osd_priv_common *opc, struct navit *navit, 
 	struct nav_toggle_announcer *this = (struct nav_toggle_announcer *)opc->data;
 
 	struct point p;
-	int do_draw = 0;
+	int do_draw = opc->osd_item.do_draw;
 	struct graphics_image *gr_image;
 	char *path;
 	char *gui_sound_off = "gui_sound_off";
 	char *gui_sound_on = "gui_sound";
     struct attr attr, speechattr;
 
-    if (this->last_state == -1)
-    {
-        if (!navit_get_attr(navit, attr_speech, &speechattr, NULL) || !speech_get_attr(speechattr.u.speech, attr_active, &attr, NULL))
-            attr.u.num = 1;
-        this->active = attr.u.num;
-    } else
-        this->active = !this->active;
+    if (!navit_get_attr(navit, attr_speech, &speechattr, NULL) || !speech_get_attr(speechattr.u.speech, attr_active, &attr, NULL))
+        attr.u.num = 1;
+    this->active = attr.u.num;
 
     if(this->active != this->last_state)
     {
