@@ -3546,6 +3546,17 @@ osd_auxmap_draw(struct osd_priv_common *opc)
 		return;
 	p.x=opc->osd_item.w/2;
 	p.y=opc->osd_item.h/2;
+
+	if (opc->osd_item.rel_h || opc->osd_item.rel_w) {
+		struct map_selection sel;
+		memset(&sel, 0, sizeof(sel));
+		sel.u.p_rect.rl.x=opc->osd_item.w;
+		sel.u.p_rect.rl.y=opc->osd_item.h;
+		printf("osd_auxmap_draw: sel.u.p_rect.rl=(%d, %d)\n", opc->osd_item.w, opc->osd_item.h);
+		transform_set_screen_selection(this->trans, &sel);
+		graphics_set_rect(opc->osd_item.gr, &sel.u.p_rect);
+	}
+
 	transform_set_center(this->trans, transform_get_center(this->ntrans));
 	transform_set_scale(this->trans, 64);
 	transform_set_yaw(this->trans, transform_get_yaw(this->ntrans));
