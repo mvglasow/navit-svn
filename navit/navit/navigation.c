@@ -1209,6 +1209,19 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		/* If the other way is only a ramp and it is one-way in the wrong direction, no announcement necessary */
 		r="no: Only ramp";
 	}
+	if (! r) {
+		/* Announce exit from roundabout, but not entry or staying in it */
+		if ((old->way.flags & AF_ROUNDABOUT) && ! (new->way.flags & AF_ROUNDABOUT)) {
+			r="yes: leaving roundabout";
+			ret=1;
+		} else 	if (!new->way.next->next && !(old->way.flags & AF_ROUNDABOUT) && (new->way.flags & AF_ROUNDABOUT) && (new->way.next->flags & AF_ROUNDABOUT)) {
+			/* this rather complicated construct makes sure we suppress announcements
+			 * only when we're entering a roundabout AND there are no other options */
+			r="no: entering roundabout";
+		} else if ((old->way.flags & AF_ROUNDABOUT) && (new->way.flags & AF_ROUNDABOUT)) {
+			r="no: staying in roundabout";
+		}
+	}
 	if (!r) {
 		if (new->way.item.type == type_ramp) {
 			/* If new is a ramp, ANNOUNCE */
@@ -1241,19 +1254,6 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 				r="yes: motorway interchange";
 				ret=1;
 			}
-		}
-	}
-	if (! r) {
-		/* Announce exit from roundabout, but not entry or staying in it */
-		if ((old->way.flags & AF_ROUNDABOUT) && ! (new->way.flags & AF_ROUNDABOUT)) {
-			r="yes: leaving roundabout";
-			ret=1;
-		} else 	if (!new->way.next->next && !(old->way.flags & AF_ROUNDABOUT) && (new->way.flags & AF_ROUNDABOUT) && (new->way.next->flags & AF_ROUNDABOUT)) {
-			/* this rather complicated construct makes sure we suppress announcements
-			 * only when we're entering a roundabout AND there are no other options */
-			r="no: entering roundabout";
-		} else if ((old->way.flags & AF_ROUNDABOUT) && (new->way.flags & AF_ROUNDABOUT)) {
-			r="no: staying in roundabout";
 		}
 	}
 	cat=maneuver_category(old->way.item.type);
