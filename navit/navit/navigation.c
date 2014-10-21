@@ -1227,13 +1227,10 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			/* If new is a ramp, ANNOUNCE */
 			r="yes: entering ramp";
 			ret=1;
-		} else if ((old->way.item.type == type_highway_land) || (old->way.item.type == type_highway_city)  || ((old->way.item.type == type_street_n_lanes) && (old->way.flags & AF_ONEWAYMASK))) {
+		} else if (is_motorway_like(&(old->way))) {
 			/* If we are at a motorway interchange, ANNOUNCE
 			 * We are assuming a motorway interchange when old way and at least
 			 * two possible ways are motorway-like and allowed.
-			 * Motorway-like means one of the following:
-			 * - item type is highway_land or highway_city
-			 * - item type is street_n_lanes (trunk in OSM) and way is one-way
 			 * If any of the possible ways is neither motorway-like nor a ramp,
 			 * we are probably on a trunk road with level crossings and not
 			 * at a motorway interchange.
@@ -1243,7 +1240,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			int num_other = 0;
 			struct navigation_way *cur_itm = &(new->way);
 			while (cur_itm) {
-				if (((cur_itm->item.type == type_highway_land) || (cur_itm->item.type == type_highway_city) || ((cur_itm->item.type == type_street_n_lanes) && (cur_itm->flags & AF_ONEWAYMASK))) && is_way_allowed(nav,cur_itm,1)) {
+				if ((is_motorway_like(cur_itm)) && is_way_allowed(nav,cur_itm,1)) {
 					num_new_motorways++;
 				} else if (cur_itm->item.type != type_ramp) {
 					num_other++;
