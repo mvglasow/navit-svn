@@ -1197,7 +1197,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 	int ret=0,d,dw,dlim;
 	char *r=NULL;
 	struct navigation_way *w;
-	int cat,ncat,wcat,maxcat,left=-180,right=180,is_unambigous=0,is_same_street;
+	int cat,ncat,wcat,maxcat,left=-180,right=180,is_unambiguous=0,is_same_street;
 	int curve_limit=25;
 
 	dbg(1,"enter %p %p %p\n",old, new, delta);
@@ -1327,25 +1327,35 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		/* if the street is really straight, the others might be closer to straight */
 		if (abs(d) < 20)
 			dlim/=2;
+		/* if both old and new way have a category of 0, or if both ways and at least one other way are
+		 * in the same category and no other ways are higher,
+		 * dlim is 620/256 (roughly 2.5) times the delta of the maneuver */
 		if ((maxcat == ncat && maxcat == cat) || (ncat == 0 && cat == 0)) 
 			dlim=abs(d)*620/256;
+		/* if both old, new and highest other category differ by no more than 1,
+		 * dlim is just higher than the delta (so another way with a delta of exactly -d will be treated as ambiguous) */
+		else if (max(max(cat, ncat), maxcat) - min(min(cat, ncat), maxcat) >= 1)
+			dlim = abs(d) + 1;
+		/* if both old and new way are in higher than highest encountered category,
+		 * dlim is 128/256 times (i.e. one half) the delta of the maneuver */
 		else if (maxcat < ncat && maxcat < cat)
 			dlim=abs(d)*128/256;
+		/* if no other ways are within +/-dlim, the maneuver is unambiguous */
 		if (left < -dlim && right > dlim) 
-			is_unambigous=1;
+			is_unambiguous=1;
 		if (dc != d) {
 			dbg(1,"d %d vs dc %d\n",d,dc);
 			d-=(dc+d+1)/2;
 			dbg(1,"result %d\n",d);
-			is_unambigous=0;
+			is_unambiguous=0;
 		}
-		if (!is_same_street && is_unambigous < 1) {
+		if (!is_same_street && is_unambiguous < 1) {
 			ret=1;
-			r="yes: not same street or ambigous";
+			r="yes: not same street or ambiguous";
 		} else
-			r="no: same street and unambigous";
+			r="no: same street and unambiguous";
 #ifdef DEBUG
-		r=g_strdup_printf("yes: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambigous=%d same_street=%d", d, left, right, dlim, cat, ncat, maxcat, is_unambigous, is_same_street);
+		r=g_strdup_printf("yes: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", d, left, right, dlim, cat, ncat, maxcat, is_unambigous, is_same_street);
 #endif
 	}
 	*delta=d;
