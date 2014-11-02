@@ -283,7 +283,7 @@ struct navigation_itm {
 	int angle_end;
 	struct coord start,end;
 	int time;
-	int length;
+	int length;                         /**< Length of {@code way} */
 	int speed;
 	int dest_time;
 	int dest_length;
@@ -1207,7 +1207,8 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 	char *r=NULL;
 	struct navigation_way *w;
 	int cat,ncat,wcat,maxcat,left=-180,right=180,is_unambiguous=0,is_same_street;
-	int curve_limit=25;
+	int curve_limit=25; /* any angle less than this is considered straight */
+	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int num_similar = 0; /* number of ways in a category similar to current one */
 	int num_options = 0; /* number of permitted ways */
 	int num_new_motorways = 0; /* number of motorway-like ways */
@@ -1243,6 +1244,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		 * and predictability (because the same filter is applied to the ways being analyzed).
 		 */
 		struct navigation_way *w = &(new->way);
+		int through_segments = 0;
 		dc=d;
 		maxcat=-1;
 		/* Check whether the street keeps its name */
@@ -1290,10 +1292,44 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 						maxcat=wcat;
 				} /* if w != new->way */
 			} /* if is_way_allowed */
+			//if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2))
+			if (is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2))
+				// FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway
+				/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
+				through_segments++;
 			w = w->next;
 		}
-		if (num_options <= 1)
-			r="no: only one option permitted";
+		if (num_options <= 1) {
+			if ((abs(d) >= curve_limit) && (through_segments == 2)) {
+				// FIXME: maybe there are cases with more than 2 through_segments...?
+				/* If we have to make a considerable turn (curve_limit or more),
+				 * check whether we are approaching a complex T junction from the "stem"
+				 * (which would need an announcement).
+				 * Complex means that the through road is a dual-carriageway road.
+				 * To find this out, we need to analyze the previous maneuvers.
+				 */
+				int hist_through_segments = 0;
+				int hist_dist = old->length; /* distance between previous and current maneuver */
+				struct navigation_itm *ni = old;
+				while (ni && (hist_through_segments == 0) && (hist_dist <= junction_limit)) {
+					struct navigation_way *w = ni->way.next;
+					while (w) {
+						if ((w->flags & AF_ONEWAYMASK) && (is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2)))
+							hist_through_segments++;
+						w = w->next;
+					}
+					ni = ni->prev;
+					if (ni)
+						hist_dist += ni->length;
+				}
+				if (hist_through_segments == 2)
+					// FIXME: see above for number of through_segments
+					ret=1;
+					r="yes: turning into dual-carriageway through-road of T junction";
+			}
+			if (!r)
+				r="no: only one option permitted";
+		}
 	}
 	if (!r) {
 		if (new->way.item.type == type_ramp) {
@@ -1320,6 +1356,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		r="yes: delta over 75";
 		ret=1;
 	} else if (!r && abs(d) > 22) {
+		//FIXME: use abs(d) >= curve_limit
 		/* When coming from street_2_* or higher category road, check if
 		 * - we have multiple options of the same category and
 		 * - we have to make a considerable turn (more than 22 degrees)
@@ -1380,7 +1417,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 	if (reason)
 		*reason=r;
 	if (r)
-		dbg(1, g_strdup_printf("%s %s -> %s %s: %s\n", old->way.name2, old->way.name1, new->way.name2, new->way.name1, r));
+		dbg(1, "%s %s -> %s %s: %s\n", old->way.name2, old->way.name1, new->way.name2, new->way.name1, r);
 	return ret;
 	
 
