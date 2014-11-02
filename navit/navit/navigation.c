@@ -1147,6 +1147,15 @@ static int maneuver_category(enum item_type type)
 	
 }
 
+/**
+ * @brief Checks whether a way is allowed
+ *
+ * This function checks whether a given vehicle is permitted to enter a given way by comparing the
+ * access and one-way restrictions of the way against the settings in {@code nav->vehicleprofile}.
+ * Turn restrictions are not taken into account.
+ *
+ * @return True if entry is permitted, false otherwise. If {@code nav->vehicleprofile} is null, true is returned.
+ */
 static int
 is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode)
 {
@@ -1194,11 +1203,15 @@ is_motorway_like(struct navigation_way *way)
 static int
 maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct navigation_itm *new, int *delta, char **reason)
 {
-	int ret=0,d,dw,dlim;
+	int ret=0,d,dw,dlim,dc;
 	char *r=NULL;
 	struct navigation_way *w;
 	int cat,ncat,wcat,maxcat,left=-180,right=180,is_unambiguous=0,is_same_street;
 	int curve_limit=25;
+	int num_similar = 0; /* number of ways in a category similar to current one */
+	int num_options = 0; /* number of permitted ways */
+	int num_new_motorways = 0; /* number of motorway-like ways */
+	int num_other = 0; /* number of ways which are neither motorway-like nor ramps */
 
 	dbg(1,"enter %p %p %p\n",old, new, delta);
 	d=angle_delta(old->angle_end, new->way.angle2);
@@ -1222,6 +1235,66 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			r="no: staying in roundabout";
 		}
 	}
+	cat=maneuver_category(old->way.item.type);
+	if (!r) {
+		/* Analyze all options (including new->way).
+		 * Anything that iterates over the whole set of options should be done here. This avoids
+		 * looping over the entire set of ways multiple times, which aims to improve performance
+		 * and predictability (because the same filter is applied to the ways being analyzed).
+		 */
+		struct navigation_way *w = &(new->way);
+		dc=d;
+		maxcat=-1;
+		/* Check whether the street keeps its name */
+		is_same_street=is_same_street2(old->way.name1, old->way.name2, new->way.name1, new->way.name2);
+		while (w) {
+			if (is_way_allowed(nav,w,1)) {
+				num_options++;
+				/* ways of similar category */
+				if (maneuver_category(w->item.type) == cat) {
+					// TODO: decide if a maneuver_category difference of 1 is still similar
+					num_similar++;
+				}
+				/* motorway-like ways */
+				if (is_motorway_like(w)) {
+					num_new_motorways++;
+				} else if (w->item.type != type_ramp) {
+					num_other++;
+				}
+				if (w != &(new->way)) {
+					dw=angle_delta(old->angle_end, w->angle2);
+					if (dw < 0) {
+						if (dw > left)
+							left=dw;
+						if (dw > -curve_limit && d < 0 && d > -curve_limit)
+							dc=dw;
+					} else {
+						if (dw < right)
+							right=dw;
+						if (dw < curve_limit && d > 0 && d < curve_limit)
+							dc=dw;
+					}
+					wcat=maneuver_category(w->item.type);
+					/* If any other street has the same name, we can't use the same name criterion.
+					 * Exceptions apply if we're coming from a motorway-like road and:
+					 * - the other road is motorway-like (a motorway might split up temporarily) or
+					 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
+					 * The second one is really a workaround for bad tagging practice in OSM. Since entering
+					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
+					 * side effects.
+					 */
+					if (is_same_street && is_same_street2(old->way.name1, old->way.name2, w->name1, w->name2) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+						is_same_street=0;
+					/* Mark if the street has a higher or the same category */
+					if (wcat > maxcat)
+						maxcat=wcat;
+				} /* if w != new->way */
+			} /* if is_way_allowed */
+			w = w->next;
+		}
+		if (num_options <= 1)
+			r="no: only one option permitted";
+	}
 	if (!r) {
 		if (new->way.item.type == type_ramp) {
 			/* If new is a ramp, ANNOUNCE */
@@ -1236,24 +1309,12 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			 * at a motorway interchange.
 			 */
 			// FIXME: motorway junctions could have service roads
-			int num_new_motorways = 0;
-			int num_other = 0;
-			struct navigation_way *cur_itm = &(new->way);
-			while (cur_itm) {
-				if ((is_motorway_like(cur_itm)) && is_way_allowed(nav,cur_itm,1)) {
-					num_new_motorways++;
-				} else if (cur_itm->item.type != type_ramp) {
-					num_other++;
-				}
-				cur_itm = cur_itm->next;
-			}
 			if ((num_other == 0) && (num_new_motorways > 1)) {
 				r="yes: motorway interchange";
 				ret=1;
 			}
 		}
 	}
-	cat=maneuver_category(old->way.item.type);
 	if (!r && abs(d) > 75) {
 		/* always make an announcement if you have to make a sharp turn */
 		r="yes: delta over 75";
@@ -1267,15 +1328,6 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		 * closer to 45 than to 0 degrees.
 		 */
 		if (cat >= maneuver_category(type_street_2_city)) {
-			int num_similar = 0;
-			struct navigation_way *cur_itm = &(new->way);
-			while (cur_itm) {
-				if (maneuver_category(cur_itm->item.type) == cat) {
-					// TODO: decide if a maneuver_category difference of 1 is still similar
-					num_similar++;
-				}
-				cur_itm = cur_itm->next;
-			}
 			if (num_similar > 1) {
 				ret=1;
 				r="yes: more than one similar road and delta over 22";
@@ -1284,40 +1336,6 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 	}
 	ncat=maneuver_category(new->way.item.type);
 	if (!r) {
-		int dc=d;
-		/* Check whether the street keeps its name */
-		is_same_street=is_same_street2(old->way.name1, old->way.name2, new->way.name1, new->way.name2);
-		w = new->way.next;
-		maxcat=-1;
-		while (w) {
-			dw=angle_delta(old->angle_end, w->angle2);
-			if (dw < 0) {
-				if (dw > left)
-					left=dw;
-				if (dw > -curve_limit && d < 0 && d > -curve_limit)
-					dc=dw;
-			} else {
-				if (dw < right)
-					right=dw;
-				if (dw < curve_limit && d > 0 && d < curve_limit)
-					dc=dw;
-			}
-			wcat=maneuver_category(w->item.type);
-			/* If any other street has the same name, we can't use the same name criterion.
-			 * Exceptions apply if we're coming from a motorway-like road and:
-			 * - the other road is motorway-like (a motorway might split up temporarily) or
-			 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
-			 * The second one is really a workaround for bad tagging practice in OSM. Since entering
-			 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
-			 * side effects.
-			 */
-			if (is_same_street && is_same_street2(old->way.name1, old->way.name2, w->name1, w->name2) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
-				is_same_street=0;
-			/* Mark if the street has a higher or the same category */
-			if (wcat > maxcat)
-				maxcat=wcat;
-			w = w->next;
-		}
 		/* get the delta limit for checking for other streets. It is lower if the street has no other
 		   streets of the same or higher category */
 		if (ncat < cat)
@@ -1334,7 +1352,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			dlim=abs(d)*620/256;
 		/* if both old, new and highest other category differ by no more than 1,
 		 * dlim is just higher than the delta (so another way with a delta of exactly -d will be treated as ambiguous) */
-		else if (max(max(cat, ncat), maxcat) - min(min(cat, ncat), maxcat) >= 1)
+		else if (max(max(cat, ncat), maxcat) - min(min(cat, ncat), maxcat) <= 1)
 			dlim = abs(d) + 1;
 		/* if both old and new way are in higher than highest encountered category,
 		 * dlim is 128/256 times (i.e. one half) the delta of the maneuver */
@@ -1351,16 +1369,18 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		}
 		if (!is_same_street && is_unambiguous < 1) {
 			ret=1;
-			r="yes: not same street or ambiguous";
+			r="yes: different street and ambiguous";
 		} else
-			r="no: same street and unambiguous";
+			r="no: same street or unambiguous";
 #ifdef DEBUG
-		r=g_strdup_printf("yes: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", d, left, right, dlim, cat, ncat, maxcat, is_unambigous, is_same_street);
+		r=g_strdup_printf("%s: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", ret==1?"yes":"no", d, left, right, dlim, cat, ncat, maxcat, is_unambiguous, is_same_street);
 #endif
 	}
 	*delta=d;
 	if (reason)
 		*reason=r;
+	if (r)
+		dbg(1, g_strdup_printf("%s %s -> %s %s: %s\n", old->way.name2, old->way.name1, new->way.name2, new->way.name1, r));
 	return ret;
 	
 
