@@ -1332,11 +1332,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 		}
 	}
 	if (!r) {
-		if (new->way.item.type == type_ramp) {
-			/* If new is a ramp, ANNOUNCE */
-			r="yes: entering ramp";
-			ret=1;
-		} else if (is_motorway_like(&(old->way))) {
+		if (is_motorway_like(&(old->way)) && (num_other == 0) && (num_new_motorways > 1)) {
 			/* If we are at a motorway interchange, ANNOUNCE
 			 * We are assuming a motorway interchange when old way and at least
 			 * two possible ways are motorway-like and allowed.
@@ -1345,10 +1341,20 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			 * at a motorway interchange.
 			 */
 			// FIXME: motorway junctions could have service roads
-			if ((num_other == 0) && (num_new_motorways > 1)) {
-				r="yes: motorway interchange";
-				ret=1;
-			}
+			r="yes: motorway interchange";
+			ret=1;
+		} else if ((new->way.item.type == type_ramp) && ((num_other == 0) || (abs(d) >= curve_limit))) {
+			/* Motorway ramps can be confusing, therefore announce each maneuver.
+			 * We'll assume a motorway ramp when all available ways are either
+			 * motorway-like or ramps.
+			 * We will also generate a maneuver whenever we have to make a turn
+			 * (of curve_limit or more) to enter the ramp.
+			 * Going straight on a ramp that crosses non-motorway roads does not
+			 * per se create a maneuver. This is to avoid superfluous maneuvers
+			 * when the minor road of a complex T junction is a ramp.
+			 */
+			r="yes: entering ramp";
+			ret=1;
 		}
 	}
 	if (!r && abs(d) > 75) {
