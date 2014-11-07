@@ -633,10 +633,11 @@ navigation_itm_ways_clear(struct navigation_itm *itm)
 }
 
 /**
- * @brief Updates the ways one can drive from itm
+ * @brief Updates the ways one can take instead of itm
  *
- * This updates the list of possible ways to drive to from itm. The item "itm" is on
- * and the next navigation item are excluded.
+ * This updates the list of possible ways to take from {@code itm->start}. The way which is part
+ * of the route ({@code itm->way}) and the way through which {@code itm->start} was reached
+ * ({@code itm->prev->way}) are excluded.
  *
  * @param itm The item that should be updated
  * @param graph_map The route graph's map that these items are on 
@@ -648,7 +649,9 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	struct map_rect *g_rect; // Contains a map rectangle from the route graph's map
 	struct item *i,*sitem;
 	struct attr sitem_attr,direction_attr;
-	struct navigation_way *w,*l;
+	struct navigation_way *w, *l, *del, *r, *lr;
+	struct coord rc[5], wc;
+	int count;
 
 	navigation_itm_ways_clear(itm);
 
@@ -667,6 +670,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	}
 
 	w = NULL;
+	r = NULL;
 	
 	while (1) {
 		i = map_rect_get_item(g_rect);
@@ -689,10 +693,29 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		}
 
 		sitem = sitem_attr.u.item;
-		if (sitem->type == type_street_turn_restriction_no || sitem->type == type_street_turn_restriction_only)
-			continue;
-
 		if (item_is_equal(itm->way.item,*sitem) || ((itm->prev) && item_is_equal(itm->prev->way.item,*sitem))) {
+			continue;
+		}
+
+		if (sitem->type == type_street_turn_restriction_no || sitem->type == type_street_turn_restriction_only) {
+			if (!itm->prev)
+				continue;
+			item_coord_rewind(i);
+			count=item_coord_get(i, rc, 5);
+			//if ((count == 3) && (rc[0].x == itm->prev->start.x) && (rc[0].y == itm->prev->start.y) && (rc[1].x == itm->start.x) && (rc[1].y == itm->start.y)) {
+			if ((count == 3) && (rc[1].x == itm->start.x) && (rc[1].y == itm->start.y)) {
+				printf("--found turn restriction coming from %s %s\n", itm->prev->way.name2, itm->prev->way.name1); //FIXME: debug code
+				item_coord_rewind(&(itm->prev->way.item));
+				while (item_coord_get(&(itm->prev->way.item), &wc, 1))
+					if ((wc.x = rc[0].x) && (wc.y == rc[0].y)) {
+						lr = r;
+						r = g_new(struct navigation_way, 1);
+						r->item = *sitem;
+						r->next = lr;
+						break;
+					}
+			} else
+				printf("--coordinate mismatch: (%d, %d) vs. (%d, %d)-(%d, %d)-(%d, %d), count=%d\n", itm->start.x, itm->start.y, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y, count); //FIXME: debug code
 			continue;
 		}
 
@@ -702,6 +725,34 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		w->item = *sitem;
 		w->next = l;
 		calculate_angle(w);
+	}
+
+	for (lr = r; lr; lr = lr->next) {
+		del = NULL;
+		for (l = &(itm->way); l && l->next; ) {
+			/* NB: we are always examining l->next (not l) because that
+			 * makes removal operations a whole lot easier */
+			item_coord_rewind(&(lr->item));
+			item_coord_get(&(lr->item), rc, 3);
+			item_coord_rewind(&(l->next->item));
+			while (!del && (item_coord_get(&(l->next->item), &wc, 1)))
+				if (((lr->item.type == type_street_turn_restriction_no) && (wc.x == rc[2].x) && (wc.y == rc[2].y))
+						|| ((lr->item.type == type_street_turn_restriction_only) && ((wc.x != rc[2].x) || (wc.y != rc[2].y))))
+					del = l->next;
+			if (del) {
+				printf("--removing %s %s -> %s %s: turn restriction\n", itm->prev->way.name2, itm->prev->way.name1, del->name2, del->name1); //FIXME: debug code
+				l->next = del->next;
+				g_free(del);
+			} else
+				l = l->next;
+		}
+	}
+
+	while (r) {
+		l = r;
+		r = r->next;
+		if (l)
+			g_free(l);
 	}
 
 	map_rect_destroy(g_rect);
@@ -1154,6 +1205,8 @@ static int maneuver_category(enum item_type type)
  * access and one-way restrictions of the way against the settings in {@code nav->vehicleprofile}.
  * Turn restrictions are not taken into account.
  *
+ * @param mode Not used
+ *
  * @return True if entry is permitted, false otherwise. If {@code nav->vehicleprofile} is null, true is returned.
  */
 static int
@@ -1349,9 +1402,10 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			 * motorway-like or ramps.
 			 * We will also generate a maneuver whenever we have to make a turn
 			 * (of curve_limit or more) to enter the ramp.
-			 * Going straight on a ramp that crosses non-motorway roads does not
-			 * per se create a maneuver. This is to avoid superfluous maneuvers
-			 * when the minor road of a complex T junction is a ramp.
+			 * Note that this condition won't catch cases in which we are going
+			 * straight on a ramp that crosses non-motorway roads. This is to
+			 * avoid creating superfluous maneuvers when the minor road of a
+			 * complex T junction is a ramp.
 			 */
 			r="yes: entering ramp";
 			ret=1;
