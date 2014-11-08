@@ -1216,13 +1216,7 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 
 	if (!ret) { // FIXME: not if old == NULL
 		/* check turn restrictions */
-		// These values cause the code in route.c to get us only the route graph point and connected segments
-		coord_sel.next = NULL;
-		coord_sel.u.c_rect.lu = old->end;
-		coord_sel.u.c_rect.rl = old->end;
-		// the selection's order is ignored
-
-		printf("--Searching for turn restrictions in (0x%x, 0x%x)-(0x%x, 0x%x), coming from %s %s %s (0x%x, 0x%x)\n", coord_sel.u.c_rect.lu.x, coord_sel.u.c_rect.lu.y, coord_sel.u.c_rect.rl.x, coord_sel.u.c_rect.rl.y, item_to_name(old->way.item.type), old->way.name2, old->way.name1, old->start.x, old->start.y); //FIXME: debug code
+		printf("--Searching for turn restrictions, coming from %s %s %s (0x%x, 0x%x)\n", item_to_name(old->way.item.type), old->way.name2, old->way.name1, old->start.x, old->start.y); //FIXME: debug code
 
 		// use the graph_map of navigation->route
 		/* From navigation_itm_new():
@@ -1279,6 +1273,13 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 				printf(", url: %s", map_attr.u.str); //FIXME: debug code
 			printf("\n"); //FIXME: debug code
 
+			// These values cause the code in route.c to get us only the route graph point and connected segments
+			coord_sel.next = NULL;
+			transform_from_to(&(old->end), map_projection(old->way.item.map), &(coord_sel.u.c_rect.lu), map_projection(graph_map));
+			transform_from_to(&(old->end), map_projection(old->way.item.map), &(coord_sel.u.c_rect.rl), map_projection(graph_map));
+			// the selection's order is ignored
+
+			printf("  **Searching for turn restrictions in (0x%x, 0x%x)-(0x%x, 0x%x)\n", coord_sel.u.c_rect.lu.x, coord_sel.u.c_rect.lu.y, coord_sel.u.c_rect.rl.x, coord_sel.u.c_rect.rl.y); //FIXME: debug code
 			g_rect = map_rect_new(graph_map, &coord_sel);
 
 #if 0
@@ -1300,11 +1301,11 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 				//printf("  --examining %s", item_to_name(i->type)); //FIXME: debug code
 
 				if (item_is_equal(old->way.item,*i)) {
-					//printf("  --found old->way.item\n"); //FIXME: debug code
+					printf("  --found old->way.item\n"); //FIXME: debug code
 					old_si = i;
 					continue;
 				} else if (item_is_equal(new->item,*i)) {
-					//printf("  --found new->item\n"); //FIXME: debug code
+					printf("  --found new->item\n"); //FIXME: debug code
 					new_si = i;
 					continue;
 				}
@@ -1313,7 +1314,7 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 					// store turn restrictions
 					//FIXME: we'll probably get three or four coords here
 					item_coord_rewind(i);
-					count=item_coord_get(i, rc, 4);
+					count=item_coord_get_pro(i, rc, 4, map_projection(new->item.map));
 					//printf("  --found %s, count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
 					if ((count == 3) && (rc[1].x == old->end.x) && (rc[1].y == old->end.y)) {
 						printf("  --adding %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(i->type), i->id_hi, i->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
@@ -1324,8 +1325,8 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 						memcpy(&(r->end), &(rc[2]), sizeof(struct coord));
 						r->item = *i;
 						r->next = lr;
-					} //else
-						//printf("  --skipping: %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(i->type), i->id_hi, i->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
+					} else
+						printf("  --skipping: %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(i->type), i->id_hi, i->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
 					continue;
 				}
 #if 0
