@@ -1206,7 +1206,7 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 	struct item *i,*sitem;
 	struct item *old_si = NULL;
 	struct item *new_si = NULL;
-	struct attr sitem_attr, direction_attr;
+	struct attr sitem_attr, direction_attr, route_attr;
 	struct navigation_turn_restriction *lr, *delr, *r_from, *r_to, *cr, *cr2;
 	struct coord rc[3], wc;
 	int count;
@@ -1224,22 +1224,35 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 		coord_sel.u.c_rect.rl = old->end;
 		// the selection's order is ignored
 
+		// use the graph_map of navigation->route
 		/* From navigation_itm_new():
 			item_attr_get(ritem, attr_route, &route_attr);
 			graph_map = route_get_graph_map(route_attr.u.route);
 		*/
 
+		// this one segfaults
+		//item_attr_get(&(old->way.item), attr_route, &route_attr);
+		//graph_map = route_get_graph_map(route_attr.u.route);
+
+		// this one works but the map has no turn restrictions
 		graph_map = route_get_graph_map(nav->route);
 
+		// this one gives a map with just route items
+		//graph_map = route_get_map(nav->route);
+
 		g_rect = map_rect_new(graph_map, &coord_sel);
+
+		// this one gives another map with just route items
 		//g_rect = map_rect_new(nav->map, &coord_sel);
 
+#if 0
 		i = map_rect_get_item(g_rect);
 		if (!i || i->type != type_rg_point) { // probably offroad?
 			printf("--No rg_point found in (0x%x, 0x%x)-(0x%x, 0x%x), possibly offroad\n", coord_sel.u.c_rect.lu.x, coord_sel.u.c_rect.lu.y, coord_sel.u.c_rect.rl.x, coord_sel.u.c_rect.rl.y); //FIXME: debug code
 			map_rect_destroy(g_rect);
 			return ret;
 		}
+#endif
 
 		printf("--Searching for turn restrictions in (0x%x, 0x%x)-(0x%x, 0x%x), coming from %s %s %s (0x%x, 0x%x)\n", coord_sel.u.c_rect.lu.x, coord_sel.u.c_rect.lu.y, coord_sel.u.c_rect.rl.x, coord_sel.u.c_rect.rl.y, item_to_name(old->way.item.type), old->way.name2, old->way.name1, old->start.x, old->start.y); //FIXME: debug code
 
@@ -1254,6 +1267,45 @@ is_maneuver_allowed(struct navigation *nav, struct navigation_itm *old, struct n
 			}
 
 			printf("  --examining %s", item_to_name(i->type)); //FIXME: debug code
+
+			if (item_is_equal(old->way.item,*i)) {
+				printf("  --found old->way.item\n"); //FIXME: debug code
+				old_si = i;
+				continue;
+			} else if (item_is_equal(new->item,*i)) {
+				printf("  --found new->item\n"); //FIXME: debug code
+				new_si = i;
+				continue;
+			}
+
+			if (i->type == type_street_turn_restriction_no || i->type == type_street_turn_restriction_only) {
+				// store turn restrictions
+				//FIXME: we'll probably get three or four coords here
+				item_coord_rewind(i);
+				count=item_coord_get(i, rc, 3);
+				//printf("  --found %s, count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
+				if ((count == 2) && (rc[1].x == old->end.x) && (rc[1].y == old->end.y)) {
+					/* possibly the "from" portion of a turn restriction */
+					printf("  --adding 'from': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(i->type), i->id_hi, i->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
+					lr = r_from;
+					r_from = g_new(struct navigation_way, 1);
+					memcpy(&(r_from->start), &(rc[0]), sizeof(struct coord));
+					memcpy(&(r_from->end), &(rc[1]), sizeof(struct coord));
+					r_from->item = *i;
+					r_from->next = lr;
+				} else if ((count == 2) && (rc[0].x == old->end.x) && (rc[0].y == old->end.y)) {
+					/* possibly the "to" portion of a turn restriction */
+					printf("  --adding 'to': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(i->type), i->id_hi, i->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
+					lr = r_to;
+					r_to = g_new(struct navigation_way, 1);
+					memcpy(&(r_to->start), &(rc[0]), sizeof(struct coord));
+					memcpy(&(r_to->end), &(rc[1]), sizeof(struct coord));
+					r_to->item = *i;
+					r_to->next = lr;
+				} else
+					printf("  --skipping: %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(i->type), i->id_hi, i->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
+				continue;
+			}
 
 			if (i->type != type_rg_segment) {
 				printf("  --not a route graph segment\n"); //FIXME: debug code
