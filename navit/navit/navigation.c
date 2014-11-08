@@ -294,6 +294,31 @@ struct navigation_itm {
 	struct navigation_itm *prev;
 };
 
+/**
+ * @brief Holds information about a turn restriction
+ *
+ * Turn restrictions describe where it is either mandatory or forbidden to travel
+ * *from* one segment *to* another *via* a point or another segment.
+ * This is represented by at least two {@code navigation_turn_restriction} structures:
+ * one for the segment leading to the maneuver, another for the segment leading away
+ * from it. If *via* is a segment, this is represented by a third structure.
+ * Structures can be matched by comparing the {@code id_hi} and {@code id_lo} members
+ * of their {@code item}.
+ */
+struct navigation_turn_restriction {
+	struct navigation_turn_restriction *next;		/**< Pointer to a linked list of navigation_turn_restrictions */
+	struct coord start,end;			                /**< The start and end coordinates of the segment */
+	struct item item;		                        /**< The item of the turn restrictions */
+};
+
+/**
+ * @brief Holds a linked list of coordinates
+ */
+struct coord_list {
+	struct coord_list *next;           /**< Pointer to a linked list of coord_lists */
+	struct coord coord;
+};
+
 static int is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode);
 
 static int
@@ -649,9 +674,15 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	struct map_rect *g_rect; // Contains a map rectangle from the route graph's map
 	struct item *i,*sitem;
 	struct attr sitem_attr, direction_attr, flags_attr;
-	struct navigation_way *w, *l, *del, *r_from, *r_to, *c, *c2;
-	struct coord rc[5], wc;
+	struct navigation_way *w, *lw, *del, *cw;
+	struct navigation_turn_restriction *lr, *delr, *r_from, *r_to, *cr, *cr2;
+	struct coord rc[3], wc;
 	int count, add;
+	struct coord_list *c_from = NULL;
+#if 0
+	struct coord_list *c_to = NULL;
+#endif
+	struct coord_list *lc;
 
 	navigation_itm_ways_clear(itm);
 
@@ -695,7 +726,25 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		}
 
 		sitem = sitem_attr.u.item;
-		if (item_is_equal(itm->way.item,*sitem) || ((itm->prev) && item_is_equal(itm->prev->way.item,*sitem))) {
+		if (item_is_equal(itm->way.item,*sitem)) {
+#if 0
+			item_coord_rewind(i);
+			while (item_coord_get(i, &wc, 1)) {
+				lc = c_to;
+				c_to = g_new(struct coord_list, 1);
+				memcpy(&(c_to->coord), &wc, sizeof(struct coord));
+				c_to->next = lc;
+			}
+#endif
+			continue;
+		} else if (((itm->prev) && item_is_equal(itm->prev->way.item,*sitem))) {
+			item_coord_rewind(i);
+			while (item_coord_get(i, &wc, 1)) {
+				lc = c_from;
+				c_from = g_new(struct coord_list, 1);
+				memcpy(&(c_from->coord), &wc, sizeof(struct coord));
+				c_from->next = lc;
+			}
 			continue;
 		}
 
@@ -705,135 +754,164 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 			item_coord_rewind(i);
 			count=item_coord_get(i, rc, 3);
 			//printf("  --found %s, count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
-			if ((count == 2) && (rc[0].x == itm->start.x) && (rc[0].y == itm->start.y)) {
+			if ((count == 2) && (rc[1].x == itm->start.x) && (rc[1].y == itm->start.y)) {
+				/* possibly the "from" portion of a turn restriction */
+				printf("  --adding 'from': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
+				lr = r_from;
+				r_from = g_new(struct navigation_way, 1);
+				memcpy(&(r_from->start), &(rc[0]), sizeof(struct coord));
+				memcpy(&(r_from->end), &(rc[1]), sizeof(struct coord));
+				r_from->item = *sitem;
+				r_from->next = lr;
+			} else if ((count == 2) && (rc[0].x == itm->start.x) && (rc[0].y == itm->start.y)) {
 				/* possibly the "to" portion of a turn restriction */
 				printf("  --adding 'to': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
-				l = r_to;
+				lr = r_to;
 				r_to = g_new(struct navigation_way, 1);
+				memcpy(&(r_to->start), &(rc[0]), sizeof(struct coord));
+				memcpy(&(r_to->end), &(rc[1]), sizeof(struct coord));
 				r_to->item = *sitem;
-				r_to->next = l;
-			} else if ((count == 2) && (rc[1].x == itm->start.x) && (rc[1].y == itm->start.y)) {
-				/* possibly the "from" portion of a turn restriction */
-#if 0
-				/* search for first coord in itm->prev, discard if no match */
-				add = 0;
-				item_coord_rewind(&(itm->prev->way.item));
-				while (item_coord_get(&(itm->prev->way.item), &wc, 1))
-					if ((wc.x == rc[0].x) && (wc.y == rc[0].y)) {
-						add = 1;
-						break;
-					}
-				if (!add) {
-					printf("  --skipping 'from': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x): start not on previous way\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
-					continue;
-				}
-#endif
-				printf("  --adding 'from': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
-				l = r_from;
-				r_from = g_new(struct navigation_way, 1);
-				r_from->item = *sitem;
-				r_from->next = l;
+				r_to->next = lr;
 			} else
 				printf("  --skipping: %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
 			continue;
 		}
 
-		l = w;
+		lw = w;
 		w = g_new(struct navigation_way, 1);
 		w->dir = direction_attr.u.num;
 		w->item = *sitem;
-		w->next = l;
+		w->next = lw;
 		calculate_angle(w);
 	}
 
 	itm->way.next = w;
 
-	/* Delete orphaned segments from r_from, i.e. segments which have no counterpart (same ID) in r_to. */
-	l = NULL;
-	for (c = r_from; c; ) {
-		del = c;
+	/* Delete orphaned segments from r_from. These are segments
+	 * - which have no counterpart (same ID) in r_to or
+	 * - whose start coordinates are not in c_from. */
+	lr = NULL;
+	for (cr = r_from; cr; ) {
+		delr = cr;
 		/* search for match in r_to, discard if no match */
-		for (c2 = r_to; c2; c2=c2->next) {
-			if ((c->item.id_hi == c2->item.id_hi) && (c->item.id_lo == c2->item.id_lo)) {
-				del = NULL;
+		for (cr2 = r_to; cr2; cr2=cr2->next) {
+			if ((cr->item.id_hi == cr2->item.id_hi) && (cr->item.id_lo == cr2->item.id_lo)) {
+				delr = NULL;
 				break;
 			}
 		}
-		if (del) {
-			printf("  --dropping 'from': %s, id (0x%x, 0x%x): orphan\n", item_to_name(c->item.type), c->item.id_hi, c->item.id_lo); //FIXME: debug code
-			if (l)
-				l->next = del->next;
+		/* search for cr->start in c_from, discard if no match */
+		if (!delr) {
+			delr = cr;
+			for (lc = c_from; delr && lc; lc = lc->next)
+				if ((lc->coord.x == cr->start.x) && (lc->coord.y == cr->start.y)) {
+					delr = NULL;
+					break;
+				}
+		}
+		if (delr) {
+			printf("  --dropping 'from': %s, id (0x%x, 0x%x): orphan\n", item_to_name(cr->item.type), cr->item.id_hi, cr->item.id_lo); //FIXME: debug code
+			if (lr)
+				lr->next = delr->next;
 			else
-				r_from = del->next;
-			c = del->next;
-			g_free(del);
+				r_from = delr->next;
+			cr = delr->next;
+			g_free(delr);
 		} else {
-			l = c;
-			c = c->next;
+			lr = cr;
+			cr = cr->next;
 		}
 	}
 
 	/* Delete orphaned segments from r_to, i.e. segments which have no counterpart (same ID) in r_from. */
-	l = NULL;
-	for (c = r_to; c; ) {
-		del = c;
+	lr = NULL;
+	for (cr = r_to; cr; ) {
+		delr = cr;
 		/* search for match in r_from, discard if no match */
-		for (c2 = r_from; c2; c2=c2->next) {
-			if ((c->item.id_hi == c2->item.id_hi) && (c->item.id_lo == c2->item.id_lo)) {
-				del = NULL;
+		for (cr2 = r_from; cr2; cr2=cr2->next) {
+			if ((cr->item.id_hi == cr2->item.id_hi) && (cr->item.id_lo == cr2->item.id_lo)) {
+				delr = NULL;
 				break;
 			}
 		}
-		if (del) {
-			printf("  --dropping 'to': %s, id (0x%x, 0x%x): orphan\n", item_to_name(c->item.type), c->item.id_hi, c->item.id_lo); //FIXME: debug code
-			if (l)
-				l->next = del->next;
+		if (delr) {
+			printf("  --dropping 'to': %s, id (0x%x, 0x%x): orphan\n", item_to_name(cr->item.type), cr->item.id_hi, cr->item.id_lo); //FIXME: debug code
+			if (lr)
+				lr->next = delr->next;
 			else
-				r_to = del->next;
-			c = del->next;
-			g_free(del);
+				r_to = delr->next;
+			cr = delr->next;
+			g_free(delr);
 		} else {
-			l = c;
-			c = c->next;
+			lr = cr;
+			cr = cr->next;
 		}
 	}
 
 	/* Delete ways which are not allowed due to turn restrictions */
-	for (c = r_to; c; c = c->next) {
-		for (c2 = &(itm->way); c2 && c2->next; ) {
-			/* NB: we are always examining c2->next (not c2) because that
-			 * makes removal operations a whole lot easier */
-			del = NULL;
-			item_coord_rewind(&(c->item));
-			item_coord_get(&(c->item), rc, 2);
-			item_coord_rewind(&(c2->next->item));
-			while (!del && (item_coord_get(&(c2->next->item), &wc, 1)))
-				if (((c->item.type == type_street_turn_restriction_no) && (wc.x == rc[1].x) && (wc.y == rc[1].y))
-						|| ((c->item.type == type_street_turn_restriction_only) && ((wc.x != rc[1].x) || (wc.y != rc[1].y))))
-					del = c2->next;
-			if (del) {
-				printf("  --removing way %s %s: turn restriction\n", del->name2, del->name1); //FIXME: debug code
-				c2->next = del->next;
-				g_free(del);
-			} else
-				c2 = c2->next;
+	if (r_to && !r_to->next && (r_to->item.type == type_street_turn_restriction_only)) {
+		/* if we have exactly one street_turn_restriction_only, drop all other ways */
+		while (itm->way.next) {
+			w = itm->way.next;
+			itm->way.next = itm->way.next->next;
+			if (w)
+				g_free(w);
 		}
+	} else {
+#if 0
+		//FIXME: clean this up
+		// idea: count *no* restrictions and ways
+		// if numbers match, delete all ways
+		for (cr = r_to; cr; cr = cr->next) {
+			for (cw = &(itm->way); cw && cw->next; ) {
+				/* NB: we are always examining cw->next (not cw) because that
+				 * makes removal operations a whole lot easier */
+				del = NULL;
+				for (lc = c_to; !del && lc; lc = lc->next)
+					if (((cr->item.type == type_street_turn_restriction_no) && (lc->coord.x == cr->end.x) && (lc->coord.y == cr->end.y))
+							|| ((cr->item.type == type_street_turn_restriction_only) && ((lc->coord.x != cr->end.x) || (lc->coord.y != cr->end.y))))
+						del = cw->next;
+				if (del) {
+					printf("  --removing way %s %s: turn restriction\n", del->name2, del->name1); //FIXME: debug code
+					cw->next = del->next;
+					g_free(del);
+				} else
+					cw = cw->next;
+			}
+		}
+#endif
 	}
 
 	/* Free r_from restriction segments */
 	while (r_from) {
-		c = r_from;
+		cr = r_from;
 		r_from = r_from->next;
-		if (c)
-			g_free(c);
+		if (cr)
+			g_free(cr);
 	}
 
 	/* Free r_to restriction segments */
 	while (r_to) {
-		c = r_to;
+		cr = r_to;
 		r_to = r_to->next;
-		if (c)
-			g_free(c);
+		if (cr)
+			g_free(cr);
+	}
+
+	/* Free c_from coordinate list */
+	while (c_from) {
+		lc = c_from;
+		c_from = c_from->next;
+		if (lc)
+			g_free(lc);
+	}
+
+	/* Free c_to coordinate list */
+	while (c_to) {
+		lc = c_to;
+		c_to = c_to->next;
+		if (lc)
+			g_free(lc);
 	}
 
 	//FIXME: can we do that earlier?
