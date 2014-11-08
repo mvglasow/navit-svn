@@ -651,8 +651,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	struct attr sitem_attr, direction_attr, flags_attr;
 	struct navigation_way *w, *l, *del, *r_from, *r_to, *c, *c2;
 	struct coord rc[5], wc;
-	int count;
-	int flags = 0;
+	int count, add;
 
 	navigation_itm_ways_clear(itm);
 
@@ -662,7 +661,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	coord_sel.u.c_rect.rl = itm->start;
 	// the selection's order is ignored
 	
-	printf("--Searching for turn restrictions in (0x%x, 0x%x)-(0x%x, 0x%x), coming from %s %s %s\n", coord_sel.u.c_rect.lu.x, coord_sel.u.c_rect.lu.y, coord_sel.u.c_rect.rl.x, coord_sel.u.c_rect.rl.y, item_to_name(itm->prev->way.item.type), itm->prev->way.name2, itm->prev->way.name1); //FIXME: debug code
+	printf("--Searching for turn restrictions in (0x%x, 0x%x)-(0x%x, 0x%x), coming from %s %s %s (0x%x, 0x%x)\n", coord_sel.u.c_rect.lu.x, coord_sel.u.c_rect.lu.y, coord_sel.u.c_rect.rl.x, coord_sel.u.c_rect.rl.y, item_to_name(itm->prev->way.item.type), itm->prev->way.name2, itm->prev->way.name1, itm->prev->start.x, itm->prev->start.y); //FIXME: debug code
 
 	g_rect = map_rect_new(graph_map, &coord_sel);
 	
@@ -704,7 +703,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 			if (!itm->prev)
 				continue;
 			item_coord_rewind(i);
-			count=item_coord_get(i, rc, 5);
+			count=item_coord_get(i, rc, 3);
 			//printf("  --found %s, count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), count, rc[0].x, rc[0].y, rc[1].x, rc[1].y, rc[2].x, rc[2].y); //FIXME: debug code
 			if ((count == 2) && (rc[0].x == itm->start.x) && (rc[0].y == itm->start.y)) {
 				/* possibly the "to" portion of a turn restriction */
@@ -715,6 +714,20 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 				r_to->next = l;
 			} else if ((count == 2) && (rc[1].x == itm->start.x) && (rc[1].y == itm->start.y)) {
 				/* possibly the "from" portion of a turn restriction */
+#if 0
+				/* search for first coord in itm->prev, discard if no match */
+				add = 0;
+				item_coord_rewind(&(itm->prev->way.item));
+				while (item_coord_get(&(itm->prev->way.item), &wc, 1))
+					if ((wc.x == rc[0].x) && (wc.y == rc[0].y)) {
+						add = 1;
+						break;
+					}
+				if (!add) {
+					printf("  --skipping 'from': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x): start not on previous way\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
+					continue;
+				}
+#endif
 				printf("  --adding 'from': %s, id (0x%x, 0x%x), count=%d, (0x%x, 0x%x)-(0x%x, 0x%x)\n", item_to_name(sitem->type), sitem->id_hi, sitem->id_lo, count, rc[0].x, rc[0].y, rc[1].x, rc[1].y); //FIXME: debug code
 				l = r_from;
 				r_from = g_new(struct navigation_way, 1);
@@ -735,9 +748,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 
 	itm->way.next = w;
 
-	/* Delete orphaned segments from r_from. These are segments
-	 * - which have no counterpart (same ID) in r_to or
-	 * - whose start coordinates are not on itm->prev->way. */
+	/* Delete orphaned segments from r_from, i.e. segments which have no counterpart (same ID) in r_to. */
 	l = NULL;
 	for (c = r_from; c; ) {
 		del = c;
@@ -746,19 +757,6 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 			if ((c->item.id_hi == c2->item.id_hi) && (c->item.id_lo == c2->item.id_lo)) {
 				del = NULL;
 				break;
-			}
-		}
-		/* search for first coord in itm->prev, discard if no match */
-		if (!del) {
-			//del = c;
-			item_coord_rewind(&(c->item));
-			item_coord_get(&(c->item), rc, 2);
-			item_coord_rewind(&(itm->prev->way.item));
-			while (del && item_coord_get(&(itm->prev->way.item), &wc, 1)) {
-				if ((wc.x == rc[0].x) && (wc.y == rc[0].y)) {
-					del = NULL;
-					break;
-				}
 			}
 		}
 		if (del) {
@@ -775,8 +773,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		}
 	}
 
-	/* Delete orphaned segments from r_to. These are segments which have no counterpart in r_from,
-	 * either because there never was one or because it got deleted in the previous step. */
+	/* Delete orphaned segments from r_to, i.e. segments which have no counterpart (same ID) in r_from. */
 	l = NULL;
 	for (c = r_to; c; ) {
 		del = c;
@@ -823,7 +820,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		}
 	}
 
-	/* Free "from" restriction segments */
+	/* Free r_from restriction segments */
 	while (r_from) {
 		c = r_from;
 		r_from = r_from->next;
@@ -831,7 +828,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 			g_free(c);
 	}
 
-	/* Free "to" restriction segments */
+	/* Free r_to restriction segments */
 	while (r_to) {
 		c = r_to;
 		r_to = r_to->next;
