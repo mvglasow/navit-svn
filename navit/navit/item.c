@@ -135,6 +135,9 @@ item_cleanup(void)
  *
  * After calling this function, the next call to {@code item_coord_get()} will
  * return coordinates starting with the first pair.
+ *
+ * @param it The map item whose pointer is to be reset. This must be the active item, i.e. the last one retrieved from the
+ * {@code map_rect}. There can only be one active item per {@code map_rect}.
  */
 void
 item_coord_rewind(struct item *it)
@@ -153,7 +156,8 @@ item_coord_rewind(struct item *it)
  * The first call to this function after a call to {@code item_coord_rewind()}
  * for the same item will return coordinate pairs starting with the first one.
  *
- * @param it The item
+ * @param it The map item whose coordinates to retrieve. This must be the active item, i.e. the last one retrieved from the
+ * {@code map_rect}. There can only be one active item per {@code map_rect}.
  * @param c Points to a buffer that will receive the coordinates.
  * The buffer must be at least {@code count * sizeof(struct coord)} bytes in size.
  * @param count The number of coordinates to retrieve. Attempts to read past the
