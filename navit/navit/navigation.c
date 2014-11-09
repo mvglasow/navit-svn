@@ -1368,6 +1368,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			 * - Additionally, there must be one way (other than the new way) within +/-90°.
 			 *   This prevents the rule from essentially announcing "don't do the U turn" where the ramps for
 			 *   two opposite directions merge.
+			 * If the criteria are satisfied, announce.
 			 */
 			r="yes: entering ramp";
 			ret=1;
