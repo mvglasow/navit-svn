@@ -1263,35 +1263,35 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 				} else if (w->item.type != type_ramp) {
 					num_other++;
 				}
+				if (w != &(new->way)) {
+					dw=angle_delta(old->angle_end, w->angle2);
+					if (dw < 0) {
+						if (dw > left)
+							left=dw;
+						if (dw > -curve_limit && d < 0 && d > -curve_limit)
+							dc=dw;
+					} else {
+						if (dw < right)
+							right=dw;
+						if (dw < curve_limit && d > 0 && d < curve_limit)
+							dc=dw;
+					}
+					wcat=maneuver_category(w->item.type);
+					/* If any other street has the same name, we can't use the same name criterion.
+					 * Exceptions apply if we're coming from a motorway-like road and:
+					 * - the other road is motorway-like (a motorway might split up temporarily) or
+					 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
+					 * The second one is really a workaround for bad tagging practice in OSM. Since entering
+					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
+					 * side effects.
+					 */
+					if (is_same_street && is_same_street2(old->way.name1, old->way.name2, w->name1, w->name2) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+						is_same_street=0;
+					/* Mark if the street has a higher or the same category */
+					if (wcat > maxcat)
+						maxcat=wcat;
+				} /* if w != new->way */
 			} /* if is_way_allowed */
-			if (w != &(new->way)) {
-				dw=angle_delta(old->angle_end, w->angle2);
-				if (dw < 0) {
-					if (dw > left)
-						left=dw;
-					if (dw > -curve_limit && d < 0 && d > -curve_limit)
-						dc=dw;
-				} else {
-					if (dw < right)
-						right=dw;
-					if (dw < curve_limit && d > 0 && d < curve_limit)
-						dc=dw;
-				}
-				wcat=maneuver_category(w->item.type);
-				/* If any other street has the same name, we can't use the same name criterion.
-				 * Exceptions apply if we're coming from a motorway-like road and:
-				 * - the other road is motorway-like (a motorway might split up temporarily) or
-				 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
-				 * The second one is really a workaround for bad tagging practice in OSM. Since entering
-				 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
-				 * side effects.
-				 */
-				if (is_same_street && is_same_street2(old->way.name1, old->way.name2, w->name1, w->name2) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
-					is_same_street=0;
-				/* Mark if the street has a higher or the same category */
-				if (wcat > maxcat)
-					maxcat=wcat;
-			} /* if w != new->way */
 			//if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2))
 			if (is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2))
 				// FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway
