@@ -1206,7 +1206,7 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 	int ret=0,d,dw,dlim,dc;
 	char *r=NULL;
 	struct navigation_way *w;
-	int cat,ncat,wcat,maxcat,left=-180,right=180,is_unambiguous=0,is_same_street;
+	int cat,ncat,wcat,maxcat,left=-180,right=180,left2=-180,right2=180,is_unambiguous=0,is_same_street;
 	int curve_limit=25; /* any angle less than this is considered straight */
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int num_similar = 0; /* number of ways in a category similar to current one */
@@ -1292,6 +1292,18 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 						maxcat=wcat;
 				} /* if w != new->way */
 			} /* if is_way_allowed */
+#if 0
+			if (w != &(new->way)) {
+				dw=angle_delta(old->angle_end, w->angle2);
+				if (dw < 0) {
+					if (dw > left2)
+						left2=dw;
+				} else {
+					if (dw < right2)
+						right2=dw;
+				}
+			} /* if w != new->way */
+#endif
 			//if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2))
 			if (is_same_street2(new->way.name1, new->way.name2, w->name1, w->name2))
 				// FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway
@@ -1358,15 +1370,16 @@ maneuver_required2(struct navigation *nav, struct navigation_itm *old, struct na
 			// FIXME: motorway junctions could have service roads
 			r="yes: motorway interchange";
 			ret=1;
-		} else if ((new->way.item.type == type_ramp) && ((num_other == 0) || (abs(d) >= curve_limit))) {
-			/* Motorway ramps can be confusing, therefore announce each maneuver.
-			 * We'll assume a motorway ramp when all available ways are either
-			 * motorway-like or ramps.
-			 * We will also generate a maneuver whenever we have to make a turn
-			 * (of curve_limit or more) to enter the ramp.
-			 * Going straight on a ramp that crosses non-motorway roads does not
-			 * per se create a maneuver. This is to avoid superfluous maneuvers
-			 * when the minor road of a complex T junction is a ramp.
+		} else if ((new->way.item.type == type_ramp) && ((num_other == 0) || (abs(d) >= curve_limit)) && ((left > -90) || (right < 90))) {
+			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
+			 * When the new way is a ramp, we check for the following criteria:
+			 * - All available ways are either motorway-like or ramps.
+			 *   This prevents this rule from firing in non-motorway setings, which is needed to avoid
+			 *   superfluous maneuvers when the minor road of a complex T junction is a ramp.
+			 * - If the above is not met, the maneuver must involve a turn (curve_limit or more) to enter the ramp.
+			 * - Additionally, there must be one way (other than the new way) within +/-90°.
+			 *   This prevents the rule from essentially announcing "don't do the U turn" where the ramps for
+			 *   two opposite directions merge.
 			 */
 			r="yes: entering ramp";
 			ret=1;
