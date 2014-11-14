@@ -93,11 +93,11 @@ int distances[]={1,2,3,4,5,10,25,50,75,100,150,200,250,300,400,500,750,-1};
 
 
 struct navigation_command {
-	struct navigation_itm *itm;
-	struct navigation_command *next;
-	struct navigation_command *prev;
-	int delta;
-	int roundabout_delta;
+	struct navigation_itm *itm;      /**< The item just after the maneuver **/
+	struct navigation_command *next; /**< The next item in the list **/
+	struct navigation_command *prev; /**< The previous item in the list **/
+	int delta;                       /**< The difference in bearing (i.e. angle one has to steer) between {@code itm->prev} and {@code itm} **/
+	int roundabout_delta;            /**< The difference in bearing between the entry and exit of a roundabout **/
 	int length;
 };
 
@@ -1736,6 +1736,42 @@ navigation_item_destination(struct navigation *nav, struct navigation_itm *itm, 
 	return ret;
 }
 
+/**
+ * @brief Creates an announcement for a single maneuver
+ *
+ * This function creates an announcement for a single maneuver. It is called each time a maneuver is
+ * to be announced. This typically happens multiple times as we approach the maneuver, and the text
+ * of the announcement will vary based on the distance to the maneuver.
+ *
+ * If we are in speech navigation and two consecutive maneuvers are very close (such that we need to
+ * announce the second one while the speech engine is still occupied with the first one), we can group
+ * multiple maneuvers together ("turn left, then turn right"). This can be done by calling this
+ * function once for each maneuver and setting the {@code connect} argument to true for all maneuvers,
+ * except for the first one, and concatenating the strings returned.
+ *
+ * This function can operate in different modes, controlled through the {@code type} argument:
+ * {@code attr_navigation_short}, {@code attr_navigation_long}, {@code attr_navigation_long_exact} or
+ * {code attr_navigation_speech}.
+ *
+ * In {@code attr_navigation_speech} mode, street names will be announced only once. This usually
+ * happens at the last announcement prior to the maneuver, unless that announcement was skipped, in
+ * which case the street name is announced when making the maneuver. Also, in this mode, the
+ * announcement "when possible, please turn around" is made if enabled.
+ *
+ * {@code attr_navigation_long_exact} causes the function to output exact distances instead of rounding
+ * them to a convenient value first.
+ *
+ * @param nav
+ * @param itm The item to be used as a reference e.g. for distance calculations. This is typically the
+ * item we're currently on, or the item just after the previous maneuver.
+ * @param cmd The maneuver to announce
+ * @param type The mode for announcements, see description
+ * @param connect Whether this maneuver is second in a pair of maneuvers announced together. If false,
+ * the announcement text will be of the form "Turn left". If true, it will be of the form "then turn
+ * left".
+ *
+ * @return The text of the announcement
+ */
 static char *
 show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigation_command *cmd, enum attr_type type, int connect)
 {
@@ -1948,10 +1984,16 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 /**
  * @brief Creates announcements for maneuvers, plus maneuvers immediately following the next maneuver
  *
- * This function does create an announcement for the current maneuver and for maneuvers
- * immediately following that maneuver, if these are too close and we're in speech navigation.
+ * This function creates an announcement for the current maneuver.
  *
- * @return An announcement that should be made
+ * If we are in speech navigation and the next maneuver is very close (such that we need to announce
+ * it while the speech engine is still occupied with the current one), we group both together ("turn
+ * left, then immediately turn right").
+ *
+ * Maneuvers are grouped together only in speech navigation, and no more than two maneuvers will be
+ * grouped together.
+ *
+ * @return The text of the announcement
  */
 static char *
 show_next_maneuvers(struct navigation *nav, struct navigation_itm *itm, struct navigation_command *cmd, enum attr_type type)
