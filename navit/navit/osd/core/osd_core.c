@@ -761,6 +761,15 @@ struct osd_text {
 };
 
 
+/**
+ * @brief Formats a text attribute
+ *
+ * Returns the formatted current value of an attribute as a string
+ * 
+ * @param attr The attribute to be formatted
+ * @param format A string specifying how to format the attribute. Allowed format strings depend on the attribute; this member can be NULL.
+ * @returns The formatted value
+ */
 static char *
 osd_text_format_attr(struct attr *attr, char *format)
 {
@@ -875,12 +884,18 @@ osd_text_format_attr(struct attr *attr, char *format)
 }
 
 /**
- * * Parse a string of the form key.subkey or key[index].subkey into its components, where subkey can itself have its own index and further subkeys
- * *
- * * @param in string to parse (will be modified by the function); upon returning this pointer will point to a string containing key
- * * @param index pointer to an address that will receive a pointer to a string containing index or a null pointer if key does not have an index
- * * @returns a pointer to a string containing subkey, i.e. everything following the first period; if no subkey was found, the return value is a pointer to an empty string; if errors are encountered (index with missing closed bracket or passing a null pointer as index argument when an index was encountered), the return value is NULL
- * */
+ * @brief Parse a string of the form key.subkey or key[index].subkey into its components, where subkey
+ * can itself have its own index and further subkeys
+ *
+ * @param in String to parse (the part before subkey will be modified by the function); upon returning
+ * this pointer will point to a string containing key
+ * @param index Pointer to an address that will receive a pointer to a string containing index or NULL
+ * if key does not have an index
+ * @returns If the function succeeds, a pointer to a string containing subkey, i.e. everything following
+ * the first period, or a pointer to an empty string if there is nothing left to parse. If the function
+ * fails (index with missing closed bracket or passing a null pointer as index argument when an index
+ * was encountered), the return value is NULL
+ */
 static char *
 osd_text_split(char *in, char **index)
 {
@@ -1139,6 +1154,13 @@ osd_text_draw(struct osd_text *this, struct navit *navit, struct vehicle *v)
 
 }
 
+/**
+ * @brief Creates a new osd_text_item and insert it into a linked list
+ * 
+ * @param parent The preceding {@code osd_text_item} in the list. If NULL, the new item becomes the root
+ * element of a new list
+ * @returns The new {@code osd_text_item}
+ */
 struct osd_text_item *
 oti_new(struct osd_text_item * parent)
 {
@@ -1156,6 +1178,15 @@ oti_new(struct osd_text_item * parent)
     return this;
 }
 
+/**
+ * @brief Prepares a text type OSD element
+ *
+ * This function parses the label string (as specified in the XML file) for a text type OSD element
+ * into attributes and static text.
+ * 
+ * @param this The OSD element. {code this->items} will receive a pointer to a list of {@code osd_text_item} structures.
+ * @param nav Pointer to a navit structure
+ */
 static void
 osd_text_prepare(struct osd_text *this, struct navit *nav)
 {
