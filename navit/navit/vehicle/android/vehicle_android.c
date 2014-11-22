@@ -193,7 +193,6 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
 static void
 vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
 	if (v->fix_type != fix_type) {
-		dbg(0, "fix_type changed to %d\n", fix_type); //FIXME: debug code
 		v->fix_type = fix_type;
 		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
 	}
