@@ -101,12 +101,15 @@ enum attr_format {
 #define ATTR_REL_MAXABS			0x40000000
 #define ATTR_REL_RELSHIFT		0x60000000
 
+/** Indicates whether a position is valid **/
 enum attr_position_valid {
-	attr_position_valid_invalid,
-	attr_position_valid_static,
-	attr_position_valid_extrapolated_time,
-	attr_position_valid_extrapolated_spatial,
-	attr_position_valid_valid,
+	attr_position_valid_invalid,              /**< The position is invalid and should be discarded. **/
+	attr_position_valid_static,               /**< The position is valid but the vehicle is not moving, or moving very slowly.
+	                                               Calculations that involve the difference between two consecutive positions,
+	                                               such as bearing, may therefore be inaccurate. **/
+	attr_position_valid_extrapolated_time,    /**< The position is extrapolated FIXME: is that simply the last known position? **/
+	attr_position_valid_extrapolated_spatial, /**< The position is extrapolated FIXME: is that a position extrapolated from the last known one? **/
+	attr_position_valid_valid,                /**< The position is valid and can be used for all purposes. **/
 };
 
 #define ATTR_IS_INT(x) ((x) >= attr_type_int_begin && (x) <= attr_type_int_end)
