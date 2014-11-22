@@ -175,12 +175,10 @@ vehicle_android_status_callback(struct vehicle_priv *v, int sats_in_view, int sa
 	if (v->sats != sats_in_view) {
 		v->sats = sats_in_view;
 		callback_list_call_attr_0(v->cbl, attr_position_qual);
-		callback_list_call_attr_0(v->cbl, attr_position_coord_geo); //FIXME: quick & dirty
 	}
 	if (v->sats_used != sats_used) {
 		v->sats_used = sats_used;
 		callback_list_call_attr_0(v->cbl, attr_position_sats_used);
-		callback_list_call_attr_0(v->cbl, attr_position_coord_geo); //FIXME: quick & dirty
 	}
 }
 
@@ -198,7 +196,6 @@ vehicle_android_fix_callback(struct vehicle_priv *v, int fix_type) {
 		dbg(0, "fix_type changed to %d\n", fix_type); //FIXME: debug code
 		v->fix_type = fix_type;
 		callback_list_call_attr_0(v->cbl, attr_position_fix_type);
-		callback_list_call_attr_0(v->cbl, attr_position_coord_geo); //FIXME: quick & dirty
 	}
 }
 
