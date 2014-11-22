@@ -107,8 +107,14 @@ enum attr_position_valid {
 	attr_position_valid_static,               /**< The position is valid but the vehicle is not moving, or moving very slowly.
 	                                               Calculations that involve the difference between two consecutive positions,
 	                                               such as bearing, may therefore be inaccurate. **/
-	attr_position_valid_extrapolated_time,    /**< The position is extrapolated FIXME: is that simply the last known position? **/
-	attr_position_valid_extrapolated_spatial, /**< The position is extrapolated FIXME: is that a position extrapolated from the last known one? **/
+	attr_position_valid_extrapolated_time,    /**< FIXME: this description is just my (mvglasow) guess; this value is not used anywhere as of r5957.
+	                                               The position is the vehicle's last known position, and the consumer of the
+	                                               information should be aware that the vehicle may have moved since. **/
+	attr_position_valid_extrapolated_spatial, /**< FIXME: this description is just my (mvglasow) guess; this value is not used anywhere as of r5957.
+	                                               The position is a prediction of the vehicle's current position, based on
+	                                               its last known position, the time elapsed since it was obtained and possibly
+	                                               other factors. This would be used for positions obtained through inertial
+	                                               navigation. **/
 	attr_position_valid_valid,                /**< The position is valid and can be used for all purposes. **/
 };
 
