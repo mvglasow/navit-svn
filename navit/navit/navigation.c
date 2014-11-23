@@ -84,6 +84,22 @@
 
 /* #define DEBUG */
 
+/* TODO: these are transitional constants to allow using the new (r5960) logging code
+ * prior to merging. Remove these definitions when merging with r5960 or later.
+ */
+/** Internal use only, do not use for logging. */
+#define lvl_unset -1
+/** Error: something did not work. */
+#define lvl_error 0
+/** Warning: something may not have worked. */
+#define lvl_warning 1
+/** Informational message. Should make sense to non-programmers. */
+#define lvl_info 2
+/** Debug output: (almost) anything goes. */
+#define lvl_debug 3
+/* end transitionsal constants */
+
+
 static int roundabout_extra_length=50;
 static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_straight
 								 * will be seen as going straight.
