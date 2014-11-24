@@ -1,6 +1,6 @@
 /**
  * Navit, a modular navigation system.
- * Copyright (C) 2005-2009 Navit Team
+ * Copyright (C) 2005-2014 Navit Team
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public License
@@ -187,11 +187,11 @@ ATTR(autozoom_max)
 ATTR2(0x00027500,type_rel_abs_begin)
 /* These attributes are int that can either hold relative		*
  * or absolute values. A relative value is indicated by 		*
- * adding 0x60000000.																				*
- *																													*
+ * adding 0x60000000.											*
+ *																*
  * The range of valid absolute values is -0x40000000 to			*
- * 0x40000000, the range of relative values is from					*
- * -0x20000000 to 0x20000000.																*/
+ * 0x40000000, the range of relative values is from				*
+ * -0x20000000 to 0x20000000.									*/
 ATTR(h)
 ATTR(w)
 ATTR(x)
@@ -380,6 +380,11 @@ ATTR(refresh_cond)
  * exclude the end nodes, because these are imported as separate nodes. */
 ATTR(house_number_interpolation_no_ends_incrmt_1)
 ATTR(house_number_interpolation_no_ends_incrmt_2)
+ATTR(street_name_systematic_nat)
+ATTR(street_name_systematic_int)
+ATTR(street_lanes)
+ATTR(street_destination)
+ATTR(exit_to)
 ATTR2(0x0003ffff,type_string_end)
 ATTR2(0x00040000,type_special_begin)
 ATTR(order)
