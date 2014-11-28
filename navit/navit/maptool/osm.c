@@ -1229,8 +1229,6 @@ osm_add_tag(char *k, char *v)
 		level=5;
 	}
 	if (! strcmp(k,"lanes")) {
-		if (in_way)
-		attr_strings_save(attr_string_street_lanes, v);
 		level=5;
 	}
 	if (attr_debug_level >= level) {
