@@ -102,6 +102,7 @@ enum attr_strings_type {
 	attr_string_street_name,
 	attr_string_street_name_systematic,
 	attr_string_street_name_systematic_nat,
+	attr_string_street_name_systematic_int,
 	attr_string_street_lanes,
 	attr_string_ref,
 	attr_string_exit_to,
@@ -1174,19 +1175,21 @@ osm_add_tag(char *k, char *v)
 			if (in_way)
 				attr_strings_save(attr_string_street_name_systematic_nat, v);
 			level=5;
-		}
-
-
+	}
+	if (! strcmp(k,"int_ref")) {
+			if (in_way)
+				attr_strings_save(attr_string_street_name_systematic_int, v);
+			level=5;
+	}
 	if (! strcmp(k,"destination")) {
 			if (in_way)
 				attr_strings_save(attr_string_street_destination, v);
 			level=5;
-		}
+	}
 	if (! strcmp(k,"exit_to")) {
 			attr_strings_save(attr_string_exit_to, v);
 			level=5;
-		}
-
+	}
 	if (! strcmp(k,"openGeoDB:is_in")) { 
 		if (!is_in_buffer[0]) 
 			g_strlcpy(is_in_buffer, v, sizeof(is_in_buffer)); 
