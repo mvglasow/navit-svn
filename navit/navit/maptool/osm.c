@@ -103,7 +103,6 @@ enum attr_strings_type {
 	attr_string_street_name_systematic,
 	attr_string_street_name_systematic_nat,
 	attr_string_street_name_systematic_int,
-	attr_string_street_lanes,
 	attr_string_ref,
 	attr_string_exit_to,
 	attr_string_street_destination,
