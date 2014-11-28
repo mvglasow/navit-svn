@@ -194,6 +194,60 @@ struct navigation {
 int distances[]={1,2,3,4,5,10,25,50,75,100,150,200,250,300,400,500,750,-1};
 
 
+/* Allowed values for navigation_maneuver.merge_or_exit
+ * The numeric values are chosen in such a way that they can be interpreted as flags:
+ * 1=merge, 2=exit, 4=left, 8=right
+ * Identifiers were chosen over flags to enforce certain rules
+ * (merge/exit and left/right are mutually exclusive, left/right requires merge or exit). */
+//FIXME: should we make this an enum?
+/** Not merging into or exiting from a motorway_like road */
+#define mex_none 0
+/** Merging into a motorway_like road, direction undefined */
+#define mex_merge 1
+/** Exiting from a motorway_like road, direction undefined */
+#define mex_exit 2
+/** Merging into a motorway_like road to the left (coming from the right) */
+#define mex_merge_left 5
+/** Exiting from a motorway_like road to the right */
+#define mex_exit_right 6
+/** Merging into a motorway_like road to the right (coming from the left) */
+#define mex_merge_right 9
+/** Exiting from a motorway_like road to the left */
+#define mex_exit_left 10
+
+/**
+ * @brief Holds information about a navigation maneuver.
+ *
+ * This structure is populated when a navigation maneuver is first analyzed. Its members contain all information
+ * needed to decide whether or not to announce the maneuver, what type of maneuver it is and the information that
+ * was used to determine the former two.
+ */
+struct navigation_maneuver {
+	enum item_type type;   /**< The type of maneuver to perform. Any {@code nav_*} item is permitted here, with one exception:
+	                            merge or exit maneuvers are indicated by the {@code merge_or_exit} member. The {@code item_type}
+	                            for such maneuvers should be a turn instruction in cases where the maneuver is ambiguous, or
+	                            {@code nav_none} for cases in which we would expect the driver to perform this maneuver even
+	                            without being instructed to do so. **/
+	int merge_or_exit;     /**< Whether we are merging into or exiting from a motorway_like road */
+	int num_new_motorways; /**< Number of candidate ways (including the route) that are motorway-like */
+	int num_other_ways;    /**< Number of candidate ways (including the route) that are neither ramps nor motorway-like */
+	int old_cat;           /**< Maneuver category of the way leading to the maneuver */
+	int new_cat;           /**< Maneuver category of the selected way after the maneuver */
+	int max_cat;           /**< Highest maneuver category of any candidate way (not including route) */
+	int num_similar_ways;  /**< Number of candidate ways (including the route) that have a {@code maneuver_category()} equal
+	                            to {@code old_cat}.*/
+	int left;              /**< Minimum bearing delta of any candidate way that turns left (not including route),
+	                            or -180 if no candidate ways turn left */
+	int right;             /**< Minimum bearing delta of any candidate way that turns right (not including route),
+	                            or 180 if no candidate ways turn right */
+	int is_unambigous;     /**< Whether the maneuver is unambiguous. A maneuver is unambiguous if, despite
+	                            multiple candidate way being available, we can reasonable expect the driver to
+	                            continue on the route without being told to do so. This is typically the case when
+	                            the route stays on the main road and goes straight, while all other candidate ways
+	                            are minor roads and involve a significant turn. */
+	int is_same_street;    /**< Whether the street keeps its name after the maneuver. */
+};
+
 struct navigation_command {
 	struct navigation_itm *itm;
 	struct navigation_command *next;
@@ -201,7 +255,8 @@ struct navigation_command {
 	int delta;
 	int roundabout_delta;
 	int length;
-	char * reason;
+	//char * reason; //FIXME: replace this with struct navigation_maneuver
+	struct navigation_maneuver *maneuver;  /**< Details on the maneuver to perform */
 };
 
 /**
@@ -329,6 +384,8 @@ navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *
 		 * I may have missed out somewhere, but in OSM the word destination is there
 		 * and has another meaning than in a classic Navit.
 		 *
+		 * (mvglasow) how about attr_street_destination (i.e. destination of the street, as opposed
+		 * to the destination of the route)?
 		 *
 		 */
 
@@ -1579,17 +1636,38 @@ is_motorway_like(struct navigation_way *way)
  * @param old The old navigation item, where we're coming from
  * @param new The new navigation item, where we're going to
  * @param delta The angle the user has to steer to navigate from old to new
- * @param reason A text string explaining how the return value resulted
+ * @param maneuver Pointer to a buffer that will receive a pointer to a {@code struct navigation_maneuver}
+ * in which detailed information on the maneuver will be stored. The buffer may receive a null pointer
+ * for some cases that do not require a maneuver. If a non-null pointer is returned, the caller is responsible
+ * for freeing up the buffer once it is no longer needed.
  * @return True if navit should guide the user, false otherwise
  */
 static int
-maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct navigation_itm *new, int *delta, char **reason)
+maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct navigation_itm *new, int *delta, struct navigation_maneuver **maneuver)
 {
+	//TODO: properly populate m->type
+	struct navigation_maneuver m;
 	int ret=0,d,dw,dlim;
 	char *r=NULL;
 	struct navigation_way *w;
-	int cat,ncat,wcat,maxcat,left=-180,right=180,is_unambigous=0,is_same_street;
+	int wcat;
 	int curve_limit=25;
+
+	*maneuver = NULL;
+
+	m.type = type_nav_none;
+	m.merge_or_exit = mex_none;
+	m.num_new_motorways = 0;
+	m.num_other_ways = 0;
+	m.num_similar_ways = 0;
+	m.old_cat = maneuver_category(old->way.item.type);
+	m.new_cat = maneuver_category(new->way.item.type);
+	m.max_cat = -1;
+	m.left = -180;
+	m.right = 180;
+	m.is_unambigous = 0;
+	/* Check whether the street keeps its name */
+	m.is_same_street = is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 
 /*	dbg(1,"enter %p %p %p\n",old, new, delta); */
 	d=angle_delta(old->angle_end, new->way.angle2);
@@ -1629,24 +1707,21 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * at a motorway interchange.
 			 */
 			/* FIXME: motorway junctions could have service roads */
-			int num_new_motorways = 0;
-			int num_other = 0;
 			struct navigation_way *cur_itm = &(new->way);
 			while (cur_itm) {
 				if ((is_motorway_like(cur_itm)) && is_way_allowed(nav,cur_itm,1)) {
-					num_new_motorways++;
+					m.num_new_motorways++;
 				} else if (cur_itm->item.type != type_ramp) {
-					num_other++;
+					m.num_other_ways++;
 				}
 				cur_itm = cur_itm->next;
 			}
-			if ((num_other == 0) && (num_new_motorways > 1)) {
+			if ((m.num_other_ways == 0) && (m.num_new_motorways > 1)) {
 				r="yes: motorway interchange";
 				ret=1;
 			}
 		}
 	}
-	cat=maneuver_category(old->way.item.type);
 	if (!r && abs(d) > 75) {
 		/* always make an announcement if you have to make a sharp turn */
 		r="yes: delta over 75";
@@ -1659,39 +1734,34 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 * Note: 22.5 degrees is the threshold because anything higher is
 		 * closer to 45 than to 0 degrees.
 		 */
-		if (cat >= maneuver_category(type_street_2_city)) {
-			int num_similar = 0;
+		if (m.old_cat >= maneuver_category(type_street_2_city)) {
 			struct navigation_way *cur_itm = &(new->way);
 			while (cur_itm) {
-				if (maneuver_category(cur_itm->item.type) == cat) {
+				if (maneuver_category(cur_itm->item.type) == m.old_cat) {
 					/* TODO: decide if a maneuver_category difference of 1 is still similar */
-					num_similar++;
+					m.num_similar_ways++;
 				}
 				cur_itm = cur_itm->next;
 			}
-			if (num_similar > 1) {
+			if (m.num_similar_ways > 1) {
 				ret=1;
 				r="yes: more than one similar road and delta over 22";
 			}
 		}
 	}
-	ncat=maneuver_category(new->way.item.type);
 	if (!r) {
 		int dc=d;
-		/* Check whether the street keeps its name */
-		is_same_street=is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 		w = new->way.next;
-		maxcat=-1;
 		while (w) {
 			dw=angle_delta(old->angle_end, w->angle2);
 			if (dw < 0) {
-				if (dw > left)
-					left=dw;
+				if (dw > m.left)
+					m.left=dw;
 				if (dw > -curve_limit && d < 0 && d > -curve_limit)
 					dc=dw;
 			} else {
-				if (dw < right)
-					right=dw;
+				if (dw < m.right)
+					m.right=dw;
 				if (dw < curve_limit && d > 0 && d < curve_limit)
 					dc=dw;
 			}
@@ -1706,40 +1776,40 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 */
 
 			/* ran into some trouble here below */
-			if (is_same_street && is_same_street2(old->way.name,
+			if (m.is_same_street && is_same_street2(old->way.name,
 					//old->way.name_systematic,
 					w->name
 					, NULL, NULL
 					//, w->name_systematic
 					) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
-				is_same_street=0;
+				m.is_same_street=0;
 			/* Mark if the street has a higher or the same category */
-			if (wcat > maxcat)
-				maxcat=wcat;
+			if (wcat > m.max_cat)
+				m.max_cat=wcat;
 			w = w->next;
 		}
 		/* get the delta limit for checking for other streets. It is lower if the street has no other
 		   streets of the same or higher category */
-		if (ncat < cat)
+		if (m.new_cat < m.old_cat)
 			dlim=80;
 		else
 			dlim=120;
 		/* if the street is really straight, the others might be closer to straight */
 		if (abs(d) < 20)
 			dlim/=2;
-		if ((maxcat == ncat && maxcat == cat) || (ncat == 0 && cat == 0)) 
+		if ((m.max_cat == m.new_cat && m.max_cat == m.old_cat) || (m.new_cat == 0 && m.old_cat == 0))
 			dlim=abs(d)*620/256;
-		else if (maxcat < ncat && maxcat < cat)
+		else if (m.max_cat < m.new_cat && m.max_cat < m.old_cat)
 			dlim=abs(d)*128/256;
-		if (left < -dlim && right > dlim) 
-			is_unambigous=1;
+		if (m.left < -dlim && m.right > dlim)
+			m.is_unambigous=1;
 		if (dc != d) {
 			dbg(1,"d %d vs dc %d\n",d,dc);
 			d-=(dc+d+1)/2;
 			dbg(1,"result %d\n",d);
-			is_unambigous=0;
+			m.is_unambigous=0;
 		}
-		if (!is_same_street && is_unambigous < 1) {
+		if (!m.is_same_street && m.is_unambigous < 1) {
 			ret=1;
 			r="yes: not same street or ambigous";
 		} else
@@ -1756,25 +1826,23 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	 *
 	 * EDIT : by now I did so much testing that I indeed would switch to motorway_like()
 	 * just did not get to it yet.
-	 *
-	 *
-	 * tries to preserve the info obtained here by assigning r the merge or exit string for
-	 * reuse when actually making or speaking the command. Needs a more refined way of passing info in
-	 * the future.
 	 */
 	if (old->way.item.type == type_ramp && (new->way.item.type == type_highway_city || new->way.item.type == type_highway_land)) {
 		ret=1;
-		r="merge";
+		m.merge_or_exit = mex_merge;
 	}
 	if (new->way.item.type == type_ramp && (old->way.item.type == type_highway_city || old->way.item.type == type_highway_land)) {
 			ret=1;
-			r="exit";
+			m.merge_or_exit = mex_exit;
 		}
 
 	*delta=d;
-	if (reason)
-		*reason=r;
 	dbg(0,"reason %s, delta=%i\n",r,*delta);
+
+	if (ret) {
+		*maneuver = g_malloc(sizeof(struct navigation_maneuver));
+		memcpy(*maneuver, &m, sizeof(struct navigation_maneuver));
+	}
 	return ret;
 	
 
@@ -1863,11 +1931,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 }
 
 static struct navigation_command *
-command_new(struct navigation *this_, struct navigation_itm *itm, int delta, char * reason)
+command_new(struct navigation *this_, struct navigation_itm *itm, int delta, struct navigation_maneuver *maneuver)
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
 	dbg(1,"enter this_=%p itm=%p delta=%d\n", this_, itm, delta);
-	ret->reason = reason;
+	ret->maneuver = maneuver;
 	ret->delta=delta;
 	ret->itm=itm;
 	if (itm && itm->prev && itm->way.next && itm->prev->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
@@ -1909,14 +1977,14 @@ make_maneuvers(struct navigation *this_, struct route *route)
 {
 	struct navigation_itm *itm, *last=NULL, *last_itm=NULL;
 	int delta;
+	void * maneuver;
 	itm=this_->first;
 	this_->cmd_last=NULL;
 	this_->cmd_first=NULL;
 	while (itm) {
 		if (last) {
-			char * reason;
-			if (maneuver_required2(this_, last_itm, itm,&delta,&reason)) {
-				command_new(this_, itm, delta,reason);
+			if (maneuver_required2(this_, last_itm, itm,&delta,&maneuver)) {
+				command_new(this_, itm, delta,maneuver);
 			}
 		} else
 			last=itm;
@@ -2219,8 +2287,9 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 	 */
 
 
-	if (cmd->reason){  /*hmm  adding this line seems to fix the segfault */
-		if (strcmp(cmd->reason,"merge")==0){
+	if (cmd->maneuver) {  /*hmm  adding this line seems to fix the segfault */
+		//if (strcmp(cmd->reason,"merge")==0){
+		if (cmd->maneuver->merge_or_exit & mex_merge) {
 			switch (level) {
 			case 2:
 				return g_strdup(_("merge case 2"));
@@ -2874,10 +2943,11 @@ navigation_map_rect_destroy(struct map_rect_priv *priv)
 	g_free(priv);
 }
 
-/* good discription needed */
+/* FIXME: good description needed */
 static struct item *
 navigation_map_get_item(struct map_rect_priv *priv)
 {
+	//TODO: move maneuver detection code into maneuver_required2
 	struct item *ret=&priv->item;
 	int delta;
 	if (!priv->itm_next)
@@ -2899,7 +2969,7 @@ navigation_map_get_item(struct map_rect_priv *priv)
 		priv->cmd_next=priv->cmd->next;
 		if (priv->cmd_itm_next && !priv->cmd_itm_next->next)
 			ret->type=type_nav_destination;
-		else {
+		else { //TODO: else if (priv->cmd->maneuver) - once maneuver->type is populated
 			if (priv->itm && priv->itm->prev && !(priv->itm->way.flags & AF_ROUNDABOUT) && (priv->itm->prev->way.flags & AF_ROUNDABOUT)) {
 
 				/* code suggests it picks the correct icon, but fails to in many cases */
@@ -2974,29 +3044,31 @@ navigation_map_get_item(struct map_rect_priv *priv)
 						ret->type=type_nav_turnaround_right;
 				}
 			}
-			if (strcmp(priv->cmd->reason,"merge")==0)
-			{
-				/*defaults to left for delta = 0
-				 *
-				 * I don't think you can technically merge with zero degrees
-				 *
-				 */
+			if (priv->cmd->maneuver) {
+				if (priv->cmd->maneuver->merge_or_exit & mex_merge) {
+					// TODO: use maneuver->left and maneuver->right
+					/*defaults to left for delta = 0
+					 *
+					 * I don't think you can technically merge with zero degrees
+					 *
+					 */
 
 
-				if (delta < 0)
-				ret->type=type_nav_merge_right;
-				else ret->type=type_nav_merge_left;
-			}
-			if (strcmp(priv->cmd->reason,"exit")==0)
-			{
-				/* defaults to right for delta=0
-				 * to my best knowledge this is good for now
-				 * a zero degree exit seems to hold a contradiction in it.
-				 *
-				 */
-				if (delta < 0)
-				ret->type=type_nav_exit_left;
-				else ret->type=type_nav_exit_right;
+					if (delta < 0)
+					ret->type=type_nav_merge_right;
+					else ret->type=type_nav_merge_left;
+				}
+				if (priv->cmd->maneuver->merge_or_exit & mex_exit) {
+					// TODO: once we have a properly set maneuver->type, use that instead of delta
+					/* defaults to right for delta=0
+					 * to my best knowledge this is good for now
+					 * a zero degree exit seems to hold a contradiction in it.
+					 *
+					 */
+					if (delta < 0)
+					ret->type=type_nav_exit_left;
+					else ret->type=type_nav_exit_right;
+				}
 			}
 		}
 	}
