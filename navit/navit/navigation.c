@@ -1722,35 +1722,35 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				} else if (w->item.type != type_ramp) {
 					m.num_other_ways++;
 				}
+				if (w != &(new->way)) {
+					dw=angle_delta(old->angle_end, w->angle2);
+					if (dw < 0) {
+						if (dw > m.left)
+							m.left=dw;
+						if (dw > -curve_limit && d < 0 && d > -curve_limit)
+							dc=dw;
+					} else {
+						if (dw < m.right)
+							m.right=dw;
+						if (dw < curve_limit && d > 0 && d < curve_limit)
+							dc=dw;
+					}
+					wcat=maneuver_category(w->item.type);
+					/* If any other street has the same name, we can't use the same name criterion.
+					 * Exceptions apply if we're coming from a motorway-like road and:
+					 * - the other road is motorway-like (a motorway might split up temporarily) or
+					 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
+					 * The second one is really a workaround for bad tagging practice in OSM. Since entering
+					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
+					 * side effects.
+					 */
+					if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+						m.is_same_street=0;
+					/* Mark if the street has a higher or the same category */
+					if (wcat > m.max_cat)
+						m.max_cat=wcat;
+				} /* if w != new->way */
 			} /* if is_way_allowed */
-			if (w != &(new->way)) {
-				dw=angle_delta(old->angle_end, w->angle2);
-				if (dw < 0) {
-					if (dw > m.left)
-						m.left=dw;
-					if (dw > -curve_limit && d < 0 && d > -curve_limit)
-						dc=dw;
-				} else {
-					if (dw < m.right)
-						m.right=dw;
-					if (dw < curve_limit && d > 0 && d < curve_limit)
-						dc=dw;
-				}
-				wcat=maneuver_category(w->item.type);
-				/* If any other street has the same name, we can't use the same name criterion.
-				 * Exceptions apply if we're coming from a motorway-like road and:
-				 * - the other road is motorway-like (a motorway might split up temporarily) or
-				 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
-				 * The second one is really a workaround for bad tagging practice in OSM. Since entering
-				 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
-				 * side effects.
-				 */
-				if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
-					m.is_same_street=0;
-				/* Mark if the street has a higher or the same category */
-				if (wcat > m.max_cat)
-					m.max_cat=wcat;
-			} /* if w != new->way */
 			/*if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))*/
 			if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
 				/* FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway */
@@ -1819,15 +1819,17 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			/* FIXME: motorway junctions could have service roads */
 			r="yes: motorway interchange";
 			ret=1;
-		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(d) >= curve_limit))) {
-			/* Motorway ramps can be confusing, therefore announce each maneuver.
-			 * We'll assume a motorway ramp when all available ways are either
-			 * motorway-like or ramps.
-			 * We will also generate a maneuver whenever we have to make a turn
-			 * (of curve_limit or more) to enter the ramp.
-			 * Going straight on a ramp that crosses non-motorway roads does not
-			 * per se create a maneuver. This is to avoid superfluous maneuvers
-			 * when the minor road of a complex T junction is a ramp.
+		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(d) >= curve_limit)) && ((m.left > -90) || (m.right < 90))) {
+			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
+			 * When the new way is a ramp, we check for the following criteria:
+			 * - All available ways are either motorway-like or ramps.
+			 *   This prevents this rule from firing in non-motorway setings, which is needed to avoid
+			 *   superfluous maneuvers when the minor road of a complex T junction is a ramp.
+			 * - If the above is not met, the maneuver must involve a turn (curve_limit or more) to enter the ramp.
+			 * - Additionally, there must be one way (other than the new way) within +/-90°.
+			 *   This prevents the rule from essentially announcing "don't do the U turn" where the ramps for
+			 *   two opposite directions merge.
+			 * If the criteria are satisfied, announce.
 			 */
 			r="yes: entering ramp";
 			ret=1;
