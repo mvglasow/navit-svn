@@ -240,7 +240,7 @@ struct navigation_maneuver {
 	int num_other_ways;        /**< Number of permitted candidate ways that are neither ramps nor motorway-like */
 	int old_cat;               /**< Maneuver category of the way leading to the maneuver */
 	int new_cat;               /**< Maneuver category of the selected way after the maneuver */
-	int max_cat;               /**< Highest maneuver category of any candidate way other than the route, permitted or not */
+	int max_cat;               /**< Highest maneuver category of any permitted candidate way other than the route */
 	int num_similar_ways;      /**< Number of candidate ways (including the route) that have a {@code maneuver_category()} similar
 	                                to {@code old_cat}. See {@code maneuver_required2()} for definition of "similar". */
 	int left;                  /**< Minimum bearing delta of any candidate way that turns left (not including route),
