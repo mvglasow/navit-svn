@@ -780,7 +780,7 @@ calculate_entry_angle(struct navigation_way *w)
 	if (item_attr_get(realitem, attr_street_name_systematic, &attr))
 		w->name_systematic=map_convert_string(realitem->map,attr.u.str);
 	else
-		w->name=NULL;
+		w->name_systematic=NULL;
 		
 	if (w->dir < 0) {
 		if (item_coord_get(realitem, cbuf, 2) != 2) {
