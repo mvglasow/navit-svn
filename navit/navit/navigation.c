@@ -973,6 +973,17 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	itm->way.next = w;
 }
 
+/**
+ * @brief Destroys navigation items associated with a navigation object.
+ *
+ * This function destroys all or some of the {@code navigation_itm} instances associated with
+ * {@code this_}, starting with the first one. Data structures associated with the items will
+ * also be freed.
+ *
+ * @param this_ The navigation object whose command instances are to be destroyed
+ * @param end The first navigation item to keep. If it is NULL or not found in the list, all items
+ * will be destroyed.
+ */
 static void
 navigation_destroy_itms_cmds(struct navigation *this_, struct navigation_itm *end)
 {
@@ -994,6 +1005,8 @@ navigation_destroy_itms_cmds(struct navigation *this_, struct navigation_itm *en
 			if (cmd->next) {
 				cmd->next->prev = NULL;
 			}
+			if (cmd->maneuver)
+				g_free(cmd->maneuver);
 			g_free(cmd);
 		}
 		dbg(0,"829 destroy_itm_cmds\n");
