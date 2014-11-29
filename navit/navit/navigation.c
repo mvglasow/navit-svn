@@ -240,7 +240,7 @@ struct navigation_maneuver {
 	int num_other_ways;        /**< Number of permitted candidate ways that are neither ramps nor motorway-like */
 	int old_cat;               /**< Maneuver category of the way leading to the maneuver */
 	int new_cat;               /**< Maneuver category of the selected way after the maneuver */
-	int max_cat;               /**< Highest maneuver category of any permitted candidate way other than the route */
+	int max_cat;               /**< Highest maneuver category of any candidate way other than the route, permitted or not */
 	int num_similar_ways;      /**< Number of candidate ways (including the route) that have a {@code maneuver_category()} similar
 	                                to {@code old_cat}. See {@code maneuver_required2()} for definition of "similar". */
 	int left;                  /**< Minimum bearing delta of any candidate way that turns left (not including route),
@@ -1705,7 +1705,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 * and predictability (because the same filter is applied to the ways being analyzed).
 		 */
 		struct navigation_way *w = &(new->way);
-		int through_segments = 0; //FIXME
+		int through_segments = 0;
 		dc=d;
 		/* Check whether the street keeps its name */
 		while (w) {
@@ -1722,35 +1722,35 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				} else if (w->item.type != type_ramp) {
 					m.num_other_ways++;
 				}
-				if (w != &(new->way)) {
-					dw=angle_delta(old->angle_end, w->angle2);
-					if (dw < 0) {
-						if (dw > m.left)
-							m.left=dw;
-						if (dw > -curve_limit && d < 0 && d > -curve_limit)
-							dc=dw;
-					} else {
-						if (dw < m.right)
-							m.right=dw;
-						if (dw < curve_limit && d > 0 && d < curve_limit)
-							dc=dw;
-					}
-					wcat=maneuver_category(w->item.type);
-					/* If any other street has the same name, we can't use the same name criterion.
-					 * Exceptions apply if we're coming from a motorway-like road and:
-					 * - the other road is motorway-like (a motorway might split up temporarily) or
-					 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
-					 * The second one is really a workaround for bad tagging practice in OSM. Since entering
-					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
-					 * side effects.
-					 */
-					if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
-						m.is_same_street=0;
-					/* Mark if the street has a higher or the same category */
-					if (wcat > m.max_cat)
-						m.max_cat=wcat;
-				} /* if w != new->way */
 			} /* if is_way_allowed */
+			if (w != &(new->way)) {
+				dw=angle_delta(old->angle_end, w->angle2);
+				if (dw < 0) {
+					if (dw > m.left)
+						m.left=dw;
+					if (dw > -curve_limit && d < 0 && d > -curve_limit)
+						dc=dw;
+				} else {
+					if (dw < m.right)
+						m.right=dw;
+					if (dw < curve_limit && d > 0 && d < curve_limit)
+						dc=dw;
+				}
+				wcat=maneuver_category(w->item.type);
+				/* If any other street has the same name, we can't use the same name criterion.
+				 * Exceptions apply if we're coming from a motorway-like road and:
+				 * - the other road is motorway-like (a motorway might split up temporarily) or
+				 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
+				 * The second one is really a workaround for bad tagging practice in OSM. Since entering
+				 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
+				 * side effects.
+				 */
+				if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+					m.is_same_street=0;
+				/* Mark if the street has a higher or the same category */
+				if (wcat > m.max_cat)
+					m.max_cat=wcat;
+			} /* if w != new->way */
 			/*if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))*/
 			if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
 				/* FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway */
@@ -1788,10 +1788,25 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					r="yes: turning into dual-carriageway through-road of T junction";
 				}
 			}
-			if (!r)
-				r="no: only one option permitted";
 		}
 	}
+	if (!r && abs(d) > 75) {
+		/* always make an announcement if you have to make a sharp turn */
+		r="yes: delta over 75";
+		ret=1;
+	} else if (!r && abs(d) >= curve_limit) {
+		if ((m.new_cat >= maneuver_category(type_street_2_city)) && (m.num_similar_ways > 1)) {
+			/* When coming from street_2_* or higher category road, check if
+			 * - we have multiple options of the same category and
+			 * - we have to make a considerable turn (at least curve_limit)
+			 * If both is the case, ANNOUNCE.
+			 */
+			ret=1;
+			r="yes: more than one similar road and delta >= curve_limit";
+		}
+	}
+	if ((!r) && (m.num_options <= 1))
+		r="no: only one option permitted";
 	if (!r) {
 		if (is_motorway_like(&(old->way)) && (m.num_other_ways == 0) && (m.num_new_motorways > 1)) {
 			/* If we are at a motorway interchange, ANNOUNCE
@@ -1816,25 +1831,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 */
 			r="yes: entering ramp";
 			ret=1;
-		}
-	}
-	if (!r && abs(d) > 75) {
-		/* always make an announcement if you have to make a sharp turn */
-		r="yes: delta over 75";
-		ret=1;
-	} else if (!r && abs(d) >= curve_limit) {
-		/* When coming from street_2_* or higher category road, check if
-		 * - we have multiple options of the same category and
-		 * - we have to make a considerable turn (at least curve_limit)
-		 * If both is the case, ANNOUNCE.
-		 * Note: 22.5 degrees is the threshold because anything higher is
-		 * closer to 45 than to 0 degrees.
-		 */
-		if (m.old_cat >= maneuver_category(type_street_2_city)) {
-			if (m.num_similar_ways > 1) {
-				ret=1;
-				r="yes: more than one similar road and delta >= curve_limit";
-			}
 		}
 	}
 	if (!r) {
