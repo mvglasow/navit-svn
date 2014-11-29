@@ -1817,13 +1817,18 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * at a motorway interchange.
 			 */
 			/* FIXME: motorway junctions could have service roads */
-			r="yes: motorway interchange";
+			r="yes: motorway interchange (multiple motorways)";
+			ret=1;
+		} else if (is_motorway_like(&(old->way)) && (m.num_other_ways == 0) && (!m.is_same_street)) {
+			/* Another sign that we are at a motorway interchange is if the street name changes
+			 */
+			r="yes: motorway interchange (name changes)";
 			ret=1;
 		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(d) >= curve_limit)) && ((m.left > -90) || (m.right < 90))) {
 			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
 			 * When the new way is a ramp, we check for the following criteria:
 			 * - All available ways are either motorway-like or ramps.
-			 *   This prevents this rule from firing in non-motorway setings, which is needed to avoid
+			 *   This prevents this rule from firing in non-motorway settings, which is needed to avoid
 			 *   superfluous maneuvers when the minor road of a complex T junction is a ramp.
 			 * - If the above is not met, the maneuver must involve a turn (curve_limit or more) to enter the ramp.
 			 * - Additionally, there must be one way (other than the new way) within +/-90°.
