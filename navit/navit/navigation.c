@@ -196,24 +196,39 @@ int distances[]={1,2,3,4,5,10,25,50,75,100,150,200,250,300,400,500,750,-1};
 
 /* Allowed values for navigation_maneuver.merge_or_exit
  * The numeric values are chosen in such a way that they can be interpreted as flags:
- * 1=merge, 2=exit, 4=left, 8=right
+ * 1=merge, 2=exit, 4=interchange, 8=right, 16=left
  * Identifiers were chosen over flags to enforce certain rules
- * (merge/exit and left/right are mutually exclusive, left/right requires merge or exit). */
+ * (merge/exit/interchange and left/right are mutually exclusive, left/right requires merge or exit). */
 //FIXME: should we make this an enum?
+
 /** Not merging into or exiting from a motorway_like road */
 #define mex_none 0
-/** Merging into a motorway_like road, direction undefined */
+
+/** Merging into a motorway-like road, direction undefined */
 #define mex_merge 1
-/** Exiting from a motorway_like road, direction undefined */
+
+/** Exiting from a motorway-like road, direction undefined.
+ * This should only be used for ramps leading to a non-motorway road.
+ * For interchanges, use {@code mex_interchange} instead. */
 #define mex_exit 2
-/** Merging into a motorway_like road to the left (coming from the right) */
-#define mex_merge_left 5
-/** Exiting from a motorway_like road to the right */
-#define mex_exit_right 6
-/** Merging into a motorway_like road to the right (coming from the left) */
+
+/** Motorway-like road splits in two.
+ * This should be used for all cases in which ramps lead to another motorway-like road. */
+#define mex_interchange 4
+
+/** Merging into a motorway-like road to the right (coming from the left) */
 #define mex_merge_right 9
-/** Exiting from a motorway_like road to the left */
-#define mex_exit_left 10
+
+/** Exiting from a motorway-like road to the right.
+ * See {@code mex_exit} for usage. */
+#define mex_exit_right 10
+
+/** Merging into a motorway-like road to the left (coming from the right) */
+#define mex_merge_left 17
+
+/** Exiting from a motorway-like road to the left.
+ * See {@code mex_exit} for usage. */
+#define mex_exit_left 18
 
 /**
  * @brief Holds information about a navigation maneuver.
@@ -1818,11 +1833,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 */
 			/* FIXME: motorway junctions could have service roads */
 			r="yes: motorway interchange (multiple motorways)";
+			m.merge_or_exit = mex_interchange;
 			ret=1;
 		} else if (is_motorway_like(&(old->way)) && (m.num_other_ways == 0) && (!m.is_same_street)) {
 			/* Another sign that we are at a motorway interchange is if the street name changes
 			 */
 			r="yes: motorway interchange (name changes)";
+			/* TODO: tell motorway interchanges from exits */
+			/* m.merge_or_exit = mex_interchange; */
 			ret=1;
 		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(d) >= curve_limit)) && ((m.left > -90) || (m.right < 90))) {
 			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
@@ -1836,6 +1854,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 *   two opposite directions merge.
 			 * If the criteria are satisfied, announce.
 			 */
+			/* TODO: detect motorway interchanges and set m.merge_or_exit accordingly */
 			r="yes: entering ramp";
 			ret=1;
 		}
@@ -1882,20 +1901,15 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 #endif
 	}
 
-	/* the 2 below could use is_motorway_like() but in this stage apply a stricter criterion for
-	 * clear testcases to work on.
-	 *
-	 * EDIT : by now I did so much testing that I indeed would switch to motorway_like()
-	 * just did not get to it yet.
-	 */
-	if (old->way.item.type == type_ramp && (new->way.item.type == type_highway_city || new->way.item.type == type_highway_land)) {
-		ret=1;
-		m.merge_or_exit = mex_merge;
-	}
-	if (new->way.item.type == type_ramp && (old->way.item.type == type_highway_city || old->way.item.type == type_highway_land)) {
+	if (m.merge_or_exit == mex_none) {
+		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way))) {
+			ret=1;
+			m.merge_or_exit = mex_merge;
+		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way))) {
 			ret=1;
 			m.merge_or_exit = mex_exit;
 		}
+	}
 
 	*delta=d;
 	dbg(0,"reason %s, delta=%i\n",r,*delta);
