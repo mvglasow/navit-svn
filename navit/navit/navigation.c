@@ -1164,20 +1164,6 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		*	}
 		*/
 
-
-
-		/* Ditch lanes right away
-		 *
-		 *
-		 *
-		 * priority : high, critical
-		 */
-
-
-
-		if (item_attr_get(streetitem, attr_street_lanes, &attr)){
-			ret->way.lanes=map_convert_string(streetitem->map,attr.u.str);
-		}
 		if (item_attr_get(streetitem, attr_street_destination, &attr)){
 			ret->way.destination=map_convert_string(streetitem->map,attr.u.str);
 	/*				dbg(0,"destination=%s\n", ret->way.destination); */
