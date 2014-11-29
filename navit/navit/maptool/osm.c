@@ -1777,7 +1777,7 @@ osm_end_way(struct maptool_osm *osm)
 		item_bin_add_attr_string(item_bin, attr_district_name, attr_strings[attr_string_district_name]);
 		item_bin_add_attr_string(item_bin, attr_street_name_systematic, attr_strings[attr_string_street_name_systematic]);
 		item_bin_add_attr_string(item_bin, attr_street_name_systematic_nat, attr_strings[attr_string_street_name_systematic_nat]);
-		item_bin_add_attr_string(item_bin, attr_street_lanes, attr_strings[attr_string_street_lanes]);
+		//item_bin_add_attr_string(item_bin, attr_street_lanes, attr_strings[attr_string_street_lanes]); //FIXME
 		item_bin_add_attr_string(item_bin, attr_street_destination, attr_strings[attr_string_street_destination]);
 		item_bin_add_attr_longlong(item_bin, attr_osm_wayid, osmid_attr_value);
 		if (debug_attr_buffer[0])
