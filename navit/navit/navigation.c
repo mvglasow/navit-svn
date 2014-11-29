@@ -311,10 +311,9 @@ struct navigation_way {
 
 	int flags;						/**< The flags of the way */
 	struct item item;				/**< The item of the way */
-	char *name;						/* for street_name */
-	char *name_systematic;			/* for street_name_systematic */
-	char *lanes;					/* for street_lanes */
-	char *destination;				/* for the destination this way leads to (osm:destination)*/
+	char *name;						/**< The street name ({@code street_name} attribute) */
+	char *name_systematic;			/**< The road number ({@code street_name_systematic} attribute, OSM: {@code ref}) */
+	char *destination;				/**< The destination this way leads to (OSM: {@code destination}) */
 };
 
 struct navigation_itm {
@@ -887,7 +886,6 @@ navigation_itm_ways_clear(struct navigation_itm *itm)
 		map_convert_free(c->name);
 		map_convert_free(c->name_systematic);
 		map_convert_free(c->destination);
-//		map_convert_free(c->lanes);
 
 		g_free(c);
 		c = n;
