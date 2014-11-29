@@ -1730,7 +1730,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 * looping over the entire set of ways multiple times, which aims to improve performance
 		 * and predictability (because the same filter is applied to the ways being analyzed).
 		 */
-		struct navigation_way *w = &(new->way);
+		w = &(new->way);
 		int through_segments = 0;
 		dc=d;
 		/* Check whether the street keeps its name */
@@ -1926,7 +1926,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	dbg(0,"reason %s, delta=%i\n",r,*delta);
 
 	if (ret) {
-		*maneuver = g_malloc(sizeof(struct navigation_maneuver));
+		*maneuver = g_new(struct navigation_maneuver, 1);
 		memcpy(*maneuver, &m, sizeof(struct navigation_maneuver));
 	}
 	if (r)
@@ -2065,14 +2065,14 @@ make_maneuvers(struct navigation *this_, struct route *route)
 {
 	struct navigation_itm *itm, *last=NULL, *last_itm=NULL;
 	int delta;
-	void * maneuver;
+	struct navigation_maneuver *maneuver;
 	itm=this_->first;
 	this_->cmd_last=NULL;
 	this_->cmd_first=NULL;
 	while (itm) {
 		if (last) {
-			if (maneuver_required2(this_, last_itm, itm,&delta,&maneuver)) {
-				command_new(this_, itm, delta,maneuver);
+			if (maneuver_required2(this_, last_itm, itm, &delta, &maneuver)) {
+				command_new(this_, itm, delta, maneuver);
 			}
 		} else
 			last=itm;
@@ -2964,7 +2964,7 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 				int delta=0;
 				char *reason=NULL;
 				maneuver_required2(this_->nav, prev, itm, &delta, &reason);
-				this_->str=attr->u.str=g_strdup_printf("reason:%s",reason);
+				this_->str=attr->u.str=g_strdup_printf("reason:%s",reason); //FIXME: we now have a struct
 				return 1;
 			}
 			
