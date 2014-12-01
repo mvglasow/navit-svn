@@ -845,7 +845,6 @@ navigation_itm_ways_clear(struct navigation_itm *itm)
 	c = itm->way.next;
 	while (c) {
 		n = c->next;
-		dbg(0,"717 itm_ways_clear\n");
 		map_convert_free(c->name);
 		map_convert_free(c->name_systematic);
 		map_convert_free(c->destination);
