@@ -842,32 +842,6 @@ navigation_itm_ways_clear(struct navigation_itm *itm)
 {
 	struct navigation_way *c,*n;
 
-	/* At a given point I was trying out new features sometimes as fast as
-	 * a new one each hour. That had to go wrong one day and indeed it broke
-	 * completely soon afterwards. I then tried to restore it as good as possible
-	 * so I could make a few more showcases so all efforts would not be invain.
-	 * I brought it back to the point where you can drive the demovehicle as long
-	 * as you want, but it freaks-out once it reaches it's destination.
-	 * Apparently this also happens when you try to acces the route, I never tried
-	 * that and would even have been surprised if that already wroked.
-	 *
-	 *
-	 *
-	 * Below is a good sample of all the clumsyness I ended up doing, all for the good cause,
-	 * but would appreciate stuff like that to be reviewed before high_five makes it to any
-	 * kind of public repo. This is something that must first be seen in action, without
-	 * browsing throught the code first. So in short, a first public available version should be
-	 * able to drive to destination without errors, route access and navigation map can be dealt
-	 * with along the way.
-	 *
-	 * IMHO the usage of map_convert_free is wrong, but since it works fine this can be dealt with later
-	 *
-	 */
-
-
-
-
-
 	c = itm->way.next;
 	while (c) {
 		n = c->next;
