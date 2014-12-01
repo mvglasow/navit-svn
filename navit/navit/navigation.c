@@ -397,18 +397,7 @@ navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *
 	case attr_street_name:
 	case attr_street_name_systematic:
 	case attr_street_name_systematic_nat:
-	//case attr_street_lanes: //FIXME
-	case attr_destination:
-
-		/*the usage of the word 'destination' may have to be verified all-over as not
-		 * to have any confusion with the destination you gave Navit as target.
-		 * I may have missed out somewhere, but in OSM the word destination is there
-		 * and has another meaning than in a classic Navit.
-		 *
-		 * (mvglasow) how about attr_street_destination (i.e. destination of the street, as opposed
-		 * to the destination of the route)?
-		 *
-		 */
+	case attr_street_destination:
 
 		mr=map_rect_new(this_->map, NULL);
 		while ((item=map_rect_get_item(mr))) {
