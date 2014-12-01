@@ -1209,7 +1209,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 
 			struct map_selection mselexit;
 			struct item *rampitem;
-			dbg(0,"test ramp\n");
+			dbg(lvl_debug,"test ramp\n");
 
 			mselexit.next = NULL;
 			mselexit.u.c_rect.lu = c[0] ;
@@ -1260,12 +1260,12 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 							{
 								if (attr.type == attr_label)
 								{
-									dbg(0,"exit_label=%s\n",attr.u.str);
+									dbg(lvl_debug,"exit_label=%s\n",attr.u.str);
 									ret->way.name_systematic= map_convert_string(streetitem->map,attr.u.str);
 								}
 								if (attr.type == attr_ref)
 								{
-									dbg(0,"exit_ref=%s\n",attr.u.str);
+									dbg(lvl_debug,"exit_ref=%s\n",attr.u.str);
 									ret->way.name= map_convert_string(streetitem->map,attr.u.str);
 								}
 
@@ -1292,7 +1292,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 									if (attr.u.str){
 										if (ret->way.destination)
 										map_convert_free(ret->way.destination);
-					/*				dbg(0,"exit_to=%s\n",attr.u.str); */
+									dbg(lvl_debug,"exit_to=%s\n",attr.u.str); 
 									ret->way.destination= map_convert_string(streetitem->map,attr.u.str);
 									}
 								}
