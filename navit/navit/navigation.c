@@ -970,9 +970,10 @@ navigation_destroy_itms_cmds(struct navigation *this_, struct navigation_itm *en
 				g_free(cmd->maneuver);
 			g_free(cmd);
 		}
-		dbg(0,"829 destroy_itm_cmds\n");
+	
 		map_convert_free(itm->way.name);
 		map_convert_free(itm->way.name_systematic);
+		map_convert_free(itm->way.destination);
 		navigation_itm_ways_clear(itm);
 		g_free(itm);
 	}
