@@ -2852,20 +2852,10 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 		return 0;
 	case attr_street_name_systematic:
 		attr->u.str=itm->way.name_systematic;
-		//this_->attr_next=attr_street_lanes;
-		this_->attr_next=attr_destination; //FIXME
+		this_->attr_next=attr_destination; 
 		if (attr->u.str){
 			return 1;}
 		return 0;
-#if 0
-		//FIXME
-	case attr_street_lanes:
-			attr->u.str=itm->way.lanes;
-			this_->attr_next=attr_destination;
-			if (attr->u.str){
-				return 1;}
-			return 0;
-#endif
 	case attr_street_destination:
 			attr->u.str=itm->way.destination;
 			this_->attr_next=attr_debug;
