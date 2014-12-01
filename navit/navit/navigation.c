@@ -1273,10 +1273,10 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 								{
 									/* some exit_to info was found to be csv instead of
 									 * using a ; sep.
-									 *
 									 * the code from robotaxi will have to be reviewed for this,
 									 * it only handles ; separator now.
-									 *
+									 * EDIT(jandegr) : up to now only found them using a ',' as separator in France and
+									 * using a ';' as separator elsewhere
 									 *
 									 * If OSM contains no anomalies, it's either exit_to or
 									 * destnation info, but we must be aware that both could
@@ -2328,17 +2328,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 	 *
 	 */
 
-	/* critical but done :) fix a segfault,
-	 *
-	 * next task : have someone who knows something about computers
-	 * check this whole thing out for memory leaks and other pittfalls.
-	 *
-	 *
-	 *
-	 */
-
-
-	if (cmd->maneuver) {  /*hmm  adding this line seems to fix the segfault */
+	if (cmd->maneuver) {  
 		//if (strcmp(cmd->reason,"merge")==0){
 		if (cmd->maneuver->merge_or_exit & mex_merge) {
 			switch (level) {
