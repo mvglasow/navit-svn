@@ -1097,7 +1097,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 	struct attr street_item,direction,route_attr;
 	struct map_rect *mr;
 	struct attr attr;
-	struct coord c[256];		/* however the OSM maximum is 2000 nodes */
+	struct coord c[256];		/* however the OSM maximum is 2000 nodes, how does maptool handle this ? */
 	struct coord exitcoord;
 
 	if (routeitem) {
@@ -1168,20 +1168,10 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 
 		navigation_itm_update(ret, routeitem);
 
-
-		/* there must be a faster way to obtain only first and last coord
-		 * ask tryagain someday ?
-		 *
-		 *
-		 * low priority, works fine as is for a long time already
-		 */
-
 		item_coord_rewind(routeitem);
-		while (i<255 && item_coord_get(routeitem, &c[i], 1) ) {
-/*			dbg(0, "coord %i %i %i\n", i, c[i].x ,c[i].y);   */
-				i++;
-		}
-/*		dbg(0,"count=%d\n", i); */
+		i= item_coord_get(routeitem, &c[0], 256);
+		if (i>255)
+			dbg(lvl_error,"streetitem has probably more than 256 coordinates\n") ; /*will probably never happen*/
 		i--;
 		if (i>=1)
 		{
