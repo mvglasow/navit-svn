@@ -1066,9 +1066,6 @@ check_roundabout(struct navigation_itm *itm, struct map *graph_map)
 /*@brief
  *
  *
- * hier die exit ref recupereren en als naam zetten !!
- *
- *
  *
  * routeitem has an attr. streetitem, but that is only and id and a map,
  * allowing to fetch the actual streetitem, that will live under the same name.
@@ -1080,8 +1077,6 @@ check_roundabout(struct navigation_itm *itm, struct map *graph_map)
  *
  *
  * navigation_itm_new() holds the bulk of the changes of high_five
- * and have a look at the maptool diff
- * (#1082, my recent version, robotaxi's version is outdated) before reading below.
  *
  *
  */
@@ -1204,9 +1199,6 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			mselexit.next = NULL;
 			mselexit.u.c_rect.lu = c[0] ;
 			mselexit.u.c_rect.rl = c[0] ;
-			/* it's probably futile to start changing the params below
-			 * and might even turn against us some day so pls. leave as is
-			 */
 			mselexit.range = item_range_all;
 			mselexit.order = 18;
 
@@ -1232,18 +1224,6 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 					if (item_coord_get(rampitem, &exitcoord, 1)
 							&& exitcoord.x == c[0].x && exitcoord.y == c[0].y)
 					{
-
-
-						/* dbg 0 is for errors only, I mis-use it in a first-try
-						 * version too, but in public versions this should be cleaned-up all over.
-						 *
-						 * and why not make it mandatory that dbg 0 messages start with 'ERROR:'
-						 * or make dbg() do that ?
-						 *
-						 */
-
-	/*					dbg(0,"coords :%i, %i \n",exitcoord.x,exitcoord.y);	*/
-
 						while (item_attr_get(rampitem, attr_any, &attr))
 						{
 							if (attr.type)
