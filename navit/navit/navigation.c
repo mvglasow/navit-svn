@@ -1122,11 +1122,10 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			return NULL;
 		}
 
-		if (item_attr_get(streetitem, attr_street_name, &attr)){
-
+		if (item_attr_get(streetitem, attr_street_name, &attr))
 			ret->way.name=map_convert_string(streetitem->map,attr.u.str);
 
-		}
+
 
 		/* for highways OSM ref, nat_ref and int_ref can get a bit fuzzy.
 		 *
@@ -1143,10 +1142,9 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		 */
 
 
-		if (item_attr_get(streetitem, attr_street_name_systematic, &attr)){
+		if (item_attr_get(streetitem, attr_street_name_systematic, &attr))
 			ret->way.name_systematic=map_convert_string(streetitem->map,attr.u.str);
 
-		}
 
 		/* handle later, see todo above.
 		*if (item_attr_get(streetitem, attr_street_name_systematic_nat, &attr)){
@@ -1155,11 +1153,8 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		*	}
 		*/
 
-		if (item_attr_get(streetitem, attr_street_destination, &attr)){
+		if (item_attr_get(streetitem, attr_street_destination, &attr))
 			ret->way.destination=map_convert_string(streetitem->map,attr.u.str);
-	/*				dbg(0,"destination=%s\n", ret->way.destination); */
-		}
-
 
 		navigation_itm_update(ret, routeitem);
 
@@ -1183,19 +1178,16 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		 *  If present, obtain exit_ref, exit_label and exit_to
 		 *  from the map.
 		 *  exit_to holds info similar to attr_street_destination, and
-		 *  we place it in way.destination as well, replacing the street_destination info
-		 *  in cases where a ramp has both.
+		 *  we place it in way.destination as well, unless the street_destination info
+		 *  is already present
 		 *
 		 *
 		 */
 		if (streetitem->type == type_ramp )
 		{
-
-
 			struct map_selection mselexit;
 			struct item *rampitem;
 			dbg(lvl_debug,"test ramp\n");
-
 			mselexit.next = NULL;
 			mselexit.u.c_rect.lu = c[0] ;
 			mselexit.u.c_rect.rl = c[0] ;
@@ -1205,70 +1197,38 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			map_rect_destroy(mr);					/* is this usefull ? */
 			mr = map_rect_new	(tmap, &mselexit);
 
-			while (rampitem=map_rect_get_item(mr)) /* generates a compiler warning but Navit does
-													* it like this all the time
-													*/
+			while (rampitem=map_rect_get_item(mr))
 			{
-
-				if (rampitem->type == type_highway_exit
-
-						/*  Don't do anything like below, as I see it now we also pick up
-						 *  some info from time to time in case a ramp splits.
-						 *  If you do anything like below you will start cutting away info.
-						 *
-						 *		&& ((this_->last->way.item.type == type_highway_land) || (this_->last->way.item.type == type_highway_city))
-						 * 		or check with is_motorway_like() or don't check at all ?
-						 */
-								)
-				{
-					if (item_coord_get(rampitem, &exitcoord, 1)
+				if (rampitem->type == type_highway_exit && item_coord_get(rampitem, &exitcoord, 1)
 							&& exitcoord.x == c[0].x && exitcoord.y == c[0].y)
+				{
+					while (item_attr_get(rampitem, attr_any, &attr))
 					{
-						while (item_attr_get(rampitem, attr_any, &attr))
+						if (attr.type && attr.type == attr_label)
 						{
-							if (attr.type)
-							{
-								if (attr.type == attr_label)
-								{
-									dbg(lvl_debug,"exit_label=%s\n",attr.u.str);
-									ret->way.name_systematic= map_convert_string(streetitem->map,attr.u.str);
-								}
-								if (attr.type == attr_ref)
-								{
-									dbg(lvl_debug,"exit_ref=%s\n",attr.u.str);
-									ret->way.name= map_convert_string(streetitem->map,attr.u.str);
-								}
-
-								if (attr.type == attr_exit_to)
-								{
-									/* some exit_to info was found to be csv instead of
-									 * using a ; sep.
-									 * the code from robotaxi will have to be reviewed for this,
-									 * it only handles ; separator now.
-									 * EDIT(jandegr) : up to now only found them using a ',' as separator in France and
-									 * using a ';' as separator elsewhere
-									 *
-									 * If OSM contains no anomalies, it's either exit_to or
-									 * destnation info, but we must be aware that both could
-									 * be provided for the same street.
-									 * If both exist, the info from exit_to
-									 * will survive, will need a review later.
-									 * priotiry : low, works already really fine this way and
-									 * it will require much testing or map-data scanning to find out
-									 * if this can be a real issue or only my imagination.
-									 *
-									 *
-									 */
-									if (attr.u.str){
-										if (ret->way.destination)
-										map_convert_free(ret->way.destination);
-									dbg(lvl_debug,"exit_to=%s\n",attr.u.str); 
-									ret->way.destination= map_convert_string(streetitem->map,attr.u.str);
-									}
-								}
-
-
-							}
+							dbg(lvl_debug,"exit_label=%s\n",attr.u.str);
+							ret->way.name_systematic= map_convert_string(streetitem->map,attr.u.str);
+						}
+						if (attr.type == attr_ref)
+						{
+							dbg(lvl_debug,"exit_ref=%s\n",attr.u.str);
+							ret->way.name= map_convert_string(streetitem->map,attr.u.str);
+						}
+						if (attr.type == attr_exit_to)
+						{
+							/* some exit_to info was found to be csv instead of
+							* using a ; sep.
+							* the code from robotaxi will have to be reviewed for this,
+							* it only handles ; separator now.
+							* EDIT(jandegr) : up to now only found them using a ',' as separator in France and
+							* using a ';' as separator elsewhere
+							*
+							* If destination info already exists, exit_to
+							* info is not used
+							*
+							*/
+							if (attr.u.str && !ret->way.destination)
+								ret->way.destination= map_convert_string(streetitem->map,attr.u.str);
 						}
 					}
 				}
