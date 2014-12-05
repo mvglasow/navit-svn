@@ -205,11 +205,13 @@ int distances[]={1,2,3,4,5,10,25,50,75,100,150,200,250,300,400,500,750,-1};
 #define mex_none 0
 
 /** Merging into a motorway-like road, direction undefined */
+//FIXME: do we need this constant?
 #define mex_merge 1
 
 /** Exiting from a motorway-like road, direction undefined.
  * This should only be used for ramps leading to a non-motorway road.
  * For interchanges, use {@code mex_interchange} instead. */
+//FIXME: do we need this constant?
 #define mex_exit 2
 
 /** Motorway-like road splits in two.
@@ -243,7 +245,7 @@ struct navigation_maneuver {
 	                                for such maneuvers should be a turn instruction in cases where the maneuver is ambiguous, or
 	                                {@code nav_none} for cases in which we would expect the driver to perform this maneuver even
 	                                without being instructed to do so. **/
-	int merge_or_exit;         /**< Whether we are merging into or exiting from a motorway_like road */
+	int merge_or_exit;         /**< Whether we are merging into or exiting from a motorway_like road or we are at an interchange */
 	int is_complex_t_junction; /**< Whether we are coming from the "stem" of a T junction whose "bar" is a dual-carriageway road and
 	                                crossing the opposite lane of the "bar" first (i.e. turning left in countries that drive on the
 	                                right, or turning right in countries that drive on the left). For these maneuvers
@@ -1578,6 +1580,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	int wcat;
 	int curve_limit=25; /* any angle less than this is considered straight */
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
+	int motorways_left = 0, motorways_right = 0; /* number of motorway-like roads left or right of new->way */
 
 	*maneuver = NULL;
 
@@ -1632,6 +1635,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		dc=d;
 		/* Check whether the street keeps its name */
 		while (w) {
+			dw=angle_delta(old->angle_end, w->angle2);
 			if (is_way_allowed(nav,w,1)) {
 				m.num_options++;
 				/* ways of similar category */
@@ -1646,7 +1650,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					m.num_other_ways++;
 				}
 				if (w != &(new->way)) {
-					dw=angle_delta(old->angle_end, w->angle2);
+					/* if we're exiting from a motorway, check which side of the ramp the motorway is on */
+					if (is_motorway_like(w) && is_motorway_like(&(old->way)) && new->way.item.type == type_ramp) {
+							if (dw < d)
+								motorways_left++;
+							else
+								motorways_right++;
+					}
+
 					if (dw < 0) {
 						if (dw > m.left)
 							m.left=dw;
@@ -1673,7 +1684,18 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					if (wcat > m.max_cat)
 						m.max_cat=wcat;
 				} /* if w != new->way */
-			} /* if is_way_allowed */
+				/* if is_way_allowed */
+			} else {
+				/* If we're merging onto a motorway, check which side of the ramp the motorway is on.
+				 * This requires examining the candidate ways which are NOT allowed. */
+				if (is_motorway_like(w) && is_motorway_like(&(new->way)) && old->way.item.type == type_ramp) {
+					if (dw < 0)
+						motorways_left++;
+					else
+						motorways_right++;
+				}
+				/* if !is_way_allowed */
+			} /* if is_way_allowed || !is_way_allowed */
 			/*if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))*/
 			if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
 				/* FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway */
@@ -1813,10 +1835,18 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 
 	if (m.merge_or_exit == mex_none) {
 		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way))) {
-			ret=1;
-			m.merge_or_exit = mex_merge;
-			if (!r)
-				r = "yes: merging onto motorway-like road";
+			if (motorways_left)
+				m.merge_or_exit = mex_merge_left;
+			else if (motorways_right)
+				m.merge_or_exit = mex_merge_right;
+			/* if there are no motorways on either side, we are not merging
+			 * (more likely the start of a motorway) */
+
+			if (m.merge_or_exit != mex_none) {
+				ret=1;
+				if (!r)
+					r = "yes: merging onto motorway-like road";
+			}
 		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way))) {
 			/* Detect interchanges:
 			 * if we're entering a ramp and the route is taking us onto another motorway-like road,
@@ -1833,11 +1863,18 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			if (ni && is_motorway_like(&(ni->way)))
 				m.merge_or_exit = mex_interchange;
 			else
-				m.merge_or_exit = mex_exit;
+				if (motorways_left)
+					m.merge_or_exit = mex_exit_right;
+				else if (motorways_right)
+					m.merge_or_exit = mex_exit_left;
+				/* if there are no motorways on either side, this is not an exit
+				 * (more likely the end of a motorway) */
 
-			ret=1;
-			if (!r)
-				r = "yes: exiting motorway-like road";
+			if (m.merge_or_exit != mex_none) {
+				ret=1;
+				if (!r)
+					r = "yes: exiting motorway-like road";
+			}
 		}
 	}
 
@@ -3036,29 +3073,22 @@ navigation_map_get_item(struct map_rect_priv *priv)
 				}
 			}
 			if (priv->cmd->maneuver) {
-				if (priv->cmd->maneuver->merge_or_exit & mex_merge) {
-					// TODO: use maneuver->left and maneuver->right
-					/*defaults to left for delta = 0
-					 *
-					 * I don't think you can technically merge with zero degrees
-					 *
-					 */
-
-
-					if (delta < 0)
+				switch (priv->cmd->maneuver->merge_or_exit) {
+				case mex_merge_left:
+					ret->type=type_nav_merge_left;
+					break;
+				case mex_merge_right:
 					ret->type=type_nav_merge_right;
-					else ret->type=type_nav_merge_left;
-				}
-				if (priv->cmd->maneuver->merge_or_exit & mex_exit) {
-					// TODO: once we have a properly set maneuver->type, use that instead of delta
-					/* defaults to right for delta=0
-					 * to my best knowledge this is good for now
-					 * a zero degree exit seems to hold a contradiction in it.
-					 *
-					 */
-					if (delta < 0)
+					break;
+				case mex_exit_left:
 					ret->type=type_nav_exit_left;
-					else ret->type=type_nav_exit_right;
+					break;
+				case mex_exit_right:
+					ret->type=type_nav_exit_right;
+					break;
+					/* exit or merge without a direction should never happen,
+					 * mex_intersection results in a regular instruction,
+					 * thus no default case is needed */
 				}
 			}
 		}
