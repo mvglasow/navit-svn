@@ -1566,12 +1566,15 @@ is_motorway_like(struct navigation_way *way)
 static int
 maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct navigation_itm *new, int *delta, struct navigation_maneuver **maneuver)
 {
-	//TODO: properly populate m->type
-	struct navigation_maneuver m;
+	struct navigation_maneuver m; /* if the function returns true, this will be passed in the maneuver argument */
 	struct navigation_itm *ni; /* temporary navigation item used for comparisons that examine previous or subsequent maneuvers */
-	int ret=0,d,dw,dlim,dc;
-	char *r=NULL;
-	struct navigation_way *w;
+	int ret=0;
+	int d; /* bearing difference between old and new */
+	int dw; /* temporary bearing difference between old and w (way being examined) */
+	int dlim; /* if no other ways are within +/- dlim, the maneuver is unambiguous */
+	int dc; /* if new and another way are within +/-curve_limit and on the same side, bearing difference for the other way; else d */
+	char *r=NULL; /* human-legible reason for announcing or not announcing the maneuver */
+	struct navigation_way *w; /* temporary way to examine */
 	int wcat;
 	int curve_limit=25; /* any angle less than this is considered straight */
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
@@ -1789,9 +1792,12 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		/* if no other ways are within +/-dlim, the maneuver is unambiguous */
 		if (m.left < -dlim && m.right > dlim)
 			m.is_unambiguous=1;
+		/* if another way is within +/-curve_limit and on the same side as new, the maneuver is ambiguous */
 		if (dc != d) {
 			dbg(1,"d %d vs dc %d\n",d,dc);
-			d-=(dc+d+1)/2;
+			d-=(dc+d+1)/2; /* FIXME: This looks like a hack to disambiguate turn instructions when two ways
+			                * are within curve_limit and on the same side. It manipulates the delta so that
+			                * the two will turn into different directions. */
 			dbg(1,"result %d\n",d);
 			m.is_unambiguous=0;
 		}
