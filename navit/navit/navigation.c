@@ -1568,6 +1568,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 {
 	//TODO: properly populate m->type
 	struct navigation_maneuver m;
+	struct navigation_itm *ni; /* temporary navigation item used for comparisons that examine previous or subsequent maneuvers */
 	int ret=0,d,dw,dlim,dc;
 	char *r=NULL;
 	struct navigation_way *w;
@@ -1688,7 +1689,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				 */
 				int hist_through_segments = 0;
 				int hist_dist = old->length; /* distance between previous and current maneuver */
-				struct navigation_itm *ni = old;
+				ni = old;
 				while (ni && (hist_through_segments == 0) && (hist_dist <= junction_limit)) {
 					struct navigation_way *w = ni->way.next;
 					while (w) {
@@ -1758,7 +1759,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 *   two opposite directions merge.
 			 * If the criteria are satisfied, announce.
 			 */
-			/* TODO: detect motorway interchanges and set m.merge_or_exit accordingly */
 			r="yes: entering ramp";
 			ret=1;
 		}
@@ -1809,9 +1809,29 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way))) {
 			ret=1;
 			m.merge_or_exit = mex_merge;
+			if (!r)
+				r = "yes: merging onto motorway-like road";
 		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way))) {
+			/* Detect interchanges:
+			 * if we're entering a ramp and the route is taking us onto another motorway-like road,
+			 * set m.merge_or_exit = mex_interchange */
+			ni = new->next;
+			while (ni && (ni->way.item.type == type_ramp)) {
+				/* TODO: we might want to ensure all candidate roads at ni are either motorway-like,
+				 * ramps or maybe service roads. Without this check, certain types of direction
+				 * changes (i.e. exit motorway and take access ramp for opposite direction) might get
+				 * misinterpreted as interchanges (namely when the entire way from one carriageway to
+				 * the other is on a ramp). */
+				ni = ni->next;
+			}
+			if (ni && is_motorway_like(&(ni->way)))
+				m.merge_or_exit = mex_interchange;
+			else
+				m.merge_or_exit = mex_exit;
+
 			ret=1;
-			m.merge_or_exit = mex_exit;
+			if (!r)
+				r = "yes: exiting motorway-like road";
 		}
 	}
 
