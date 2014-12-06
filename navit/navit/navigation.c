@@ -260,10 +260,8 @@ struct navigation_maneuver {
 	int max_cat;               /**< Highest maneuver category of any permitted candidate way other than the route */
 	int num_similar_ways;      /**< Number of candidate ways (including the route) that have a {@code maneuver_category()} similar
 	                                to {@code old_cat}. See {@code maneuver_required2()} for definition of "similar". */
-	int left;                  /**< Minimum bearing delta of any candidate way that turns left (not including route),
-	                                or -180 if no candidate ways turn left */
-	int right;                 /**< Minimum bearing delta of any candidate way that turns right (not including route),
-	                                or 180 if no candidate ways turn right */
+	int left;                  /**< Minimum bearing delta of any candidate way left of the route, -180 for none */
+	int right;                 /**< Minimum bearing delta of any candidate way right of the route, 180 for none */
 	int is_unambiguous;        /**< Whether the maneuver is unambiguous. A maneuver is unambiguous if, despite
 	                                multiple candidate way being available, we can reasonable expect the driver to
 	                                continue on the route without being told to do so. This is typically the case when
@@ -307,6 +305,9 @@ struct navigation_way {
 	 * I hope I am completely wrong and angle2 != angle_to
 	 * but if angle2 really means angle_to then this is a bad joke
 	 *
+	 * (mvglasow) angle2 might be the bearing at the start of the way (0 = north, 90 = east etc.),
+	 * this needs further examination
+	 *
 	 */
 
 
@@ -320,7 +321,7 @@ struct navigation_way {
 
 struct navigation_itm {
 	struct navigation_way way;
-	int angle_end;
+	int angle_end;                      /* FIXME: is this the bearing at the end of way? */
 	struct coord start,end;
 	int time;
 	int length;
@@ -1658,14 +1659,21 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 								motorways_right++;
 					}
 
-					if (dw < 0) {
+					if (dw < d) {
 						if (dw > m.left)
 							m.left=dw;
-						if (dw > -curve_limit && d < 0 && d > -curve_limit)
-							dc=dw;
 					} else {
 						if (dw < m.right)
 							m.right=dw;
+					}
+
+					/* FIXME: once we have a better way of determining whether a turn instruction is ambiguous
+					 * (multiple near-straight roads), remove dc and the delta hack further down, and set
+					 * m.is_unambiguous instead */
+					if (dw < 0) {
+						if (dw > -curve_limit && d < 0 && d > -curve_limit)
+							dc=dw;
+					} else {
 						if (dw < curve_limit && d > 0 && d < curve_limit)
 							dc=dw;
 					}
@@ -1823,7 +1831,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			dbg(1,"result %d\n",d);
 			m.is_unambiguous=0;
 		}
-		if (!m.is_same_street && m.is_unambiguous < 1) {
+		if (!m.is_same_street && m.is_unambiguous < 1) { /* FIXME: why < 1? */
 			ret=1;
 			r="yes: different street and ambiguous";
 		} else
