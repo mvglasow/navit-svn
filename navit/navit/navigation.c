@@ -101,6 +101,8 @@
 
 
 static int roundabout_extra_length=50;
+
+/* FIXME: abandon in favor of curve_limit once keep left/right maneuvers are fully implemented */
 static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_straight
 								 * will be seen as going straight.
 								 *
@@ -114,6 +116,8 @@ static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_s
 								 *
 								 */
 
+/** Maneuvers whose absolute delta is less than this will be considered straight */
+static int curve_limit = 25;
 
 /* quick 'fixes it for me in dutch' see #1274
  * and has a medium to low priority,
@@ -270,13 +274,18 @@ struct navigation_maneuver {
 	int is_same_street;        /**< Whether the street keeps its name after the maneuver. */
 };
 
+/**
+ * @brief Holds information about a command for a navigation maneuver.
+ *
+ * An instance of this structure is generated for each navigation maneuver that is to be announced.
+ */
 struct navigation_command {
-	struct navigation_itm *itm;
-	struct navigation_command *next;
-	struct navigation_command *prev;
-	int delta;
-	int roundabout_delta;
-	int length;
+	struct navigation_itm *itm;            /**< The navigation item following the maneuver */
+	struct navigation_command *next;       /**< next command in the list */
+	struct navigation_command *prev;       /**< previous command in the list */
+	int delta;                             /**< bearing change at maneuver */
+	int roundabout_delta;                  /**< if we are leaving a roundabout, effective bearing change (between entry and exit) */
+	int length;                            /* FIXME: length of the maneuver itself? Used for roundabout maneuvers */
 	//char * reason; //FIXME: replace this with struct navigation_maneuver
 	struct navigation_maneuver *maneuver;  /**< Details on the maneuver to perform */
 };
@@ -1579,7 +1588,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	char *r=NULL; /* human-legible reason for announcing or not announcing the maneuver */
 	struct navigation_way *w; /* temporary way to examine */
 	int wcat;
-	int curve_limit=25; /* any angle less than this is considered straight */
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int motorways_left = 0, motorways_right = 0; /* number of motorway-like roads left or right of new->way */
 
@@ -1825,10 +1833,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		/* if another way is within +/-curve_limit and on the same side as new, the maneuver is ambiguous */
 		if (dc != d) {
 			dbg(1,"d %d vs dc %d\n",d,dc);
-			d-=(dc+d+1)/2; /* FIXME: This looks like a hack to disambiguate turn instructions when two ways
-			                * are within curve_limit and on the same side. It manipulates the delta so that
-			                * the two will turn into different directions. */
-			dbg(1,"result %d\n",d);
 			m.is_unambiguous=0;
 		}
 		if (!m.is_same_street && m.is_unambiguous < 1) { /* FIXME: why < 1? */
@@ -1982,6 +1986,18 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 #endif
 }
 
+/**
+ * @brief Creates a new {@code struct navigation_command} for a maneuver.
+ *
+ * This function also parses {@code maneuver} and sets its {@code type} appropriately so that other
+ * functions can rely on that. This is currently underway and only a few maneuver types are implemented
+ * thus far.
+ *
+ * @param this_ The navigation object
+ * @param itm The navigation item following the maneuver
+ * @param delta The change in bearing at the maneuver
+ * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}
+ */
 static struct navigation_command *
 command_new(struct navigation *this_, struct navigation_itm *itm, int delta, struct navigation_maneuver *maneuver)
 {
@@ -1990,6 +2006,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, int delta, str
 	ret->maneuver = maneuver;
 	ret->delta=delta;
 	ret->itm=itm;
+	/* if we're leaving a roundabout, calculate effective bearing change (between entry and exit) and set length */
 	if (itm && itm->prev && itm->way.next && itm->prev->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
 		int len=0;
 		int angle=0;
@@ -2012,7 +2029,39 @@ command_new(struct navigation *this_, struct navigation_itm *itm, int delta, str
 		dbg(0,"entry %d exit %d\n", entry_angle, exit_angle);
 		ret->roundabout_delta=angle_delta(entry_angle, exit_angle);
 		ret->length=len+roundabout_extra_length;
+
+		/* TODO: set ret->maneuver->type to
+			nav_roundabout_{r|l}{1..8}
+		 */
+	} else if (ret->maneuver) {
+		/* set ret->maneuver->type */
+		/* possible maneuver types:
+			nav_merge_{left|right}      (do not set here)
+			nav_turnaround
+			nav_turnaround_{left|right}
+			nav_exit_{left|right}       (do not set here)
+			nav_keep_{left|right}
+			nav_straight
+			nav_{right|left}_{1..3}
+			nav_none                    (default)
+			nav_position
+			nav_destination
+		 */
+		if (abs(ret->delta) < curve_limit) {
+			/* if the route goes straight:
+			 * if there's another straight way on one side of the route (not both - the expression below is a logical XOR),
+			 * the maneuver is "keep left" or "keep right",
+			 * else it is "go straight" */
+			if (!(ret->maneuver->left > -curve_limit) != !(ret->maneuver->right < curve_limit)) {
+				if (ret->maneuver->left > -curve_limit)
+					ret->maneuver->type = type_nav_keep_right;
+				else
+					ret->maneuver->type = type_nav_keep_left;
+			} else
+				ret->maneuver->type = type_nav_straight;
+		}
 	}
+
 	if (this_->cmd_last) {
 		this_->cmd_last->next=ret;
 		ret->prev = this_->cmd_last;
@@ -2979,7 +3028,22 @@ navigation_map_rect_destroy(struct map_rect_priv *priv)
 	g_free(priv);
 }
 
-/* FIXME: good description needed */
+/**
+ * @brief Gets the next item from the navigation map.
+ *
+ * This function returns an item from a map rectangle on the navigation map and advances the item pointer,
+ * so that at the next call the next item will be returned.
+ *
+ * Earlier builds of Navit would rely on this function to determine the type of maneuver. Transition to
+ * a new logic, in which the maneuver type is set upon creating the navigation maneuver and queried, is
+ * currently underway. Currently, this function will check {@code maneuver->type} and {@code maneuver->merge_or_exit}
+ * and, if one of them is set, use the new logic, otherwise the old logic will be used.
+ *
+ * @param priv The {@code struct map_rect_priv} of the map rect on the navigation map from which an item
+ * is to be retrieved.
+ *
+ * @return The item, or NULL if there are no more items in the map rectangle
+ */
 static struct item *
 navigation_map_get_item(struct map_rect_priv *priv)
 {
@@ -3005,6 +3069,30 @@ navigation_map_get_item(struct map_rect_priv *priv)
 		priv->cmd_next=priv->cmd->next;
 		if (priv->cmd_itm_next && !priv->cmd_itm_next->next)
 			ret->type=type_nav_destination;
+		else if (priv->cmd->maneuver && ((priv->cmd->maneuver->type != type_nav_none) || (priv->cmd->maneuver->merge_or_exit & (mex_merge | mex_exit)))) {
+			/* if maneuver type or merge_or_exit is set, use these values */
+			/* FIXME: make decision to use merge_or_exit context-dependent */
+			switch (priv->cmd->maneuver->merge_or_exit) {
+			case mex_merge_left:
+				ret->type=type_nav_merge_left;
+				break;
+			case mex_merge_right:
+				ret->type=type_nav_merge_right;
+				break;
+			case mex_exit_left:
+				ret->type=type_nav_exit_left;
+				break;
+			case mex_exit_right:
+				ret->type=type_nav_exit_right;
+				break;
+			default:
+				/* exit or merge without a direction should never happen,
+				 * mex_intersection results in a regular instruction,
+				 * thus all these are handled by the default case,
+				 * which is to return the type field */
+				ret->type = priv->cmd->maneuver->type;
+			}
+		}
 		else { //TODO: else if (priv->cmd->maneuver) - once maneuver->type is populated
 			if (priv->itm && priv->itm->prev && !(priv->itm->way.flags & AF_ROUNDABOUT) && (priv->itm->prev->way.flags & AF_ROUNDABOUT)) {
 
