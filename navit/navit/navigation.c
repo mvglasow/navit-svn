@@ -2033,7 +2033,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, int delta, str
 		/* TODO: set ret->maneuver->type to
 			nav_roundabout_{r|l}{1..8}
 		 */
-	} else if (ret->maneuver) {
+	} else {
 		/* set ret->maneuver->type */
 		/* possible maneuver types:
 			nav_merge_{left|right}      (do not set here)
@@ -2092,7 +2092,9 @@ make_maneuvers(struct navigation *this_, struct route *route)
 		last_itm=itm;
 		itm=itm->next;
 	}
-	command_new(this_, last_itm, 0, NULL);
+	maneuver = g_new0(struct navigation_maneuver, 1);
+	maneuver->type = type_nav_destination;
+	command_new(this_, last_itm, 0, maneuver);
 }
 
 static int
