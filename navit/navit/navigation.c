@@ -1551,6 +1551,7 @@ is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode)
  * {@code extended} is true and item type is either ramp or street_service
  *
  * @param way The way to examine
+ * @param extended Whether to consider ramps and service roads to be motorway-like
  * @return True for motorway-like, false otherwise
  */
 static int
@@ -1593,6 +1594,9 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	int wcat;
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int motorways_left = 0, motorways_right = 0; /* number of motorway-like roads left or right of new->way */
+	int route_leaves_motorway = 0; /* when the maneuver changes from a motorway-like road to a ramp,
+	                                * whether a subsequent maneuver leaves the motorway (changing direction
+	                                * is considered leaving the motorway) */
 
 	*maneuver = NULL;
 
@@ -1658,6 +1662,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				/* motorway-like ways */
 				if (is_motorway_like(w, 0)) {
 					m.num_new_motorways++;
+				//} else if (!is_motorway_like(w, 1)) {
 				} else if (w->item.type != type_ramp) {
 					m.num_other_ways++;
 				}
@@ -1692,12 +1697,13 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					/* If any other street has the same name, we can't use the same name criterion.
 					 * Exceptions apply if we're coming from a motorway-like road and:
 					 * - the other road is motorway-like (a motorway might split up temporarily) or
-					 * - the other road is a ramp (they are sometimes tagged with the name of the motorway)
+					 * - the other road is a ramp or service road (they are sometimes tagged with the name of the motorway)
 					 * The second one is really a workaround for bad tagging practice in OSM. Since entering
 					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
 					 * side effects.
 					 */
 					if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+					//if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || !is_motorway_like(w, 1)) && is_way_allowed(nav,w,2))
 						m.is_same_street=0;
 					/* Mark if the street has a higher or the same category */
 					if (wcat > m.max_cat)
@@ -1780,7 +1786,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * we are probably on a trunk road with level crossings and not
 			 * at a motorway interchange.
 			 */
-			/* FIXME: motorway junctions could have service roads */
 			r="yes: motorway interchange (multiple motorways)";
 			m.merge_or_exit = mex_interchange;
 			ret=1;
@@ -1867,15 +1872,20 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * if we're entering a ramp and the route is taking us onto another motorway-like road,
 			 * set m.merge_or_exit = mex_interchange */
 			ni = new->next;
-			while (ni && (ni->way.item.type == type_ramp)) {
+			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
 				/* TODO: we might want to ensure all candidate roads at ni are either motorway-like,
 				 * ramps or maybe service roads. Without this check, certain types of direction
 				 * changes (i.e. exit motorway and take access ramp for opposite direction) might get
 				 * misinterpreted as interchanges (namely when the entire way from one carriageway to
 				 * the other is on a ramp). */
+				w = &(ni->way);
+				while (!route_leaves_motorway && w) {
+					route_leaves_motorway = !is_motorway_like(w, 1);
+					w = w->next;
+				}
 				ni = ni->next;
 			}
-			if (ni && is_motorway_like(&(ni->way), 0))
+			if (ni && !route_leaves_motorway && is_motorway_like(&(ni->way), 0))
 				m.merge_or_exit = mex_interchange;
 			else
 				if (motorways_left)
