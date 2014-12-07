@@ -1385,19 +1385,19 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 						}
 						if (attr.type == attr_exit_to)
 						{
-							/* some exit_to info was found to be csv instead of
-							* using a ; sep.
-							* the code from robotaxi will have to be reviewed for this,
-							* it only handles ; separator now.
-							* EDIT(jandegr) : up to now only found them using a ',' as separator in France and
-							* using a ';' as separator elsewhere
-							*
-							* If destination info already exists, exit_to
-							* info is not used
-							*
-							*/
-							if (attr.u.str && !ret->way.destination)
-								ret->way.destination= map_convert_string(streetitem->map,attr.u.str);
+						if (attr.u.str && !ret->way.destination){
+							char *destination_raw;
+							destination_raw=map_convert_string(streetitem->map,attr.u.str);
+							dbg(lvl_debug,"destination_raw from exit_to =%s\n",destination_raw);
+							if ((split_string_to_list(&(ret->way),destination_raw, ';')) < 2)
+								/*
+								 * if a first try did not result in an actual splitting
+								 * retry with ',' as a separator
+								 *
+								 * */
+								(split_string_to_list(&(ret->way),destination_raw, ','));
+							g_free(destination_raw);
+							}
 						}
 					}
 				}
