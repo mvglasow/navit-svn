@@ -393,6 +393,78 @@ angle_opposite(int angle)
 	return ((angle+180)%360);
 }
 
+/*@brief : frees a list as constructed with split_string_to_list()
+ *
+ *
+ *@param : the list to be freed
+ */
+static void
+free_list(struct street_destination *list) {
+
+	if (list){
+		struct street_destination *clist;
+		while (list){
+			clist = list->next;
+			g_free(list->destination);
+			g_free(list);
+			list = clist;
+		}
+		list = NULL;
+	}
+}
+
+
+/*@brief splits a string into a list, the separator to split on can
+ * 	be any character.
+ *
+ *
+ * It is already modified to be used with any separator, but still has to be modified
+ * to split into any list instead of just a list held by a navigation_way
+ *
+ *
+ *
+ * @param way, a navigation_way holding the list to be fille up
+ * @param raw_string, a string to be splitted
+ * @param sep, a char to be used as separator to split the raw_string
+ * @return an integer, the number of entries in the list
+ */
+
+
+static int
+split_string_to_list(struct navigation_way *way, char* raw_string, char sep){
+
+struct street_destination *new_street_destination = NULL;
+struct street_destination *next_street_destination_remember = NULL;
+char *pos1 = raw_string;
+char *pos2;
+int count = 0;
+
+free_list(way->destination); /*in case this is a retry with a different separator.*/
+dbg(lvl_debug,"raw_string=%s split with %c\n",raw_string, sep);
+if (strlen(raw_string)>0){
+	count = 1;
+	while (pos1){
+		new_street_destination = g_new(struct street_destination, 1);
+		new_street_destination->next = next_street_destination_remember;
+		next_street_destination_remember = new_street_destination ;
+		if ((pos2 = strrchr(pos1, sep)) != NULL) {
+			new_street_destination->destination = g_strdup(pos2+1);
+			*pos2 = '\0' ;
+			dbg(lvl_debug,"splitted_off_string=%s\n",new_street_destination->destination);
+			count++;
+		} else {
+			new_street_destination->destination = g_strdup(pos1);
+			pos1 = NULL;
+			dbg(lvl_debug,"head_of_string=%s\n",new_street_destination->destination);
+		}
+		way->destination = next_street_destination_remember;
+		}
+	}
+return count;
+}
+
+
+
 int
 navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter)
 {
