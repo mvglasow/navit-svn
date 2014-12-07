@@ -1016,62 +1016,6 @@ navigation_itm_update(struct navigation_itm *itm, struct item *ritem)
 	itm->speed=speed.u.num;
 }
 
-/**
- * @brief This check if an item is part of a roundabout
- *
- * @param itm The item to be checked
- * @return True if the item is part of a roundabout
- */ 
-static int
-check_roundabout(struct navigation_itm *itm, struct map *graph_map)
-{
-	struct map_selection coord_sel;
-	struct map_rect *g_rect; /* Contains a map rectangle from the route graph's map */
-	struct item *i,*sitem;
-	struct attr sitem_attr,flags_attr;
-
-	/* These values cause the code in route.c to get us only the route graph point and connected segments */
-	coord_sel.next = NULL;
-	coord_sel.u.c_rect.lu = itm->start;
-	coord_sel.u.c_rect.rl = itm->start;
-	/* the selection's order is ignored */
-	
-	g_rect = map_rect_new(graph_map, &coord_sel);
-	
-	i = map_rect_get_item(g_rect);
-	if (!i || i->type != type_rg_point) { /* probably offroad? */
-		map_rect_destroy(g_rect);
-		return 0;
-	}
-
-	while (1) {
-		i = map_rect_get_item(g_rect);
-
-		if (!i) {
-			break;
-		}
-		
-		if (i->type != type_rg_segment) {
-			continue;
-		}
-		
-		if (!item_attr_get(i,attr_street_item,&sitem_attr)) {
-			continue;
-		}		
-
-		sitem = sitem_attr.u.item;
-		if (item_is_equal(itm->way.item,*sitem)) {
-			if (item_attr_get(i,attr_flags,&flags_attr) && (flags_attr.u.num & AF_ROUNDABOUT)) {
-				map_rect_destroy(g_rect);
-				return 1;
-			}
-		}
-	}
-
-	map_rect_destroy(g_rect);
-	return 0;
-}
-
 /*@brief
  *
  *
