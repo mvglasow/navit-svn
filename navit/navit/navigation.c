@@ -728,27 +728,20 @@ get_distance(struct navigation *nav, int dist, enum attr_type type, int is_lengt
 }
 
 
-/* FIXME: why is this called calculate_entry_angle when it does a bunch of other stuff as well?
- * We might want to change that to something like navigation_way_init, with an extra int* parameter for exit angle
- */
 /**
- * @brief This calculates the angle with which an item (navigation_way) starts or ends
+ * @brief Initializes a navigation_way
  *
+ * This function analyzes the underlying map item and sets the entry bearing, names and flags for the way.
+ * Optionally it returns the exit bearing, start and end coordinates of the way.
  *
- * This function can be used to get the angle an item (from a route graph map)
- * starts or ends with. Note that the angle will point towards the inner of
- * the item. This function also sets the name and name_systematic of the
- * naviagtion_way item by recovering them from the real item
+ * Note that entry bearing is expressed as bearing towards the opposite end of the item, while exit bearing
+ * is away from the opposite end.
  *
- * this is all a little flou, why the names here ??
- *
- * This is meant to be used with items from a route graph map
- * With other items this will probably not be optimal...
- *
- * @param w The way which should be calculated and names set
- */ 
+ * @param w The way to initialize. The {@code item}, {@code id_hi}, {@code id_lo} and {@code dir}
+ * members of this struct must be set prior to calling this function.
+ */
 static void
-calculate_entry_angle(struct navigation_way *w)
+navigation_way_init(struct navigation_way *w)
 {
 	struct coord cbuf[2];
 	struct item *realitem;
@@ -940,7 +933,7 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		w->dir = direction_attr.u.num;
 		w->item = *sitem;
 		w->next = l;
-		calculate_entry_angle(w);	/* calculte and set w->angle2 */
+		navigation_way_init(w);	/* calculte and set w->angle2 */
 	}
 
 	map_rect_destroy(g_rect);
@@ -1142,10 +1135,8 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 
 
 
-		/* TODO: the following function was introduced to get flags, but it may render some of the
-		 * stuff below obsolete (namely name, way and entry angle). Check and remove what is no longer
-		 * needed. */
-		calculate_entry_angle(&(ret->way));
+		/* FIXME: Just set flags here, the coords stuff will give incorrect results! */
+		navigation_way_init(&(ret->way));
 
 		/* for highways OSM ref, nat_ref and int_ref can get a bit fuzzy.
 		 *
