@@ -393,6 +393,158 @@ angle_opposite(int angle)
 	return ((angle+180)%360);
 }
 
+/*@brief : frees a list as constructed with split_string_to_list()
+ *
+ *
+ *@param : the list to be freed
+ */
+static void
+free_list(struct street_destination *list) {
+
+	if (list){
+		struct street_destination *clist;
+		while (list){
+			clist = list->next;
+			g_free(list->destination);
+			g_free(list);
+			list = clist;
+		}
+		list = NULL;
+	}
+}
+
+
+/*@brief splits a string into a list, the separator to split on can
+ * 	be any character.
+ *
+ *
+ * It is already modified to be used with any separator, but still has to be modified
+ * to split into any list instead of just a list held by a navigation_way
+ *
+ *
+ *
+ * @param way, a navigation_way holding the list to be fille up
+ * @param raw_string, a string to be splitted
+ * @param sep, a char to be used as separator to split the raw_string
+ * @return an integer, the number of entries in the list
+ */
+
+
+static int
+split_string_to_list(struct navigation_way *way, char* raw_string, char sep){
+
+struct street_destination *new_street_destination = NULL;
+struct street_destination *next_street_destination_remember = NULL;
+char *pos1 = raw_string;
+char *pos2;
+int count = 0;
+
+free_list(way->destination); /*in case this is a retry with a different separator.*/
+dbg(lvl_debug,"raw_string=%s split with %c\n",raw_string, sep);
+if (strlen(raw_string)>0){
+	count = 1;
+	while (pos1){
+		new_street_destination = g_new(struct street_destination, 1);
+		new_street_destination->next = next_street_destination_remember;
+		next_street_destination_remember = new_street_destination ;
+		if ((pos2 = strrchr(pos1, sep)) != NULL) {
+			new_street_destination->destination = g_strdup(pos2+1);
+			*pos2 = '\0' ;
+			dbg(lvl_debug,"splitted_off_string=%s\n",new_street_destination->destination);
+			count++;
+		} else {
+			new_street_destination->destination = g_strdup(pos1);
+			pos1 = NULL;
+			dbg(lvl_debug,"head_of_string=%s\n",new_street_destination->destination);
+		}
+		way->destination = next_street_destination_remember;
+		}
+	}
+return count;
+}
+
+/** @brief Selects the destination-names for the next announcement from the
+ *         destination-names that are registered in the following command items.
+ *
+ *         The aim of this function is to find the destination-name entry that has the most hits in the following
+ *         command items so that the destination name has a relevance over several announcements. If there is no 'winner'
+ *         the entry is selected that is at top of the destination.
+ */
+static char*
+select_announced_destinations(struct navigation_command *current_command)
+{
+	struct street_destination *current_destination = NULL;  // the list pointer of the destination_names of the current command.
+	struct street_destination *search_destination = NULL;   // the list pointer of the destination_names of the respective search_command.
+
+	struct navigation_command *search_command = NULL;   // loop through every navigation command up to the end.
+
+	// limits the number of entries of a destination sign as well as the number of command items to investigate
+	#define MAX_LOOPS 10
+
+	int destination_count[MAX_LOOPS] = {0,0,0,0,0,0,0,0,0,0};	// countains the hits of identical destination signs over all
+									// investigated command items - a 'high score' of destination names
+	int destination_index = 0, search_command_counter = 0;
+	int i, max_hits, max_hit_index;
+
+	// search over every following command for seeking identical destination_names
+	if (current_command->itm->way.destination) {
+
+		// can we investigate over the following commands?
+		if (current_command->next) {
+			// loop over every destination sign of the current command, as far as there are not more than 10 entries.
+			destination_index = 0; // Do only the first MAX_LOOPS destination_signs
+			current_destination = current_command->itm->way.destination;
+			while (current_destination && (destination_index < MAX_LOOPS)) {
+				// initialize the search command
+				search_command = current_command->next;
+				search_command_counter = 0; // Do only the first MAX_LOOPS commands.
+				while (search_command && (search_command_counter < MAX_LOOPS)) {
+					if (search_command->itm) {
+						// has the search command any destination_signs?
+						if (search_command->itm->way.destination) {
+							search_destination = search_command->itm->way.destination;
+							while (search_destination) {
+								// Search this name in the destination list of the current command.
+								if (0 == strcmp(current_destination->destination,
+										search_destination->destination)) {
+									// enter the destination_name in the investigation list
+									destination_count[destination_index]++;
+									search_destination = NULL; // break condition
+								} else {
+									search_destination = search_destination->next;
+								}
+							} // <- search over destination names of the looped search command.
+						}
+					}
+					search_command_counter++;
+					search_command = search_command->next;
+				} // <- while (search_command)
+
+				destination_index++;
+				current_destination = current_destination->next;
+			} // <- while (current_destination_sign)
+
+			// search for the best candidate
+			max_hits = 0;
+			max_hit_index = 0;
+			for (i = 0; i < destination_index; i++) {
+				if (destination_count[i] > max_hits) {
+					max_hits = destination_count[i];
+					max_hit_index = i;
+				}
+			}
+			// jump to the corresponding destination_name
+			current_destination =  current_command->itm->way.destination;
+			for (i = 0; i < max_hit_index; i++) {
+				current_destination = current_destination->next;
+			}
+		} // <- are there any commands to investigate?
+	} // <- is there any destination_name?
+
+	// return the best candidate, if there is any.
+	return g_strdup(current_destination ? current_destination->destination:NULL);
+}
+
 int
 navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter)
 {
@@ -1107,9 +1259,14 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		*	}
 		*/
 
-		if (item_attr_get(streetitem, attr_street_destination, &attr))
-			ret->way.destination=map_convert_string(streetitem->map,attr.u.str);
-
+		if (item_attr_get(streetitem, attr_street_destination, &attr)){
+			char *destination_raw;
+			destination_raw=map_convert_string(streetitem->map,attr.u.str);
+			dbg(lvl_debug,"destination_raw =%s\n",destination_raw);
+			split_string_to_list(&(ret->way),destination_raw, ';');
+			g_free(destination_raw);
+		}
+		
 		navigation_itm_update(ret, routeitem);
 
 		item_coord_rewind(routeitem);
@@ -1170,19 +1327,19 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 						}
 						if (attr.type == attr_exit_to)
 						{
-							/* some exit_to info was found to be csv instead of
-							* using a ; sep.
-							* the code from robotaxi will have to be reviewed for this,
-							* it only handles ; separator now.
-							* EDIT(jandegr) : up to now only found them using a ',' as separator in France and
-							* using a ';' as separator elsewhere
-							*
-							* If destination info already exists, exit_to
-							* info is not used
-							*
-							*/
-							if (attr.u.str && !ret->way.destination)
-								ret->way.destination= map_convert_string(streetitem->map,attr.u.str);
+						if (attr.u.str && !ret->way.destination){
+							char *destination_raw;
+							destination_raw=map_convert_string(streetitem->map,attr.u.str);
+							dbg(lvl_debug,"destination_raw from exit_to =%s\n",destination_raw);
+							if ((split_string_to_list(&(ret->way),destination_raw, ';')) < 2)
+								/*
+								 * if a first try did not result in an actual splitting
+								 * retry with ',' as a separator
+								 *
+								 * */
+								(split_string_to_list(&(ret->way),destination_raw, ','));
+							g_free(destination_raw);
+							}
 						}
 					}
 				}
@@ -2849,12 +3006,13 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 			return 1;}
 		return 0;
 	case attr_street_destination:
-			attr->u.str=itm->way.destination;
-			this_->attr_next=attr_debug;
-			if (attr->u.str){
-				return 1;}
-			return 0;
-
+		this_->attr_next=attr_debug;
+		if (itm->way.destination && itm->way.destination->destination)
+			attr->u.str=select_announced_destinations(cmd);
+		else attr->u.str=NULL;
+		if (attr->u.str){
+			return 1;}
+		return 0;
 	case attr_debug:
 		switch(this_->debug_idx) {
 		case 0:
