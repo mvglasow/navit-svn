@@ -732,10 +732,11 @@ get_distance(struct navigation *nav, int dist, enum attr_type type, int is_lengt
  * @brief Initializes a navigation_way
  *
  * This function analyzes the underlying map item and sets the entry bearing, names and flags for the way.
- * Optionally it returns the exit bearing, start and end coordinates of the way.
  *
- * Note that entry bearing is expressed as bearing towards the opposite end of the item, while exit bearing
- * is away from the opposite end.
+ * Note that entry bearing is expressed as bearing towards the opposite end of the item.
+ *
+ * Note that this function is not suitable for ways on the route (created in {@code navigation_itm_new})
+ * as it may return incorrect coordinates for these ways.
  *
  * @param w The way to initialize. The {@code item}, {@code id_hi}, {@code id_lo} and {@code dir}
  * members of this struct must be set prior to calling this function.
@@ -1130,13 +1131,11 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			return NULL;
 		}
 
+		if (item_attr_get(streetitem, attr_flags, &attr))
+			ret->way.flags=attr.u.num;
+
 		if (item_attr_get(streetitem, attr_street_name, &attr))
 			ret->way.name=map_convert_string(streetitem->map,attr.u.str);
-
-
-
-		/* FIXME: Just set flags here, the coords stuff will give incorrect results! */
-		navigation_way_init(&(ret->way));
 
 		/* for highways OSM ref, nat_ref and int_ref can get a bit fuzzy.
 		 *
@@ -1248,9 +1247,6 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 
 		item_attr_get(routeitem, attr_route, &route_attr);
 		graph_map = route_get_graph_map(route_attr.u.route);
-		if (check_roundabout(ret, graph_map)) {
-			ret->way.flags |= AF_ROUNDABOUT;
-		}
 
 /*		dbg(1,"i=%d start %d end %d '%s' '%s'\n", i, ret->way.angle2, ret->angle_end, ret->way.name, ret->way.name_systematic); */
 		map_rect_destroy(mr);
