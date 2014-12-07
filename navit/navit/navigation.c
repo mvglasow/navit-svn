@@ -1317,9 +1317,14 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		*	}
 		*/
 
-		if (item_attr_get(streetitem, attr_street_destination, &attr))
-			ret->way.destination=map_convert_string(streetitem->map,attr.u.str);
-
+		if (item_attr_get(streetitem, attr_street_destination, &attr)){
+			char *destination_raw;
+			destination_raw=map_convert_string(streetitem->map,attr.u.str);
+			dbg(lvl_debug,"destination_raw =%s\n",destination_raw);
+			split_string_to_list(&(ret->way),destination_raw, ';');
+			g_free(destination_raw);
+		}
+		
 		navigation_itm_update(ret, routeitem);
 
 		item_coord_rewind(routeitem);
