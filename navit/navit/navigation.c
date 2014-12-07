@@ -3051,12 +3051,13 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 			return 1;}
 		return 0;
 	case attr_street_destination:
-			attr->u.str=itm->way.destination;
-			this_->attr_next=attr_debug;
-			if (attr->u.str){
-				return 1;}
-			return 0;
-
+		this_->attr_next=attr_debug;
+		if (itm->way.destination && itm->way.destination->destination)
+			attr->u.str=select_announced_destinations(cmd);
+		else attr->u.str=NULL;
+		if (attr->u.str){
+			return 1;}
+		return 0;
 	case attr_debug:
 		switch(this_->debug_idx) {
 		case 0:
