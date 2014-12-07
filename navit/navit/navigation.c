@@ -1662,8 +1662,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				/* motorway-like ways */
 				if (is_motorway_like(w, 0)) {
 					m.num_new_motorways++;
-				//} else if (!is_motorway_like(w, 1)) {
-				} else if (w->item.type != type_ramp) {
+				} else if (!is_motorway_like(w, 1)) {
 					m.num_other_ways++;
 				}
 				if (w != &(new->way)) {
