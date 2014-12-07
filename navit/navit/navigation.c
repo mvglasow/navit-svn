@@ -728,6 +728,9 @@ get_distance(struct navigation *nav, int dist, enum attr_type type, int is_lengt
 }
 
 
+/* FIXME: why is this called calculate_entry_angle when it does a bunch of other stuff as well?
+ * We might want to change that to something like navigation_way_init, with an extra int* parameter for exit angle
+ */
 /**
  * @brief This calculates the angle with which an item (navigation_way) starts or ends
  *
@@ -1138,6 +1141,11 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			ret->way.name=map_convert_string(streetitem->map,attr.u.str);
 
 
+
+		/* TODO: the following function was introduced to get flags, but it may render some of the
+		 * stuff below obsolete (namely name, way and entry angle). Check and remove what is no longer
+		 * needed. */
+		calculate_entry_angle(&(ret->way));
 
 		/* for highways OSM ref, nat_ref and int_ref can get a bit fuzzy.
 		 *
@@ -1557,7 +1565,7 @@ is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode)
 static int
 is_motorway_like(struct navigation_way *way, int extended)
 {
-	if ((way->item.type == type_highway_land) || (way->item.type == type_highway_city)  || ((way->item.type == type_street_n_lanes) && (way->flags & AF_ONEWAYMASK)))
+	if ((way->item.type == type_highway_land) || (way->item.type == type_highway_city) || ((way->item.type == type_street_n_lanes) && (way->flags & AF_ONEWAYMASK)))
 		return 1;
 	if ((extended) && ((way->item.type == type_ramp) || (way->item.type == type_street_service)))
 		return 1;
@@ -1867,16 +1875,15 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					r = "yes: merging onto motorway-like road";
 			}
 		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way), 0)) {
-			/* Detect interchanges:
-			 * if we're entering a ramp and the route is taking us onto another motorway-like road,
-			 * set m.merge_or_exit = mex_interchange */
+			/* Detect interchanges - if:
+			 * - we're entering a ramp,
+			 * - the route is taking us onto another motorway-like road and
+			 * - none of the maneuvers in between connects to any non-motorway roads,
+			 * set m.merge_or_exit = mex_interchange.
+			 * The last check is to prevent direction changes (i.e. exit motorway and take access ramp
+			 * for opposite direction) from being misinterpreted as interchanges. */
 			ni = new->next;
 			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
-				/* TODO: we might want to ensure all candidate roads at ni are either motorway-like,
-				 * ramps or maybe service roads. Without this check, certain types of direction
-				 * changes (i.e. exit motorway and take access ramp for opposite direction) might get
-				 * misinterpreted as interchanges (namely when the entire way from one carriageway to
-				 * the other is on a ramp). */
 				w = &(ni->way);
 				while (!route_leaves_motorway && w) {
 					route_leaves_motorway = !is_motorway_like(w, 1);
