@@ -1548,14 +1548,17 @@ is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode)
  *
  * item type is highway_land or highway_city (OSM: highway=motorway)
  * item type is street_n_lanes (OSM: highway=trunk) and way is one-way
+ * {@code extended} is true and item type is either ramp or street_service
  *
  * @param way The way to examine
  * @return True for motorway-like, false otherwise
  */
 static int
-is_motorway_like(struct navigation_way *way)
+is_motorway_like(struct navigation_way *way, int extended)
 {
 	if ((way->item.type == type_highway_land) || (way->item.type == type_highway_city)  || ((way->item.type == type_street_n_lanes) && (way->flags & AF_ONEWAYMASK)))
+		return 1;
+	if ((extended) && ((way->item.type == type_ramp) || (way->item.type != type_street_service)))
 		return 1;
 	return 0;
 }
@@ -1653,14 +1656,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					m.num_similar_ways++;
 				}
 				/* motorway-like ways */
-				if (is_motorway_like(w)) {
+				if (is_motorway_like(w, 0)) {
 					m.num_new_motorways++;
 				} else if (w->item.type != type_ramp) {
 					m.num_other_ways++;
 				}
 				if (w != &(new->way)) {
 					/* if we're exiting from a motorway, check which side of the ramp the motorway is on */
-					if (is_motorway_like(w) && is_motorway_like(&(old->way)) && new->way.item.type == type_ramp) {
+					if (is_motorway_like(w, 0) && is_motorway_like(&(old->way), 0) && new->way.item.type == type_ramp) {
 							if (dw < d)
 								motorways_left++;
 							else
@@ -1694,7 +1697,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
 					 * side effects.
 					 */
-					if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way)) || (!is_motorway_like(w) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+					if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
 						m.is_same_street=0;
 					/* Mark if the street has a higher or the same category */
 					if (wcat > m.max_cat)
@@ -1704,7 +1707,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			} else {
 				/* If we're merging onto a motorway, check which side of the ramp the motorway is on.
 				 * This requires examining the candidate ways which are NOT allowed. */
-				if (is_motorway_like(w) && is_motorway_like(&(new->way)) && old->way.item.type == type_ramp) {
+				if (is_motorway_like(w, 0) && is_motorway_like(&(new->way), 0) && old->way.item.type == type_ramp) {
 					if (dw < 0)
 						motorways_left++;
 					else
@@ -1769,7 +1772,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	if ((!r) && (m.num_options <= 1))
 		r="no: only one option permitted";
 	if (!r) {
-		if (is_motorway_like(&(old->way)) && (m.num_other_ways == 0) && (m.num_new_motorways > 1)) {
+		if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (m.num_new_motorways > 1)) {
 			/* If we are at a motorway interchange, ANNOUNCE
 			 * We are assuming a motorway interchange when old way and at least
 			 * two possible ways are motorway-like and allowed.
@@ -1781,7 +1784,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			r="yes: motorway interchange (multiple motorways)";
 			m.merge_or_exit = mex_interchange;
 			ret=1;
-		} else if (is_motorway_like(&(old->way)) && (m.num_other_ways == 0) && (!m.is_same_street)) {
+		} else if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (!m.is_same_street)) {
 			/* Another sign that we are at a motorway interchange is if the street name changes
 			 */
 			r="yes: motorway interchange (name changes)";
@@ -1846,7 +1849,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	}
 
 	if (m.merge_or_exit == mex_none) {
-		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way))) {
+		if (old->way.item.type == type_ramp && is_motorway_like(&(new->way), 0)) {
 			if (motorways_left)
 				m.merge_or_exit = mex_merge_left;
 			else if (motorways_right)
@@ -1859,7 +1862,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (!r)
 					r = "yes: merging onto motorway-like road";
 			}
-		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way))) {
+		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way), 0)) {
 			/* Detect interchanges:
 			 * if we're entering a ramp and the route is taking us onto another motorway-like road,
 			 * set m.merge_or_exit = mex_interchange */
@@ -1872,7 +1875,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				 * the other is on a ramp). */
 				ni = ni->next;
 			}
-			if (ni && is_motorway_like(&(ni->way)))
+			if (ni && is_motorway_like(&(ni->way), 0))
 				m.merge_or_exit = mex_interchange;
 			else
 				if (motorways_left)
@@ -3199,6 +3202,25 @@ navigation_map_get_item(struct map_rect_priv *priv)
 	return ret;
 }
 
+/**
+ * @brief Gets the item with the specified ID from the navigation map.
+ *
+ * This function returns the item with the ID specified in the arguments from a map rectangle on the
+ * navigation map.
+ *
+ * Internally the function calls {@code navigation_map_get_item()}, thus the same logic applies for the
+ * data of the item that is returned. See {@code navigation_map_get_item()} for details.
+ *
+ * The item pointer of the map rectangle will be moved so that a subsequent call to {@code navigation_map_get_item()}
+ * will return the next item following the one returned by this function.
+ *
+ * @param priv The {@code struct map_rect_priv} of the map rect on the navigation map from which an item
+ * is to be retrieved.
+ * @param id_hi The high part of the ID
+ * @param id_lo The low part of the IF
+ *
+ * @return The item, or NULL if an item with the ID specified was not found in the map rectangle
+ */
 static struct item *
 navigation_map_get_item_byid(struct map_rect_priv *priv, int id_hi, int id_lo)
 {
