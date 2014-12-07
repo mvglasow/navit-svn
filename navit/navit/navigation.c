@@ -1559,7 +1559,7 @@ is_motorway_like(struct navigation_way *way, int extended)
 {
 	if ((way->item.type == type_highway_land) || (way->item.type == type_highway_city)  || ((way->item.type == type_street_n_lanes) && (way->flags & AF_ONEWAYMASK)))
 		return 1;
-	if ((extended) && ((way->item.type == type_ramp) || (way->item.type != type_street_service)))
+	if ((extended) && ((way->item.type == type_ramp) || (way->item.type == type_street_service)))
 		return 1;
 	return 0;
 }
