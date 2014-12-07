@@ -463,7 +463,87 @@ if (strlen(raw_string)>0){
 return count;
 }
 
+/** @brief Selects the destination-names for the next announcement from the
+ *         destination-names that are registered in the following command items.
+ *
+ *         The aim of this function is to find the destination-name entry that has the most hits in the following
+ *         command items so that the destination name has a relevance over several announcements. If there is no 'winner'
+ *         the entry is selected that is at top of the destination.
+ */
+static char*
+select_announced_destinations(struct navigation_command *current_command)
+{
+	struct street_destination *current_destination = NULL;  // the list pointer of the destination_names of the current command.
+	struct street_destination *search_destination = NULL;   // the list pointer of the destination_names of the respective search_command.
 
+	struct navigation_command *search_command = NULL;   // loop through every navigation command up to the end.
+
+	// limits the number of entries of a destination sign as well as the number of command items to investigate
+	#define MAX_LOOPS 10
+
+	int destination_count[MAX_LOOPS] = {0,0,0,0,0,0,0,0,0,0};	// countains the hits of identical destination signs over all
+									// investigated command items - a 'high score' of destination names
+	int destination_index = 0, search_command_counter = 0;
+	int i, max_hits, max_hit_index;
+
+	// search over every following command for seeking identical destination_names
+	if (current_command->itm->way.destination) {
+
+		// can we investigate over the following commands?
+		if (current_command->next) {
+			// loop over every destination sign of the current command, as far as there are not more than 10 entries.
+			destination_index = 0; // Do only the first MAX_LOOPS destination_signs
+			current_destination = current_command->itm->way.destination;
+			while (current_destination && (destination_index < MAX_LOOPS)) {
+				// initialize the search command
+				search_command = current_command->next;
+				search_command_counter = 0; // Do only the first MAX_LOOPS commands.
+				while (search_command && (search_command_counter < MAX_LOOPS)) {
+					if (search_command->itm) {
+						// has the search command any destination_signs?
+						if (search_command->itm->way.destination) {
+							search_destination = search_command->itm->way.destination;
+							while (search_destination) {
+								// Search this name in the destination list of the current command.
+								if (0 == strcmp(current_destination->destination,
+										search_destination->destination)) {
+									// enter the destination_name in the investigation list
+									destination_count[destination_index]++;
+									search_destination = NULL; // break condition
+								} else {
+									search_destination = search_destination->next;
+								}
+							} // <- search over destination names of the looped search command.
+						}
+					}
+					search_command_counter++;
+					search_command = search_command->next;
+				} // <- while (search_command)
+
+				destination_index++;
+				current_destination = current_destination->next;
+			} // <- while (current_destination_sign)
+
+			// search for the best candidate
+			max_hits = 0;
+			max_hit_index = 0;
+			for (i = 0; i < destination_index; i++) {
+				if (destination_count[i] > max_hits) {
+					max_hits = destination_count[i];
+					max_hit_index = i;
+				}
+			}
+			// jump to the corresponding destination_name
+			current_destination =  current_command->itm->way.destination;
+			for (i = 0; i < max_hit_index; i++) {
+				current_destination = current_destination->next;
+			}
+		} // <- are there any commands to investigate?
+	} // <- is there any destination_name?
+
+	// return the best candidate, if there is any.
+	return g_strdup(current_destination ? current_destination->destination:NULL);
+}
 
 int
 navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter)
