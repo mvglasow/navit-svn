@@ -325,7 +325,7 @@ struct navigation_way {
 	struct item item;				/**< The item of the way */
 	char *name;						/**< The street name ({@code street_name} attribute) */
 	char *name_systematic;			/**< The road number ({@code street_name_systematic} attribute, OSM: {@code ref}) */
-	char *destination;				/**< The destination this way leads to (OSM: {@code destination}) */
+	struct street_destination *destination;				/**< The destination this way leads to (OSM: {@code destination}) */
 };
 
 struct navigation_itm {
@@ -343,6 +343,24 @@ struct navigation_itm {
 	struct navigation_itm *next;
 	struct navigation_itm *prev;
 };
+
+
+/*@brief A linked list conataining the destination of the road
+ *
+ *
+ * Holds the destination info from the road, that is the place
+ * you drive to if you keep following the road as found on
+ * traffic sign's (ex. Paris, Senlis ...)
+ *
+ *
+ */
+
+struct street_destination {
+	struct street_destination *next;
+	char *destination;
+};
+
+
 
 static void navigation_flush(struct navigation *this_);
 
