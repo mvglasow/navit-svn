@@ -2404,13 +2404,20 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		level=1;
 	}
 
+
+	/*Draft for some comment
+	 * 
+	 *strength as in 'easily, strongly, really strongly'
+	 *strength_needed is false by default
+	 *strength_needed becomes true if either :
+	 * 
+	 * - the maneuver is to the left and there are other possibilities to the left 
+	 * - or the maneuver is to the right and there are other possibilities to the right 
+	 * 
+	 */
+
 	w = itm->next->way.next;
 	strength_needed = 0;
-
-	/*
-	 * hmmmmm
-	 *
-	 */
 
 	if (angle_delta(itm->next->way.angle2,itm->angle_end) < 0) {
 		while (w) {
