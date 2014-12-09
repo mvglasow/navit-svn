@@ -2437,7 +2437,12 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		}
 	}
 
-
+	/*Suggestion : let dir also include 'to the' so 'right' becomes 
+	 *'to the right', same for left. This allows us to offload the
+	 *linguistics to deal with 'to the left/right' versus 'straight' to 
+	 *the translaters, and the code only deals with the semantics
+	 *  
+	 */
 	if (delta > angle_straight) {
 			/* TRANSLATORS: right, as in 'Turn right' */
 			dir=_("right");
