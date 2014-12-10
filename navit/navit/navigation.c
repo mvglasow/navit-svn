@@ -2375,9 +2375,10 @@ static char *
 show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigation_command *cmd, enum attr_type type, int connect)
 {
 	/* TRANSLATORS: right, as in 'Turn right' */
-	const char *dir=_("straight"),*strength="";
+	const char *dir,*strength="";
 	int distance=itm->dest_length-cmd->itm->dest_length;
 	char *d,*ret=NULL;
+	char *street_destination_announce=NULL;
 	int delta=cmd->delta;
 	int level;
 	int strength_needed;
@@ -2443,6 +2444,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 	 *the translaters, and the code only deals with the semantics
 	 *  
 	 */
+	dir=_("straight");
 	if (delta > angle_straight) {
 			/* TRANSLATORS: right, as in 'Turn right' */
 			dir=_("right");
@@ -2602,15 +2604,20 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		else
 		     tellstreetname = 1;
 
-		if(nav->tell_street_name && tellstreetname)
+		if(nav->tell_street_name && tellstreetname){
+			char *street_destination;
 			destination=navigation_item_destination(nav, cmd->itm, itm, " ");
-
-		if (level != -2) {
+			street_destination=select_announced_destinations(cmd);
+			if (street_destination)
+				street_destination_announce=g_strdup_printf(_(" to %s"),street_destination);
+			g_free(street_destination);
+		}
+		if (level != connected) {
 			/* TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street' */
-			ret=g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"), strength, dir, d, destination ? destination:"");
+			ret=g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 		} else {
 			/* TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination */
-			ret=g_strdup_printf(_("then turn %1$s%2$s %3$s%4$s"), strength, dir, d, destination ? destination:"");
+			ret=g_strdup_printf(_("then turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 		}
 		g_free(destination);
 	} else {
@@ -2624,6 +2631,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			
 	}
 	g_free(d);
+	g_free(street_destination_announce);
 	return ret;
 }
 
