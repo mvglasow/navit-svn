@@ -2524,13 +2524,13 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		if (cmd->maneuver->merge_or_exit & mex_merge) {
 			switch (level) {
 			case 2:
-				return g_strdup(_("merge case 2"));
+				return g_strdup(_("merge soon"));
 			case 1:
-				return g_strdup_printf(_("merge case 1"));
+				return g_strdup_printf(_("merge"));
 			case -2:
-				return g_strdup_printf(_("then merge case -2"));
+				return g_strdup_printf(_("then merge"));
 			case 0:
-				return g_strdup_printf(_("merge case 0"));
+				return g_strdup_printf(_("merge now")); /*probably useless*/
 			}
 		}
 	}
@@ -2612,7 +2612,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				street_destination_announce=g_strdup_printf(_(" to %s"),street_destination);
 			g_free(street_destination);
 		}
-		if (level != connected) {
+		if (level != -2) {
 			/* TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street' */
 			ret=g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 		} else {
