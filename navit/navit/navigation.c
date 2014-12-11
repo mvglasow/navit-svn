@@ -2539,6 +2539,42 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			}
 		}
 	}
+	
+	/* first rudimentary try to announce an exit
+	 *
+	 * Announce an exit with :
+	 * - direction of the maneuvre (left/right.)
+	 * - exit number (exit ref.)
+	 * - selected destination the exit leads to
+	 * - exit label if no selected destination available
+	 */
+	if (cmd->maneuver) 
+	{
+		if (cmd->maneuver->merge_or_exit & mex_exit) 
+		{
+		char *destination = NULL;
+		char *street_destination;
+		destination=navigation_item_destination(nav, cmd->itm, itm, " ");
+		street_destination=select_announced_destinations(cmd);
+		if (street_destination)
+			street_destination_announce=g_strdup_printf(_("towards %s"),street_destination);
+		g_free(street_destination);
+
+
+		switch (level) {
+			case 2:
+				return g_strdup_printf(_("%1$s exit %2$s soon %3$s"),dir,itm->next->way.name,street_destination_announce ? street_destination_announce : itm->next->way.name_systematic);
+			case 1:
+				return g_strdup_printf(_("%1$s exit %2$s %3$s"),dir,itm->next->way.name,street_destination_announce ? street_destination_announce : itm->next->way.name_systematic);
+			case -2:
+				return g_strdup_printf(_("then exit"));
+			case 0:
+				return g_strdup_printf(_("exit now")); /*probably useless*/
+				}
+				g_free(street_destination_announce);
+		}
+	}
+	
 	switch(level) {
 	case 3:
 		d=get_distance(nav, distance, type, 1);
