@@ -2650,7 +2650,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			destination=navigation_item_destination(nav, cmd->itm, itm, " ");
 			street_destination=select_announced_destinations(cmd);
 			if (street_destination)
-				street_destination_announce=g_strdup_printf(_(" to %s"),street_destination);
+				street_destination_announce=g_strdup_printf(_(" towards %s"),street_destination);
 			g_free(street_destination);
 		}
 		if (level != -2) {
