@@ -2563,9 +2563,9 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 		switch (level) {
 			case 2:
-				return g_strdup_printf(_("%1$s exit %2$s soon %3$s"),dir,itm->next->way.name,street_destination_announce ? street_destination_announce : itm->next->way.name_systematic);
+				return g_strdup_printf(_("%1$s exit %2$s soon %3$s"),dir,cmd->itm->way.name,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic);
 			case 1:
-				return g_strdup_printf(_("%1$s exit %2$s %3$s"),dir,itm->next->way.name,street_destination_announce ? street_destination_announce : itm->next->way.name_systematic);
+				return g_strdup_printf(_("%1$s exit %2$s %3$s"),dir,cmd->itm->way.name,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic);
 			case -2:
 				return g_strdup_printf(_("then exit"));
 			case 0:
