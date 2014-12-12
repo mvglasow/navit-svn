@@ -130,12 +130,40 @@ item_cleanup(void)
 		g_hash_table_destroy(default_flags_hash);
 }
 
+/**
+ * @brief Resets the "coordinate pointer" of an item
+ *
+ * This function resets the "coordinate pointer" of an item to point to the first coordinate pair,
+ * so that at the next call to {@code item_coord_get()} the first coordinates will be returned.
+ *
+ * @param it The map item whose pointer is to be reset. This must be the active item, i.e. the last one retrieved from the
+ * {@code map_rect}. There can only be one active item per {@code map_rect}.
+ */
 void
 item_coord_rewind(struct item *it)
 {
 	it->meth->item_coord_rewind(it->priv_data);
 }
 
+/**
+ * @brief Gets the next coordinates from an item
+ *
+ * This function returns a list of coordinates from an item and advances the "coordinate pointer"
+ * by the number of coordinates returned, so that at the next call the next coordinates will be returned.
+ *
+ * Coordinates are stored in the projection of the item's map. If you need them in a different projection,
+ * call {@code item_coord_get_pro()} instead.
+ *
+ * @param it The map item whose coordinates to retrieve. This must be the active item, i.e. the last one retrieved from the
+ * {@code map_rect}. There can only be one active item per {@code map_rect}.
+ * @param c Points to a buffer that will receive the coordinates.
+ * The buffer must be at least {@code count * sizeof(struct coord)} bytes in size.
+ * @param count The number of coordinates to retrieve. Attempts to read past the
+ * end are handled gracefully and only the available number of coordinates is
+ * returned.
+ *
+ * @return The number of coordinates actually retrieved and stored in {@code c}
+ */
 int
 item_coord_get(struct item *it, struct coord *c, int count)
 {
@@ -181,6 +209,23 @@ item_coord_get_within_selection(struct item *it, struct coord *c, int count, str
         return 0;
 }
 
+/**
+ * @brief Gets the next coordinates from an item and reprojects them
+ *
+ * This function returns a list of coordinates from an item and advances the "coordinate pointer"
+ * by the number of coordinates returned, so that at the next call the next coordinates will be returned.
+ *
+ * @param it The map item whose coordinates to retrieve. This must be the active item, i.e. the last one retrieved from the
+ * {@code map_rect}. There can only be one active item per {@code map_rect}.
+ * @param c Points to a buffer that will receive the coordinates.
+ * The buffer must be at least {@code count * sizeof(struct coord)} bytes in size.
+ * @param count The number of coordinates to retrieve. Attempts to read past the
+ * end are handled gracefully and only the available number of coordinates is
+ * returned.
+ * @param projection The projection into which the coordinates will be transformed
+ *
+ * @return The number of coordinates actually retrieved and stored in {@code c}
+ */
 int
 item_coord_get_pro(struct item *it, struct coord *c, int count, enum projection to)
 {
@@ -348,7 +393,7 @@ item_hash_insert(struct item_hash *h, struct item *item, void *val)
 {
 	struct item *hitem=g_new(struct item, 1);
         *hitem=*item;
-	dbg(2,"inserting (0x%x,0x%x) into %p\n", item->id_hi, item->id_lo, h->h);
+	dbg(lvl_info,"inserting (0x%x,0x%x) into %p\n", item->id_hi, item->id_lo, h->h);
 	g_hash_table_insert(h->h, hitem, val);
 }
 
@@ -357,9 +402,9 @@ item_hash_remove(struct item_hash *h, struct item *item)
 {
 	int ret;
 
-	dbg(2,"removing (0x%x,0x%x) from %p\n", item->id_hi, item->id_lo, h->h);
+	dbg(lvl_info,"removing (0x%x,0x%x) from %p\n", item->id_hi, item->id_lo, h->h);
 	ret=g_hash_table_remove(h->h, item);
-	dbg(2,"ret=%d\n", ret);
+	dbg(lvl_info,"ret=%d\n", ret);
 
 	return ret;
 }

@@ -60,10 +60,11 @@ print_usage(void)
 {
 	printf("%s",_("navit usage:\n"
 	"navit [options] [configfile]\n"
-	"\t-c <file>: use <file> as config file\n"
-	"\t-d <n>: set the global debug output level to <n> (0-3). Overrides setting from config file.\n"
+	"\t-c <file>: use <file> as config file, instead of using the default file.\n"
+	"\t-d <n>: set the global debug output level to <n> (0=error, 1=warning, 2=info, 3=debug).\n"
+	"\tSettings from config file will still take effect where they set a higher level.\n"
 	"\t-h: print this usage info and exit.\n"
-	"\t-v: Print the version and exit.\n"));
+	"\t-v: print the version and exit.\n"));
 }
 
 
@@ -184,12 +185,12 @@ int main_real(int argc, char * const* argv)
 	for (;;) {
 		if (li == NULL) {
 			// We have not found an existing config file from all possibilities
-			dbg(0, "%s", _("No config file navit.xml, navit.xml.local found\n"));
+			dbg(lvl_error, "%s", _("No config file navit.xml, navit.xml.local found\n"));
 			return 4;
 		}
         // Try the next config file possibility from the list
 		config_file = li->data;
-		dbg(1,"trying %s\n",config_file);
+		dbg(lvl_debug,"trying %s\n",config_file);
 		if (file_exists(config_file)) {
 			break;
 		}
@@ -197,14 +198,14 @@ int main_real(int argc, char * const* argv)
 		li = g_list_next(li);
 	}
 
-	dbg(0,"Loading %s\n",config_file);
+	dbg(lvl_debug,"Loading %s\n",config_file);
 	if (!config_load(config_file, &error)) {
-		dbg(0, _("Error parsing config file '%s': %s\n"), config_file, error ? error->message : "");
+		dbg(lvl_error, _("Error parsing config file '%s': %s\n"), config_file, error ? error->message : "");
 	} else {
-		dbg(0, _("Using config file '%s'\n"), config_file);
+		dbg(lvl_info, _("Using config file '%s'\n"), config_file);
 	}
 	if (! config) {
-		dbg(0, _("Error: No configuration found in config file '%s'\n"), config_file);
+		dbg(lvl_error, _("Error: No configuration found in config file '%s'\n"), config_file);
         }
 	while (li) {
 		g_free(li->data);
@@ -212,7 +213,7 @@ int main_real(int argc, char * const* argv)
 	}
 	g_list_free(list);
 	if (! (config && config_get_attr(config, attr_navit, &navit, NULL))) {
-		dbg(0, "%s", _("Internal initialization failed, exiting. Check previous error messages.\n"));
+		dbg(lvl_error, "%s", _("Internal initialization failed, exiting. Check previous error messages.\n"));
 		exit(5);
 	}
 	conf.type=attr_config;

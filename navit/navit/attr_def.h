@@ -1,4 +1,4 @@
-/**
+/*
  * Navit, a modular navigation system.
  * Copyright (C) 2005-2014 Navit Team
  *
@@ -15,6 +15,15 @@
  * License along with this program; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
+ */
+
+/** @file attr_def.h
+ * @brief Attribute definitions.
+ * 
+ * Any attribute used by a Navit object must be defined in this file.
+ *
+ * @author Navit Team
+ * @date 2005-2014
  */
 
 /* prototypes */
@@ -380,6 +389,7 @@ ATTR(refresh_cond)
  * exclude the end nodes, because these are imported as separate nodes. */
 ATTR(house_number_interpolation_no_ends_incrmt_1)
 ATTR(house_number_interpolation_no_ends_incrmt_2)
+ATTR(dbg_level)
 ATTR(street_name_systematic_nat)
 ATTR(street_name_systematic_int)
 ATTR(street_destination)

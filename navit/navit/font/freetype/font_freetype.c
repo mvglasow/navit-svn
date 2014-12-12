@@ -351,21 +351,21 @@ static FT_Error face_requester( FTC_FaceID face_id, FT_Library library, FT_Point
 	if (! face_id)
 		return FT_Err_Invalid_Handle;
 	fontfile=g_strdup((char *)face_id);
-	dbg(1,"fontfile=%s\n", fontfile);
+	dbg(lvl_debug,"fontfile=%s\n", fontfile);
 	fontindex=strrchr(fontfile,'/');
 	if (! fontindex) {
 		g_free(fontfile);
 		return FT_Err_Invalid_Handle;
 	}
 	*fontindex++='\0';
-	dbg(1,"new face %s %d\n", fontfile, atoi(fontindex));
+	dbg(lvl_debug,"new face %s %d\n", fontfile, atoi(fontindex));
 	ret = FT_New_Face( library, fontfile, atoi(fontindex), aface );
 	if(ret) {
-	       dbg(0,"Error while creating freetype face: %d\n", ret);
+	       dbg(lvl_error,"Error while creating freetype face: %d\n", ret);
 	       return ret;
 	}
 	if((ret = FT_Select_Charmap(*aface, FT_ENCODING_UNICODE))) {
-	       dbg(0,"Error while creating freetype face: %d\n", ret);
+	       dbg(lvl_error,"Error while creating freetype face: %d\n", ret);
 	}
 	return 0;
 }
@@ -412,7 +412,7 @@ font_freetype_font_new(struct graphics_priv *gr,
 	}
 	font->size=size;
 #ifdef HAVE_FONTCONFIG
-	dbg(2, " about to search for fonts, preferred = %s\n", fontfamily);
+	dbg(lvl_info, " about to search for fonts, preferred = %s\n", fontfamily);
 	family = g_malloc(sizeof(fontfamilies) + sizeof(fontfamily));
 	if (fontfamily) {
 		memcpy(family, &fontfamily, sizeof(fontfamily));
@@ -426,7 +426,7 @@ font_freetype_font_new(struct graphics_priv *gr,
 
 
 		while (*family && !found) {
-			dbg(2, "Looking for font family %s. exact=%d\n",
+			dbg(lvl_info, "Looking for font family %s. exact=%d\n",
 			    *family, exact);
 			FcPattern *required =
 			    FcPatternBuild(NULL, FC_FAMILY, FcTypeString,
@@ -456,7 +456,7 @@ font_freetype_font_new(struct graphics_priv *gr,
 				if ((r1 == FcResultMatch)
 				    && (r2 == FcResultMatch)
 				    && (FcValueEqual(v1, v2) || !exact)) {
-					dbg(2,
+					dbg(lvl_info,
 					    "About to load font from file %s index %d\n",
 					    fontfile, fontindex);
 #if USE_CACHING
@@ -528,7 +528,7 @@ font_freetype_font_new(struct graphics_priv *gr,
 	g_free(name);
 #endif /* HAVE_FONTCONFIG */
 	if (!found) {
-		dbg(0,"Failed to load font, no labelling\n");
+		dbg(lvl_error,"Failed to load font, no labelling\n");
 		g_free(font);
 		return NULL;
 	}
@@ -782,14 +782,13 @@ font_freetype_glyph_get_glyph(struct font_freetype_glyph *g,
 
 static void
 font_freetype_destroy(void) {
+	// Do not call FcFini here: GdkPixbuf also (indirectly) uses fontconfig (for SVGs with
+	// text), but does not properly deallocate all objects, so FcFini assert()s.
 	if (!library_deinit) {
-#ifdef HAVE_FONTCONFIG
-			FcFini();
-#endif
 #if USE_CACHING
-			FTC_Manager_Done(manager);
+		FTC_Manager_Done(manager);
 #endif
-			FT_Done_FreeType(library);
+		FT_Done_FreeType(library);
 	}
 	library_deinit = 1;
 }

@@ -52,9 +52,10 @@ static struct sockaddr_in debug_sin;
 #endif
 
 
-int debug_level=0;
-#define GLOBAL_DEBUG_LEVEL_UNSET -1
-int global_debug_level=GLOBAL_DEBUG_LEVEL_UNSET;
+#define DEFAULT_DEBUG_LEVEL lvl_error
+dbg_level max_debug_level=DEFAULT_DEBUG_LEVEL;
+#define GLOBAL_DEBUG_LEVEL_UNSET lvl_unset
+dbg_level global_debug_level=GLOBAL_DEBUG_LEVEL_UNSET;
 int segv_level=0;
 int timestamp_prefix=0;
 
@@ -101,22 +102,22 @@ debug_init(const char *program_name)
 static void
 debug_update_level(gpointer key, gpointer value, gpointer user_data)
 {
-	if (debug_level < GPOINTER_TO_INT(value))
-		debug_level = GPOINTER_TO_INT(value);
+	if (max_debug_level < GPOINTER_TO_INT(value))
+		max_debug_level = GPOINTER_TO_INT(value);
 }
 
 void
-debug_set_global_level(int level, int override_old_value ) {
+debug_set_global_level(dbg_level level, int override_old_value ) {
 	if (global_debug_level == GLOBAL_DEBUG_LEVEL_UNSET || override_old_value) {
 		global_debug_level=level;
-		if (debug_level < global_debug_level){
-			debug_level = global_debug_level;
+		if (max_debug_level < global_debug_level){
+			max_debug_level = global_debug_level;
 		}
 	}
 }
 
 void
-debug_level_set(const char *name, int level)
+debug_level_set(const char *name, dbg_level level)
 {
 	if (!strcmp(name, "segv")) {
 		segv_level=level;
@@ -134,14 +135,43 @@ debug_level_set(const char *name, int level)
 	}
 }
 
+static dbg_level
+parse_dbg_level(struct attr *dbg_level_attr, struct attr *level_attr)
+{
+	if (dbg_level_attr) {
+		if(!strcmp(dbg_level_attr->u.str,"error")){
+			return lvl_error;
+		}
+		if(!strcmp(dbg_level_attr->u.str,"warning")){
+			return lvl_warning;
+		}
+		if(!strcmp(dbg_level_attr->u.str,"info")){
+			return lvl_info;
+		}
+		if(!strcmp(dbg_level_attr->u.str,"debug")){
+			return lvl_debug;
+		}
+		dbg(lvl_error, "Invalid debug level in config: '%s'\n", dbg_level_attr->u.str);
+	} else if (level_attr) {
+		if (level_attr->u.num>= lvl_error &&
+		    level_attr->u.num<= lvl_debug)
+			return level_attr->u.num;
+		dbg(lvl_error, "Invalid debug level in config: %ld\n", level_attr->u.num);
+	}
+	return lvl_unset;
+}
+
 struct debug *
 debug_new(struct attr *parent, struct attr **attrs)
 {
-	struct attr *name,*level;
+	struct attr *name,*dbg_level_attr,*level_attr;
+	dbg_level level;
 	name=attr_search(attrs, NULL, attr_name);
-	level=attr_search(attrs, NULL, attr_level);
+	dbg_level_attr=attr_search(attrs, NULL, attr_dbg_level);
+	level_attr=attr_search(attrs, NULL, attr_level);
+	level = parse_dbg_level(dbg_level_attr,level_attr);
 #ifdef HAVE_SOCKET
-	if (!name && !level) {
+	if (!name && level==lvl_unset) {
 		struct attr *socket_attr=attr_search(attrs, NULL, attr_socket);
 		char *p,*s;
 		if (!socket_attr)
@@ -165,19 +195,23 @@ debug_new(struct attr *parent, struct attr **attrs)
 		return (struct debug *)&dummy;	
 	}
 #endif
-	if (!name || !level)
+	if (!name || level==lvl_unset)
 		return NULL;
-	debug_level_set(name->u.str, level->u.num);
+	debug_level_set(name->u.str, level);
 	return (struct debug *)&dummy;
 }
 
 
-int
-debug_level_get(const char *name)
+dbg_level
+debug_level_get(const char *message_category)
 {
 	if (!debug_hash)
-		return 0;
-	return GPOINTER_TO_INT(g_hash_table_lookup(debug_hash, name));
+		return DEFAULT_DEBUG_LEVEL;
+	gpointer level = g_hash_table_lookup(debug_hash, message_category);
+	if (!level) {
+		return DEFAULT_DEBUG_LEVEL;
+	}
+	return GPOINTER_TO_INT(level);
 }
 
 static void debug_timestamp(char *buffer)
@@ -206,49 +240,88 @@ static void debug_timestamp(char *buffer)
 #endif
 }
 
+static char* dbg_level_to_string(dbg_level level)
+{
+	switch(level) {
+		case lvl_unset:
+			return "-unset-";
+		case lvl_error:
+			return "error";
+		case lvl_warning:
+			return "warning";
+		case lvl_info:
+			return "info";
+		case lvl_debug:
+			return "debug";
+	}
+	return "-invalid level-";
+}
+
+#ifdef HAVE_API_ANDROID
+static android_LogPriority
+dbg_level_to_android(dbg_level level)
+{
+	switch(level) {
+		case lvl_unset:
+			return ANDROID_LOG_UNKNOWN;
+		case lvl_error:
+			return ANDROID_LOG_ERROR;
+		case lvl_warning:
+			return ANDROID_LOG_WARN;
+		case lvl_info:
+			return ANDROID_LOG_INFO;
+		case lvl_debug:
+			return ANDROID_LOG_DEBUG;
+	}
+	return ANDROID_LOG_UNKNOWN;
+}
+#endif
+
 void
-debug_vprintf(int level, const char *module, const int mlen, const char *function, const int flen, int prefix, const char *fmt, va_list ap)
+debug_vprintf(dbg_level level, const char *module, const int mlen, const char *function, const int flen, int prefix, const char *fmt, va_list ap)
 {
 #if defined HAVE_API_WIN32_CE || defined _MSC_VER
-	char buffer[4096];
+	char message_origin[4096];
 #else
-	char buffer[mlen+flen+3];
+	char message_origin[mlen+flen+3];
 #endif
-	FILE *fp=debug_fp;
 
-	sprintf(buffer, "%s:%s", module, function);
-	if (global_debug_level >= level || debug_level_get(module) >= level || debug_level_get(buffer) >= level) {
+	sprintf(message_origin, "%s:%s", module, function);
+	if (global_debug_level >= level || debug_level_get(module) >= level || debug_level_get(message_origin) >= level) {
 #if defined(DEBUG_WIN32_CE_MESSAGEBOX)
 		wchar_t muni[4096];
 #endif
-		char xbuffer[4096];
-		xbuffer[0]='\0';
+		char debug_message[4096];
+		debug_message[0]='\0';
 		if (prefix) {
 			if (timestamp_prefix)
-				debug_timestamp(xbuffer);	
-			strcpy(xbuffer+strlen(xbuffer),buffer);
-			strcpy(xbuffer+strlen(xbuffer),":");
+				debug_timestamp(debug_message);
+			strcpy(debug_message+strlen(debug_message),dbg_level_to_string(level));
+			strcpy(debug_message+strlen(debug_message),":");
+			strcpy(debug_message+strlen(debug_message),message_origin);
+			strcpy(debug_message+strlen(debug_message),":");
 		}
 #if defined HAVE_API_WIN32_CE
 #define vsnprintf _vsnprintf
 #endif
-		vsnprintf(xbuffer+strlen(xbuffer),4095-strlen(xbuffer),fmt,ap);
+		vsnprintf(debug_message+strlen(debug_message),4095-strlen(debug_message),fmt,ap);
 #ifdef DEBUG_WIN32_CE_MESSAGEBOX
-		mbstowcs(muni, xbuffer, strlen(xbuffer)+1);
+		mbstowcs(muni, debug_message, strlen(debug_message)+1);
 		MessageBoxW(NULL, muni, TEXT("Navit - Error"), MB_APPLMODAL|MB_OK|MB_ICONERROR);
 #else
 #ifdef HAVE_API_ANDROID
-		__android_log_print(ANDROID_LOG_ERROR,"navit", "%s", xbuffer);
+		__android_log_print(dbg_level_to_android(level), "navit", "%s", debug_message);
 #else
 #ifdef HAVE_SOCKET
 		if (debug_socket != -1) {
-			sendto(debug_socket, xbuffer, strlen(xbuffer), 0, (struct sockaddr *)&debug_sin, sizeof(debug_sin));
+			sendto(debug_socket, debug_message, strlen(debug_message), 0, (struct sockaddr *)&debug_sin, sizeof(debug_sin));
 			return;
 		}
 #endif
+		FILE *fp=debug_fp;
 		if (! fp)
 			fp = stderr;
-		fprintf(fp,"%s",xbuffer);
+		fprintf(fp,"%s",debug_message);
 		fflush(fp);
 #endif
 #endif
@@ -256,7 +329,7 @@ debug_vprintf(int level, const char *module, const int mlen, const char *functio
 }
 
 void
-debug_printf(int level, const char *module, const int mlen,const char *function, const int flen, int prefix, const char *fmt, ...)
+debug_printf(dbg_level level, const char *module, const int mlen,const char *function, const int flen, int prefix, const char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
@@ -267,7 +340,7 @@ debug_printf(int level, const char *module, const int mlen,const char *function,
 void
 debug_assert_fail(const char *module, const int mlen,const char *function, const int flen, const char *file, int line, const char *expr)
 {
-	debug_printf(0,module,mlen,function,flen,1,"%s:%d assertion failed:%s\n", file, line, expr);
+	debug_printf(lvl_error,module,mlen,function,flen,1,"%s:%d assertion failed:%s\n", file, line, expr);
 	abort();
 }
 
@@ -314,7 +387,7 @@ debug_dump_mallocs(void)
 {
 	struct malloc_head *head=malloc_heads;
 	int i;
-	dbg(0,"mallocs %d\n",mallocs);
+	dbg(lvl_debug,"mallocs %d\n",mallocs);
 	while (head) {
 		fprintf(stderr,"unfreed malloc from %s of size %d\n",head->where,head->size);
 		for (i = 0 ; i < 8 ; i++)
@@ -337,7 +410,7 @@ debug_malloc(const char *where, int line, const char *func, int size)
 	debug_malloc_size+=size;
 	if (debug_malloc_size/(1024*1024) != debug_malloc_size_m) {
 		debug_malloc_size_m=debug_malloc_size/(1024*1024);
-		dbg(0,"malloced %d kb\n",debug_malloc_size/1024);
+		dbg(lvl_debug,"malloced %d kb\n",debug_malloc_size/1024);
 	}
 	head=malloc(size+sizeof(*head)+sizeof(*tail));
 	head->magic=0xdeadbeef;

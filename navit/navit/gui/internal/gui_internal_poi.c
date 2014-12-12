@@ -122,7 +122,7 @@ gui_internal_poi_icon(struct gui_priv *this, struct item *item)
 								icon=g_strdup(el->u.icon.src);
 							}
 							char *dot=g_strrstr(icon,".");
-							dbg(2,"%s %s\n", item_to_name(item->type),icon);
+							dbg(lvl_debug,"%s %s\n", item_to_name(item->type),icon);
 							if(dot)
 								*dot=0;
 							img=image_new_xs(this,icon);
@@ -301,6 +301,8 @@ gui_internal_cmd_pois_item(struct gui_priv *this, struct coord *center, struct i
 	type=item_to_name(item->type);
 
 	icon=gui_internal_poi_icon(this,item);
+	if(!icon && item->type==type_house_number)
+		icon=image_new_xs(this,"post");
 	if(!icon) {
 		icon=image_new_xs(this,"gui_inactive");
 		text=g_strdup_printf("%s%s%s%s %s", distbuf, dirbuf, routedistbuf, type, name);
@@ -332,10 +334,12 @@ gui_internal_cmd_pois_item(struct gui_priv *this, struct coord *center, struct i
  */
 
 char *
-gui_internal_compose_item_address_string(struct item *item)
+gui_internal_compose_item_address_string(struct item *item, int prependPostal)
 {
 	char *s=g_strdup("");
 	struct attr attr;
+	if(prependPostal && item_attr_get(item, attr_postal, &attr)) 
+		s=g_strjoin(" ",s,map_convert_string_tmp(item->map,attr.u.str),NULL);
 	if(item_attr_get(item, attr_house_number, &attr)) 
 		s=g_strjoin(" ",s,map_convert_string_tmp(item->map,attr.u.str),NULL);
 	if(item_attr_get(item, attr_street_name, &attr)) 
@@ -383,8 +387,8 @@ gui_internal_cmd_pois_item_selected(struct poi_param *param, struct item *item)
 		char *long_name, *s;
 		GList *f;
 		int i;
-		if (param->isAddressFilter) {
-			s=gui_internal_compose_item_address_string(item);
+		if (param->AddressFilterType>0) {
+			s=gui_internal_compose_item_address_string(item,param->AddressFilterType==2?1:0);
 		} else if (item_attr_get(item, attr_label, &attr)) {
 			s=g_strdup_printf("%s %s", item_to_name(item->type), map_convert_string_tmp(item->map,attr.u.str));
 		} else {
@@ -455,7 +459,12 @@ gui_internal_cmd_pois_filter_do(struct gui_priv *this, struct widget *wm, void *
 	} else {
 		param=g_new0(struct poi_param,1);
 	}
-	param->isAddressFilter=strcmp(wm->name,"AddressFilter")==0;
+	if(!strcmp(wm->name,"AddressFilter"))
+		param->AddressFilterType=1;
+	else if(!strcmp(wm->name,"AddressFilterZip"))
+		param->AddressFilterType=2;
+	else
+		param->AddressFilterType=0;
 
 	gui_internal_poi_param_set_filter(param, w->text);
 
@@ -516,6 +525,11 @@ gui_internal_cmd_pois_filter(struct gui_priv *this, struct widget *wm, void *dat
 	wb->name=g_strdup("AddressFilter");
 	wb->func = gui_internal_cmd_pois_filter_do;
 	wb->data=wk;
+	gui_internal_widget_append(we, wb=gui_internal_image_new(this, image_new_xs(this, "zipcode")));
+	wb->state |= STATE_SENSITIVE;
+	wb->name=g_strdup("AddressFilterZip");
+	wb->func = gui_internal_cmd_pois_filter_do;
+	wb->data=wk;
 	
 	if (this->keyboard)
 		gui_internal_widget_append(w, gui_internal_keyboard(this,keyboard_mode));
@@ -559,7 +573,7 @@ gui_internal_cmd_pois(struct gui_priv *this, struct widget *wm, void *data)
 	char buffer[32];
 	struct poi_param *paramnew;
 	struct attr route;
-
+dbg(lvl_debug,"POIs...");
 	if(data) {
 	  param = data;
 	} else {
@@ -582,8 +596,8 @@ gui_internal_cmd_pois(struct gui_priv *this, struct widget *wm, void *data)
 	items= g_new0( struct item_data, maxitem);
 	
 	
-	dbg(2, "Params: sel = %i, selnb = %i, pagenb = %i, dist = %i, filterstr = %s, isAddressFilter= %d\n",
-		param->sel, param->selnb, param->pagenb, param->dist, param->filterstr, param->isAddressFilter);
+	dbg(lvl_debug, "Params: sel = %i, selnb = %i, pagenb = %i, dist = %i, filterstr = %s, AddressFilterType= %d\n",
+		param->sel, param->selnb, param->pagenb, param->dist, param->filterstr, param->AddressFilterType);
 
 	wb=gui_internal_menu(this, isel ? isel->name : _("POIs"));
 	w=gui_internal_box_new(this, gravity_top_center|orientation_vertical|flags_expand|flags_fill);
@@ -600,7 +614,7 @@ gui_internal_cmd_pois(struct gui_priv *this, struct widget *wm, void *data)
         while ((m=mapset_next(h, 1))) {
 		selm=map_selection_dup_pro(sel, pro, map_projection(m));
 		mr=map_rect_new(m, selm);
-		dbg(2,"mr=%p\n", mr);
+		dbg(lvl_debug,"mr=%p\n", mr);
 		if (mr) {
 			while ((item=map_rect_get_item(mr))) {
 				if (gui_internal_cmd_pois_item_selected(param, item) &&
@@ -612,7 +626,7 @@ gui_internal_cmd_pois(struct gui_priv *this, struct widget *wm, void *data)
 					char *label;
 					item_attr_rewind(item);
 					if (item->type==type_house_number) {
-						label=gui_internal_compose_item_address_string(item);
+						label=gui_internal_compose_item_address_string(item,1);
 					} else if (item_attr_get(item, attr_label, &attr)) {
 						label=map_convert_string(item->map,attr.u.str);
 						// Buildings which label is equal to addr:housenumber value
@@ -671,10 +685,10 @@ gui_internal_cmd_pois(struct gui_priv *this, struct widget *wm, void *data)
 		struct item_data *data = fh_extractmin(fh);
 		if (data == NULL)
 		{
-			dbg(2, "Empty heap: maxitem = %i, it = %i, dist = %i\n", maxitem, it, dist);
+			dbg(lvl_debug, "Empty heap: maxitem = %i, it = %i, dist = %i\n", maxitem, it, dist);
 			break;
 		}
-		dbg(2, "dist1: %i, dist2: %i\n", data->dist, (-key)>>10);
+		dbg(lvl_debug, "dist1: %i, dist2: %i\n", data->dist, (-key)>>10);
 		if(i==(it-pagesize*pagenb) && data->dist>prevdist)
 			prevdist=data->dist;
 		wi=gui_internal_cmd_pois_item(this, &center, &data->item, &data->c, route.u.route, data->dist, data->label);
@@ -753,13 +767,13 @@ gui_internal_cmd_pois(struct gui_priv *this, struct widget *wm, void *data)
 		while(firstrow>=0) {
 			int currow=g_list_index(wtable->children, td->bottom_row->data) - firstrow;
 			if(currow<0) {
-				dbg(0,"Can't find bottom row in children list. Stop paging.\n");
+				dbg(lvl_debug,"Can't find bottom row in children list. Stop paging.\n");
 				break;
 			}
 			if(currow>=param->count)
 				break;
 			if(!(td->scroll_buttons.next_button->state & STATE_SENSITIVE)) {
-				dbg(0,"Reached last page but item %i not found. Stop paging.\n",param->count);
+				dbg(lvl_debug,"Reached last page but item %i not found. Stop paging.\n",param->count);
 				break;
 			}
 			gui_internal_table_button_next(this, td->scroll_buttons.next_button, NULL);

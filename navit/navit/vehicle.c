@@ -1,4 +1,4 @@
-/**
+/*
  * Navit, a modular navigation system.
  * Copyright (C) 2005-2009 Navit Team
  *
@@ -15,6 +15,16 @@
  * along with this program; if not, write to the
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
+ */
+ 
+/** @file vehicle.c
+ * @brief Generic components of the vehicle object.
+ * 
+ * This file implements the generic vehicle interface, i.e. everything which is
+ * not specific to a single data source.
+ *
+ * @author Navit Team
+ * @date 2005-2014
  */
 
 #include <stdio.h>
@@ -78,7 +88,13 @@ static int vehicle_add_log(struct vehicle *this_, struct log *log);
 
 
 /**
- * Creates a new vehicle
+ * @brief Creates a new vehicle
+ *
+ * @param parent
+ * @param attrs Points to a null-terminated array of pointers to the attributes
+ * for the new vehicle type.
+ *
+ * @return The newly created vehicle object
  */
 struct vehicle *
 vehicle_new(struct attr *parent, struct attr **attrs)
@@ -93,10 +109,10 @@ vehicle_new(struct attr *parent, struct attr **attrs)
 	char *type, *colon;
 	struct pcoord center;
 
-	dbg(1, "enter\n");
+	dbg(lvl_debug, "enter\n");
 	source = attr_search(attrs, NULL, attr_source);
 	if (!source) {
-		dbg(0, "incomplete vehicle definition: missing attribute 'source'\n");
+		dbg(lvl_error, "incomplete vehicle definition: missing attribute 'source'\n");
 		return NULL;
 	}
 
@@ -104,11 +120,11 @@ vehicle_new(struct attr *parent, struct attr **attrs)
 	colon = strchr(type, ':');
 	if (colon)
 		*colon = '\0';
-	dbg(1, "source='%s' type='%s'\n", source->u.str, type);
+	dbg(lvl_debug, "source='%s' type='%s'\n", source->u.str, type);
 
 	vehicletype_new = plugin_get_vehicle_type(type);
 	if (!vehicletype_new) {
-		dbg(0, "invalid source '%s': unknown type '%s'\n", source->u.str, type);
+		dbg(lvl_error, "invalid source '%s': unknown type '%s'\n", source->u.str, type);
 		g_free(type);
 		return NULL;
 	}
@@ -119,7 +135,7 @@ vehicle_new(struct attr *parent, struct attr **attrs)
 	this_->cbl = callback_list_new();
 	this_->priv = vehicletype_new(&this_->meth, this_->cbl, attrs);
 	if (!this_->priv) {
-		dbg(0, "vehicletype_new failed\n");
+		dbg(lvl_error, "vehicletype_new failed\n");
 		callback_list_destroy(this_->cbl);
 		g_free(this_);
 		return NULL;
@@ -132,20 +148,20 @@ vehicle_new(struct attr *parent, struct attr **attrs)
 	this_->trans=transform_new(&center, 16, 0);
 	vehicle_set_default_name(this_);
 
-	dbg(1, "leave\n");
+	dbg(lvl_debug, "leave\n");
 	this_->log_to_cb=g_hash_table_new(NULL,NULL);
 	return this_;
 }
 
 /**
- * Destroys a vehicle
+ * @brief Destroys a vehicle
  * 
  * @param this_ The vehicle to destroy
  */
 void
 vehicle_destroy(struct vehicle *this_)
 {
-	dbg(0,"enter\n");
+	dbg(lvl_debug,"enter\n");
 	if (this_->animate_callback) {
 		callback_destroy(this_->animate_callback);
 		event_remove_timeout(this_->animate_timer);
@@ -188,8 +204,9 @@ vehicle_attr_iter_destroy(struct attr_iter *iter)
  *
  * @param this_ Pointer to a vehicle structure
  * @param type The attribute type to look for
- * @param attr Pointer to an attr structure to store the attribute
- * @param iter A vehicle attr_iter
+ * @param attr Pointer to a {@code struct attr} to store the attribute
+ * @param iter A vehicle attr_iter. This is only used for generic attributes; for attributes specific to the vehicle object it is ignored.
+ * @return True for success, false for failure
  */
 int
 vehicle_get_attr(struct vehicle *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter)
@@ -210,9 +227,9 @@ vehicle_get_attr(struct vehicle *this_, enum attr_type type, struct attr *attr, 
 /**
  * Generic set function
  *
- * @param this_ Pointer to a vehicle structure
- * @param attr Pointer to an attr structure for the attribute to be set
- * @return nonzero on success, zero on failure
+ * @param this_ A vehicle
+ * @param attr The attribute to set
+ * @return False on success, true on failure
  */
 int
 vehicle_set_attr(struct vehicle *this_, struct attr *attr)
@@ -237,7 +254,9 @@ vehicle_set_attr(struct vehicle *this_, struct attr *attr)
  * Generic add function
  *
  * @param this_ A vehicle
- * @param attr A struct attr
+ * @param attr The attribute to add
+ *
+ * @return true if the attribute was added, false if not.
  */
 int
 vehicle_add_attr(struct vehicle *this_, struct attr *attr)
@@ -354,8 +373,8 @@ vehicle_draw(struct vehicle *this_, struct graphics *gra, struct point *pnt, int
 {
 	if (angle < 0)
 		angle+=360;
-	dbg(1,"enter this=%p gra=%p pnt=%p lazy=%d dir=%d speed=%d\n", this_, gra, pnt, lazy, angle, speed);
-	dbg(1,"point %d,%d\n", pnt->x, pnt->y);
+	dbg(lvl_debug,"enter this=%p gra=%p pnt=%p lazy=%d dir=%d speed=%d\n", this_, gra, pnt, lazy, angle, speed);
+	dbg(lvl_debug,"point %d,%d\n", pnt->x, pnt->y);
 	this_->cursor_pnt=*pnt;
 	this_->angle=angle;
 	this_->speed=speed;
@@ -394,7 +413,7 @@ static void vehicle_set_default_name(struct vehicle *this_)
 		// Safe cast: attr_generic_set_attr does not modify its parameter.
 		default_name.u.str=(char*)_("Unnamed vehicle");
 		this_->attrs=attr_generic_set_attr(this_->attrs, &default_name);
-		dbg(0, "Incomplete vehicle definition: missing attribute 'name'. Default name set.\n");
+		dbg(lvl_error, "Incomplete vehicle definition: missing attribute 'name'. Default name set.\n");
 	}
 }
 
@@ -429,7 +448,7 @@ vehicle_draw_do(struct vehicle *this_, int lazy)
 	while (*attr) {
 		if ((*attr)->type == attr_itemgra) {
 			struct itemgra *itm=(*attr)->u.itemgra;
-			dbg(1,"speed %d-%d %d\n", itm->speed_range.min, itm->speed_range.max, speed);
+			dbg(lvl_debug,"speed %d-%d %d\n", itm->speed_range.min, itm->speed_range.max, speed);
 			if (speed >= itm->speed_range.min && speed <= itm->speed_range.max &&  
 			    angle >= itm->angle_range.min && angle <= itm->angle_range.max &&  
 			    sequence >= itm->sequence_range.min && sequence <= itm->sequence_range.max) {
@@ -452,10 +471,10 @@ vehicle_draw_do(struct vehicle *this_, int lazy)
 }
 
 /**
- * Writes to an NMEA log.
+ * @brief Writes to an NMEA log.
  *
- * @param this_ Pointer to the vehicle structure of the data source
- * @param log Pointer to a log structure for the log file
+ * @param this_ The vehicle supplying data
+ * @param log The log to write to
  */
 static void
 vehicle_log_nmea(struct vehicle *this_, struct log *log)
@@ -468,6 +487,15 @@ vehicle_log_nmea(struct vehicle *this_, struct log *log)
 	log_write(log, pos_attr.u.str, strlen(pos_attr.u.str), 0);
 }
 
+/**
+ * Add a tag to the extensions section of a GPX trackpoint.
+ *
+ * @param tag The tag to add
+ * @param logstr Pointer to a pointer to a string to be inserted into the log.
+ * When calling this function, {@code *logstr} must point to the substring into which the new tag is
+ * to be inserted. If {@code *logstr} is NULL, a new string will be created for the extensions section.
+ * Upon returning, {@code *logstr} will point to the new string with the additional tag inserted.
+ */
 void
 vehicle_log_gpx_add_tag(char *tag, char **logstr)
 {
@@ -502,10 +530,10 @@ vehicle_log_gpx_add_tag(char *tag, char **logstr)
 }
 
 /**
- * Writes to a GPX log.
+ * @brief Writes a trackpoint to a GPX log.
  *
- * @param this_ Pointer to the vehicle structure of the data source
- * @param log Pointer to a log structure for the log file
+ * @param this_ The vehicle supplying data
+ * @param log The log to write to
  */
 static void
 vehicle_log_gpx(struct vehicle *this_, struct log *log)
@@ -580,10 +608,10 @@ vehicle_log_gpx(struct vehicle *this_, struct log *log)
 }
 
 /**
- * Writes to a text log.
+ * @brief Writes to a text log.
  *
- * @param this_ Pointer to the vehicle structure of the data source
- * @param log Pointer to a log structure for the log file
+ * @param this_ The vehicle supplying data
+ * @param log The log to write to
  */
 static void
 vehicle_log_textfile(struct vehicle *this_, struct log *log)
@@ -604,10 +632,10 @@ vehicle_log_textfile(struct vehicle *this_, struct log *log)
 }
 
 /**
- * Writes to a binary log.
+ * @brief Writes to a binary log.
  *
- * @param this_ Pointer to the vehicle structure of the data source
- * @param log Pointer to a log structure for the log file
+ * @param this_ The vehicle supplying data
+ * @param log The log to write to
  */
 static void
 vehicle_log_binfile(struct vehicle *this_, struct log *log)
@@ -641,7 +669,7 @@ vehicle_log_binfile(struct vehicle *this_, struct log *log)
 			buffer_new=g_malloc((buffer[0]+3)*sizeof(int));
 			memcpy(buffer_new, buffer, (buffer[0]+1)*sizeof(int));
 		}
-		dbg(1,"c=0x%x,0x%x\n",c.x,c.y);
+		dbg(lvl_debug,"c=0x%x,0x%x\n",c.x,c.y);
 		buffer_new[buffer_new[0]+1]=c.x;
 		buffer_new[buffer_new[0]+2]=c.y;
 		buffer_new[0]+=2;
@@ -664,10 +692,12 @@ vehicle_log_binfile(struct vehicle *this_, struct log *log)
 }
 
 /**
- * Register a new log to receive data.
+ * @brief Registers a new log to receive data.
  *
- * @param this_ Pointer to the vehicle structure of the data source
- * @param log Pointer to a log structure for the log file
+ * @param this_ The vehicle supplying data
+ * @param log The log to write to
+ *
+ * @return False if the log is of an unknown type, true otherwise (including when {@code attr_type} is missing).
  */
 static int
 vehicle_add_log(struct vehicle *this_, struct log *log)

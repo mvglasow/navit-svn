@@ -1454,7 +1454,7 @@ osd_button_draw(struct osd_priv_common *opc, struct navit *nav)
 		gra = navit_get_graphics(nav);
 		this->img = graphics_image_new(gra, this->src);
 		if (!this->img) {
-			dbg(1, "failed to load '%s'\n", this->src);
+			dbg(lvl_warning, "failed to load '%s'\n", this->src);
 			return;
 		}
 
@@ -1479,10 +1479,10 @@ osd_button_init(struct osd_priv_common *opc, struct navit *nav)
 	struct osd_button *this = (struct osd_button *)opc->data;
 
 	struct graphics *gra = navit_get_graphics(nav);
-	dbg(1, "enter\n");
+	dbg(lvl_debug, "enter\n");
 	this->img = graphics_image_new(gra, this->src);
 	if (!this->img) {
-		dbg(1, "failed to load '%s'\n", this->src);
+		dbg(lvl_warning, "failed to load '%s'\n", this->src);
 		return;
 	}
 	if (!opc->osd_item.w)
@@ -1540,7 +1540,7 @@ osd_button_set_attr(struct osd_priv_common *opc, struct attr* attr)
 		gra = navit_get_graphics(nav);
 		this_->img = graphics_image_new(gra, this_->src);
 		if (!this_->img) {
-			dbg(1, "failed to load '%s'\n", this_->src);
+			dbg(lvl_warning, "failed to load '%s'\n", this_->src);
 			return 0;
 		}
 		if (!opc->osd_item.w)
@@ -1581,7 +1581,7 @@ osd_button_new(struct navit *nav, struct osd_methods *meth,
 	osd_set_std_attr(attrs, &opc->osd_item, this->use_overlay ? 1:(1|16));
 
 	if (!opc->osd_item.command) {
-		dbg(0, "no command\n");
+		dbg(lvl_error, "no command\n");
 		goto error;
 	}
 	attr = attr_search(attrs, NULL, attr_src_dir);
@@ -1591,7 +1591,7 @@ osd_button_new(struct navit *nav, struct osd_methods *meth,
 		this->src_dir=NULL;
 	attr = attr_search(attrs, NULL, attr_src);
 	if (!attr) {
-		dbg(0, "no src\n");
+		dbg(lvl_error, "no src\n");
 		goto error;
 	}
 
@@ -1617,10 +1617,10 @@ osd_image_init(struct osd_priv_common *opc, struct navit *nav)
 	struct osd_button *this = (struct osd_button *)opc->data;
 
 	struct graphics *gra = navit_get_graphics(nav);
-	dbg(1, "enter\n");
+	dbg(lvl_debug, "enter\n");
 	this->img = graphics_image_new(gra, this->src);
 	if (!this->img) {
-		dbg(1, "failed to load '%s'\n", this->src);
+		dbg(lvl_warning, "failed to load '%s'\n", this->src);
 		return;
 	}
 	if (!opc->osd_item.w)
@@ -1668,7 +1668,7 @@ osd_image_new(struct navit *nav, struct osd_methods *meth,
 		this->use_overlay=attr->u.num;
 	attr = attr_search(attrs, NULL, attr_src);
 	if (!attr) {
-		dbg(0, "no src\n");
+		dbg(lvl_error, "no src\n");
 		goto error;
 	}
 
@@ -1719,7 +1719,7 @@ osd_nav_next_turn_draw(struct osd_priv_common *opc, struct navit *navit,
 		       && (item->type == type_nav_position || item->type == type_nav_none || level-- > 0));
 	if (item) {
 		name = item_to_name(item->type);
-		dbg(1, "name=%s\n", name);
+		dbg(lvl_debug, "name=%s\n", name);
 		if (this->active != 1 || this->last_name != name) {
 			this->active = 1;
 			this->last_name = name;
@@ -1738,13 +1738,13 @@ osd_nav_next_turn_draw(struct osd_priv_common *opc, struct navit *navit,
 		osd_std_draw(&opc->osd_item);
 		if (this->active) {
 			image = g_strdup_printf(this->icon_src, name);
-			dbg(1, "image=%s\n", image);
+			dbg(lvl_debug, "image=%s\n", image);
 			gr_image =
 			    graphics_image_new_scaled(opc->osd_item.gr,
 						      image, this->icon_w,
 						      this->icon_h);
 			if (!gr_image) {
-				dbg(0,"failed to load %s in %dx%d\n",image,this->icon_w,this->icon_h);
+				dbg(lvl_error,"failed to load %s in %dx%d\n",image,this->icon_w,this->icon_h);
 				g_free(image);
 				image = graphics_icon_path("unknown.png");
 				gr_image =
@@ -1755,7 +1755,7 @@ osd_nav_next_turn_draw(struct osd_priv_common *opc, struct navit *navit,
 							      this->
 							      icon_h);
 			}
-			dbg(1, "gr_image=%p\n", gr_image);
+			dbg(lvl_debug, "gr_image=%p\n", gr_image);
 			if (gr_image) {
 				p.x =
 				    (opc->osd_item.w -
@@ -1858,7 +1858,12 @@ osd_nav_toggle_announcer_draw(struct osd_priv_common *opc, struct navit *navit, 
 	char *gui_sound_on = "gui_sound";
     struct attr attr, speechattr;
 
-    if (!navit_get_attr(navit, attr_speech, &speechattr, NULL) || !speech_get_attr(speechattr.u.speech, attr_active, &attr, NULL))
+    if (!navit_get_attr(navit, attr_speech, &speechattr, NULL))
+    {
+        dbg(lvl_error, "No speech plugin available, toggle_announcer disabled.\n");
+        return;
+    }
+    if (!speech_get_attr(speechattr.u.speech, attr_active, &attr, NULL))
         attr.u.num = 1;
     this->active = attr.u.num;
 
@@ -1868,7 +1873,7 @@ osd_nav_toggle_announcer_draw(struct osd_priv_common *opc, struct navit *navit, 
         do_draw = 1;
     }
 
-	if (do_draw)
+    if (do_draw)
     {
 		graphics_draw_mode(opc->osd_item.gr, draw_mode_begin);
 		p.x = 0;
@@ -1888,7 +1893,7 @@ osd_nav_toggle_announcer_draw(struct osd_priv_common *opc, struct navit *navit, 
             gr_image = graphics_image_new_scaled(opc->osd_item.gr, path, this->icon_w, this->icon_h);
         }
         
-        dbg(1, "gr_image=%p\n", gr_image);
+        dbg(lvl_debug, "gr_image=%p\n", gr_image);
         
         if (gr_image)
         {
@@ -2516,13 +2521,14 @@ struct osd_text {
 
 
 /**
- * @brief Format a text attribute
+ * @brief Formats a text attribute
  *
  * Returns the formatted current value of an attribute as a string
  * 
- * @param attr Pointer to an attr structure specifying the attribute to be formatted
- * @param format Pointer to a string specifying how to format the attribute. Allowed format strings depend on the attribute; this member can be NULL.
- * @returns Pointer to a string containing the formatted value
+ * @param attr The attribute to be formatted
+ * @param format A string specifying how to format the attribute. Allowed format strings depend on the attribute; this member can be NULL.
+ * @param imperial True to convert values to imperial, false to return metric values
+ * @returns The formatted value
  */
 static char *
 osd_text_format_attr(struct attr *attr, char *format, int imperial)
@@ -2675,11 +2681,17 @@ osd_text_format_attr(struct attr *attr, char *format, int imperial)
 }
 
 /**
- * Parse a string of the form key.subkey or key[index].subkey into its components, where subkey can itself have its own index and further subkeys
+ * @brief Parses a string of the form key.subkey or key[index].subkey into its components, where subkey
+ * can itself have its own index and further subkeys
  *
- * @param in String to parse (the part before subkey will be modified by the function); upon returning this pointer will point to a string containing key
- * @param index Pointer to an address that will receive a pointer to a string containing index or a null pointer if key does not have an index
- * @returns If the function succeeds, a pointer to a string containing subkey, i.e. everything following the first period, or a pointer to an empty string if there is nothing left to parse. If the function fails(index with missing closed bracket or passing a null pointer as index argument when an index was encountered), the return value is NULL
+ * @param in String to parse (the part before subkey will be modified by the function); upon returning
+ * this pointer will point to a string containing key
+ * @param index Pointer to an address that will receive a pointer to a string containing index or NULL
+ * if key does not have an index
+ * @returns If the function succeeds, a pointer to a string containing subkey, i.e. everything following
+ * the first period, or a pointer to an empty string if there is nothing left to parse. If the function
+ * fails (index with missing closed bracket or passing a null pointer as index argument when an index
+ * was encountered), the return value is NULL
  */
 static char *
 osd_text_split(char *in, char **index)
@@ -2770,8 +2782,8 @@ osd_text_draw(struct osd_priv_common *opc, struct navit *navit, struct vehicle *
 			}
 
 			if (item) {
-				dbg(1,"name %s\n", item_to_name(item->type));
-				dbg(1,"type %s\n", attr_to_name(oti->attr_typ));
+				dbg(lvl_debug,"name %s\n", item_to_name(item->type));
+				dbg(lvl_debug,"type %s\n", attr_to_name(oti->attr_typ));
 				if (item_attr_get(item, oti->attr_typ, &attr))
 					value=osd_text_format_attr(&attr, oti->format, imperial);
 			}
@@ -2884,7 +2896,7 @@ osd_text_draw(struct osd_priv_common *opc, struct navit *navit, struct vehicle *
 			last++;
 		}
 
-		dbg(1,"this->align=%d\n", this->align);
+		dbg(lvl_debug,"this->align=%d\n", this->align);
 		switch (this->align & 51) {
 		case 1:
 			p.y=0;
@@ -2944,10 +2956,11 @@ osd_text_draw(struct osd_priv_common *opc, struct navit *navit, struct vehicle *
 }
 
 /**
- * @brief Create a new osd_text_item and insert it into a linked list
+ * @brief Creates a new osd_text_item and inserts it into a linked list
  * 
- * @param parent Pointer to the preceding osd_text_item structure in the list. If NULL, the new osd_text_item becomes the root element of a new list.
- * @returns A pointer to the new osd_text_item element.
+ * @param parent The preceding {@code osd_text_item} in the list. If NULL, the new item becomes the root
+ * element of a new list
+ * @returns The new {@code osd_text_item}
  */
 static struct osd_text_item *
 oti_new(struct osd_text_item * parent)
@@ -2967,13 +2980,14 @@ oti_new(struct osd_text_item * parent)
 }
 
 /**
- * @brief Prepare a text type OSD element
+ * @brief Prepares a text type OSD element
  *
- * Parses the label string (as specified in the XML file) for a text type OSD element into attributes and static text. 
+ * This function parses the label string (as specified in the XML file) for a text type OSD element
+ * into attributes and static text.
  * 
- * @param this Pointer to an osd_text structure representing the OSD element. The items member of this structure will receive a pointer to a list of osd_text_item structures.
- * @param nav Pointer to a navit structure
- * @returns nothing
+ * @param opc The {@code struct osd_priv_common} for the OSD element. {@code opc->data->items} will
+ * receive a pointer to a list of {@code osd_text_item} structures.
+ * @param nav The navit structure
  */
 static void
 osd_text_prepare(struct osd_priv_common *opc, struct navit *nav)
@@ -3166,7 +3180,7 @@ osd_gps_status_draw(struct osd_priv_common *opc, struct navit *navit,
 			case 2:
 				strength=2;
 				if (vehicle_get_attr(vehicle_attr.u.vehicle, attr_position_sats_used, &attr, NULL)) {
-					dbg(1,"num=%ld\n", attr.u.num);
+					dbg(lvl_debug,"num=%ld\n", attr.u.num);
 					if (attr.u.num >= 3) 
 						strength=attr.u.num-1;
 					if (strength > 5)
@@ -3212,6 +3226,9 @@ osd_gps_status_init(struct osd_priv_common *opc, struct navit *nav)
 {
 	osd_set_std_graphic(nav, &opc->osd_item, (struct osd_priv *)opc);
 	navit_add_callback(nav, callback_new_attr_1(callback_cast(osd_gps_status_draw), attr_position_coord_geo, opc));
+	navit_add_callback(nav, callback_new_attr_1(callback_cast(osd_gps_status_draw), attr_position_fix_type, opc));
+	navit_add_callback(nav, callback_new_attr_1(callback_cast(osd_gps_status_draw), attr_position_sats_used, opc));
+	navit_add_callback(nav, callback_new_attr_1(callback_cast(osd_gps_status_draw), attr_position_hdop, opc));
 	osd_gps_status_draw(opc, nav, NULL);
 }
 
@@ -3478,7 +3495,7 @@ osd_scale_init(struct osd_priv_common *opc, struct navit *nav)
 	struct color color_white={COLOR_WHITE_};
 	struct color color_black={COLOR_BLACK_};
 	struct graphics *gra = navit_get_graphics(nav);
-	dbg(1, "enter\n");
+	dbg(lvl_debug, "enter\n");
 	if (this->use_overlay) {
 		osd_set_std_graphic(nav, &opc->osd_item, (struct osd_priv *)opc);
 	} else {
@@ -3552,7 +3569,7 @@ osd_auxmap_draw(struct osd_priv_common *opc)
 		memset(&sel, 0, sizeof(sel));
 		sel.u.p_rect.rl.x=opc->osd_item.w;
 		sel.u.p_rect.rl.y=opc->osd_item.h;
-		dbg(1,"osd_auxmap_draw: sel.u.p_rect.rl=(%d, %d)\n", opc->osd_item.w, opc->osd_item.h);
+		dbg(lvl_debug,"osd_auxmap_draw: sel.u.p_rect.rl=(%d, %d)\n", opc->osd_item.w, opc->osd_item.h);
 		transform_set_screen_selection(this->trans, &sel);
 		graphics_set_rect(opc->osd_item.gr, &sel.u.p_rect);
 	}

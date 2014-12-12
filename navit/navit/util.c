@@ -62,7 +62,7 @@ navit_utf8_strcasecmp(const char *s1, const char *s2)
 	s1_folded=g_utf8_casefold(s1,-1);
 	s2_folded=g_utf8_casefold(s2,-1);
 	cmpres=strcmp(s1_folded,s2_folded);
-	dbg(3,"Compared %s with %s, got %d\n",s1_folded,s2_folded,cmpres);
+	dbg(lvl_debug,"Compared %s with %s, got %d\n",s1_folded,s2_folded,cmpres);
 	g_free(s1_folded);
 	g_free(s2_folded);
 	return cmpres;
@@ -184,17 +184,15 @@ char *stristr(const char *String, const char *Pattern)
 
 #ifndef HAVE_GETDELIM
 /**
- * Read the part of a file up to a delimiter to a string.
+ * @brief Reads the part of a file up to a delimiter to a string.
  * <p> 
- * Read up to (and including) a DELIMITER from FP into *LINEPTR (and
-   NUL-terminate it).  
- * @param lineptr Pointer to a pointer returned from malloc (or
-   NULL), pointing to a buffer. It is realloc'ed as
-   necessary and will receive the data read.
+ * Read up to (and including) a DELIMITER from FP into *LINEPTR (and NUL-terminate it).
+ *
+ * @param lineptr Pointer to a pointer returned from malloc (or NULL), pointing to a buffer. It is
+ * realloc'ed as necessary and will receive the data read.
  * @param n Size of the buffer.  
  *
- * @return Number of characters read (not including
-   the null terminator), or -1 on error or EOF.
+ * @return Number of characters read (not including the null terminator), or -1 on error or EOF.
 */
 ssize_t
 getdelim (char **lineptr, size_t *n, int delimiter, FILE *fp)
@@ -312,11 +310,11 @@ int gettimeofday(struct timeval *time, void *local)
 }
 #endif
 /**
- * Convert an ISO 8601-style time string into epoch time.
+ * @brief Converts an ISO 8601-style time string into epoch time.
  *
- * @param iso8601 Pointer to a string containing the time in ISO 8601 format.
+ * @param iso8601 Time in ISO 8601 format.
  *
- * @return An unsigned integer representing the number of seconds elapsed since January 1, 1970, 00:00:00 UTC.
+ * @return The number of seconds elapsed since January 1, 1970, 00:00:00 UTC.
  */
 unsigned int
 iso8601_to_secs(char *iso8601)
@@ -347,9 +345,9 @@ iso8601_to_secs(char *iso8601)
 }
 
 /**
- * Output local system time in ISO 8601 format.
+ * @brief Outputs local system time in ISO 8601 format.
  *
- * @return Pointer to a string containing the time in ISO 8601 format
+ * @return Time in ISO 8601 format
  */
 char *
 current_to_iso8601(void)
@@ -511,7 +509,7 @@ spawn_process(char **argv)
 		pid_t pid;
 		
 		sigset_t set, old;
-		dbg(1,"spawning process for '%s'\n", argv[0]);
+		dbg(lvl_debug,"spawning process for '%s'\n", argv[0]);
 		sigemptyset(&set);
 		sigaddset(&set,SIGCHLD);
 		spawn_process_sigmask(SIG_BLOCK,&set,&old);
@@ -525,7 +523,7 @@ spawn_process(char **argv)
 			r->pid=pid;
 			spawn_process_children=g_list_prepend(spawn_process_children,r);
 		} else {
-			dbg(0,"fork() returned error.");
+			dbg(lvl_error,"fork() returned error.");
 			g_free(r);
 			r=NULL;
 		}
@@ -552,7 +550,7 @@ spawn_process(char **argv)
 		args=newSysString(cmdline);
 		cmd = newSysString(argv[0]);
 		dwRet=CreateProcess(cmd, args, NULL, NULL, 0, 0, NULL, NULL, NULL, &(r->pr));
-		dbg(0, "CreateProcess(%s,%s), PID=%i\n",argv[0],cmdline,r->pr.dwProcessId);
+		dbg(lvl_debug, "CreateProcess(%s,%s), PID=%i\n",argv[0],cmdline,r->pr.dwProcessId);
 		g_free(cmd);
 #else
 		TCHAR* args;
@@ -562,7 +560,7 @@ spawn_process(char **argv)
 		cmdline=spawn_process_compose_cmdline(argv);
 		args=newSysString(cmdline);
 		dwRet=CreateProcess(NULL, args, NULL, NULL, 0, 0, NULL, NULL, &startupInfo, &(r->pr));
-		dbg(0, "CreateProcess(%s), PID=%i\n",cmdline,r->pr.dwProcessId);
+		dbg(lvl_debug, "CreateProcess(%s), PID=%i\n",cmdline,r->pr.dwProcessId);
 #endif
 		g_free(cmdline);
 		g_free(args);
@@ -572,7 +570,7 @@ spawn_process(char **argv)
 	{
 		char *cmdline=spawn_process_compose_cmdline(argv);
 		int status;
-		dbg(0,"Unblocked spawn_process isn't availiable on this platform.\n");
+		dbg(lvl_error,"Unblocked spawn_process isn't availiable on this platform.\n");
 		status=system(cmdline);
 		g_free(cmdline);
 		r->status=status;
@@ -595,7 +593,7 @@ spawn_process(char **argv)
 int spawn_process_check_status(struct spawn_process_info *pi, int block)
 {
 	if(pi==NULL) {
-		dbg(0,"Trying to get process status of NULL, assuming process is terminated.\n");
+		dbg(lvl_error,"Trying to get process status of NULL, assuming process is terminated.\n");
 		return 255;
 	}
 #ifdef HAVE_API_WIN32_BASE
@@ -608,7 +606,7 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 					break;
 				}
 			} else {
-				dbg(0,"GetExitCodeProcess failed. Assuming the process is terminated.");
+				dbg(lvl_error,"GetExitCodeProcess failed. Assuming the process is terminated.");
 				return 255;
 			}
 			if(!block)
@@ -616,7 +614,7 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 		
 			dw=WaitForSingleObject(pi->pr.hProcess,INFINITE);
 			if(dw==WAIT_FAILED && failcount++==1) {
-				dbg(0,"WaitForSingleObject failed twice. Assuming the process is terminated.");
+				dbg(lvl_error,"WaitForSingleObject failed twice. Assuming the process is terminated.");
 				return 0;
 				break;
 			}
@@ -635,9 +633,9 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 				pi->status=WEXITSTATUS(status);
 				return pi->status;
 			if(WIFSTOPPED(status)) {
-				dbg(0,"child is stopped by %i signal\n",WSTOPSIG(status));
+				dbg(lvl_debug,"child is stopped by %i signal\n",WSTOPSIG(status));
 			} else if (WIFSIGNALED(status)) {
-				dbg(0,"child terminated by signal %i\n",WEXITSTATUS(status));
+				dbg(lvl_debug,"child terminated by signal %i\n",WEXITSTATUS(status));
 				pi->status=255;
 				return 255;
 			}
@@ -649,12 +647,12 @@ int spawn_process_check_status(struct spawn_process_info *pi, int block)
 		} else {
 			if(pi->status!=-1) // Signal handler has changed pi->status while in this function
 				return pi->status;
-			dbg(0,"waitpid() indicated error, reporting process termination.\n");
+			dbg(lvl_error,"waitpid() indicated error, reporting process termination.\n");
 			return 255;
 		}
 	}
 #else
-	dbg(0, "Non-blocking spawn_process isn't availiable for this platform, repoting process exit status.\n");
+	dbg(lvl_error, "Non-blocking spawn_process isn't availiable for this platform, repoting process exit status.\n");
 	return pi->status;
 #endif
 #endif
