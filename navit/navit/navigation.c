@@ -2539,6 +2539,48 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			}
 		}
 	}
+
+
+/*first rudimentary attempt to announce an interchange
+ *
+ * */
+	if (cmd->maneuver)
+	{
+		if (cmd->maneuver->merge_or_exit & mex_interchange)
+		{
+			char *maneuver = NULL;
+			char *destination = NULL;
+			char *street_destination;
+			destination=navigation_item_destination(nav, cmd->itm, itm, " ");
+			street_destination=select_announced_destinations(cmd);
+			if (street_destination)
+				street_destination_announce=g_strdup_printf(_("towards %s"),street_destination);
+			g_free(street_destination);
+
+			if (cmd->maneuver->type && cmd->maneuver->type==type_nav_keep_left){
+				maneuver = g_strdup(_("keep left at the "));
+			}
+			if (cmd->maneuver->type && cmd->maneuver->type==type_nav_keep_right){
+							maneuver = g_strdup(_("keep right at the "));
+						}
+
+			switch (level)
+			{
+				case 2:
+					return g_strdup(_("interchange soon"));
+				case 1:
+					return g_strdup_printf(_("%1$s interchange %2$s"),maneuver,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic);
+				case -2:
+					return g_strdup_printf(_("then %1$s  interchange %2$s"),maneuver,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic);
+				case 0:
+					return g_strdup_printf(_("%1$s interchange now %2$s"),maneuver,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic); /*probably useless*/
+			}
+			g_free(maneuver);
+			g_free(street_destination_announce);
+		}
+	}
+
+
 	
 	/* first rudimentary try to announce an exit
 	 *
