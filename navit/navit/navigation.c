@@ -249,6 +249,7 @@ struct navigation_maneuver {
 	                                for such maneuvers should be a turn instruction in cases where the maneuver is ambiguous, or
 	                                {@code nav_none} for cases in which we would expect the driver to perform this maneuver even
 	                                without being instructed to do so. **/
+	int delta;                 /**< Bearing difference (the angle the driver has to steer) for the maneuver */
 	int merge_or_exit;         /**< Whether we are merging into or exiting from a motorway_like road or we are at an interchange */
 	int is_complex_t_junction; /**< Whether we are coming from the "stem" of a T junction whose "bar" is a dual-carriageway road and
 	                                crossing the opposite lane of the "bar" first (i.e. turning left in countries that drive on the
@@ -1692,7 +1693,6 @@ is_motorway_like(struct navigation_way *way, int extended)
  *
  * @param old The old navigation item, where we're coming from
  * @param new The new navigation item, where we're going to
- * @param delta The angle the user has to steer to navigate from old to new
  * @param maneuver Pointer to a buffer that will receive a pointer to a {@code struct navigation_maneuver}
  * in which detailed information on the maneuver will be stored. The buffer may receive a null pointer
  * for some cases that do not require a maneuver. If a non-null pointer is returned, the caller is responsible
@@ -1700,12 +1700,11 @@ is_motorway_like(struct navigation_way *way, int extended)
  * @return True if navit should guide the user, false otherwise
  */
 static int
-maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct navigation_itm *new, int *delta, struct navigation_maneuver **maneuver)
+maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct navigation_itm *new, struct navigation_maneuver **maneuver)
 {
 	struct navigation_maneuver m; /* if the function returns true, this will be passed in the maneuver argument */
 	struct navigation_itm *ni; /* temporary navigation item used for comparisons that examine previous or subsequent maneuvers */
 	int ret=0;
-	int d; /* bearing difference between old and new */
 	int dw; /* temporary bearing difference between old and w (way being examined) */
 	int dlim; /* if no other ways are within +/- dlim, the maneuver is unambiguous */
 	int dc; /* if new and another way are within +/-curve_limit and on the same side, bearing difference for the other way; else d */
@@ -1721,6 +1720,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	*maneuver = NULL;
 
 	m.type = type_nav_none;
+	m.delta = angle_delta(old->angle_end, new->way.angle2);
 	m.merge_or_exit = mex_none;
 	m.is_complex_t_junction = 0;
 	m.num_options = 0;
@@ -1736,8 +1736,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	/* Check whether the street keeps its name */
 	m.is_same_street = is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 
-	dbg(lvl_debug,"enter %p %p %p\n",old, new, delta);
-	d=angle_delta(old->angle_end, new->way.angle2);
+	dbg(lvl_debug,"enter %p %p %p\n",old, new, maneuver);
 /*	dbg(0,"old=%s %s, new=%s %s, angle old=%d, angle new=%d, d=%i\n ",old->way.name,old->way.name_systematic,new->way.name,new->way.name_systematic,old->angle_end, new->way.angle2,d); */
 	if (!new->way.next) {
 		/* No announcement necessary */
@@ -1768,7 +1767,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 */
 		w = &(new->way);
 		int through_segments = 0;
-		dc=d;
+		dc=m.delta;
 		/* Check whether the street keeps its name */
 		while (w) {
 			dw=angle_delta(old->angle_end, w->angle2);
@@ -1788,13 +1787,13 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (w != &(new->way)) {
 					/* if we're exiting from a motorway, check which side of the ramp the motorway is on */
 					if (is_motorway_like(w, 0) && is_motorway_like(&(old->way), 0) && new->way.item.type == type_ramp) {
-							if (dw < d)
+							if (dw < m.delta)
 								motorways_left++;
 							else
 								motorways_right++;
 					}
 
-					if (dw < d) {
+					if (dw < m.delta) {
 						if (dw > m.left)
 							m.left=dw;
 					} else {
@@ -1806,10 +1805,10 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					 * (multiple near-straight roads), remove dc and the delta hack further down, and set
 					 * m.is_unambiguous instead */
 					if (dw < 0) {
-						if (dw > -curve_limit && d < 0 && d > -curve_limit)
+						if (dw > -curve_limit && m.delta < 0 && m.delta > -curve_limit)
 							dc=dw;
 					} else {
-						if (dw < curve_limit && d > 0 && d < curve_limit)
+						if (dw < curve_limit && m.delta > 0 && m.delta < curve_limit)
 							dc=dw;
 					}
 					wcat=maneuver_category(w->item.type);
@@ -1848,7 +1847,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			w = w->next;
 		}
 		if (m.num_options <= 1) {
-			if ((abs(d) >= curve_limit) && (through_segments == 2)) {
+			if ((abs(m.delta) >= curve_limit) && (through_segments == 2)) {
 				/* FIXME: maybe there are cases with more than 2 through_segments...? */
 				/* If we have to make a considerable turn (curve_limit or more),
 				 * check whether we are approaching a complex T junction from the "stem"
@@ -1879,11 +1878,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			}
 		}
 	}
-	if (!r && abs(d) > 75) {
+	if (!r && abs(m.delta) > 75) {
 		/* always make an announcement if you have to make a sharp turn */
 		r="yes: delta over 75";
 		ret=1;
-	} else if (!r && abs(d) >= curve_limit) {
+	} else if (!r && abs(m.delta) >= curve_limit) {
 		if ((m.new_cat >= maneuver_category(type_street_2_city)) && (m.num_similar_ways > 1)) {
 			/* When coming from street_2_* or higher category road, check if
 			 * - we have multiple options of the same category and
@@ -1915,7 +1914,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			/* TODO: tell motorway interchanges from exits */
 			/* m.merge_or_exit = mex_interchange; */
 			ret=1;
-		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(d) >= curve_limit)) && ((m.left > -90) || (m.right < 90))) {
+		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(m.delta) >= curve_limit)) && ((m.left > -90) || (m.right < 90))) {
 			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
 			 * When the new way is a ramp, we check for the following criteria:
 			 * - All available ways are either motorway-like or ramps.
@@ -1939,27 +1938,27 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		else
 			dlim=120;
 		/* if the street is really straight, the others might be closer to straight */
-		if (abs(d) < 20)
+		if (abs(m.delta) < 20)
 			dlim/=2;
 		/* if both old and new way have a category of 0, or if both ways and at least one other way are
 		 * in the same category and no other ways are higher,
 		 * dlim is 620/256 (roughly 2.5) times the delta of the maneuver */
 		if ((m.max_cat == m.new_cat && m.max_cat == m.old_cat) || (m.new_cat == 0 && m.old_cat == 0))
-			dlim=abs(d)*620/256;
+			dlim=abs(m.delta)*620/256;
 		/* if both old, new and highest other category differ by no more than 1,
 		 * dlim is just higher than the delta (so another way with a delta of exactly -d will be treated as ambiguous) */
 		else if (max(max(m.old_cat, m.new_cat), m.max_cat) - min(min(m.old_cat, m.new_cat), m.max_cat) <= 1)
-			dlim = abs(d) + 1;
+			dlim = abs(m.delta) + 1;
 		/* if both old and new way are in higher than highest encountered category,
 		 * dlim is 128/256 times (i.e. one half) the delta of the maneuver */
 		else if (m.max_cat < m.new_cat && m.max_cat < m.old_cat)
-			dlim=abs(d)*128/256;
+			dlim=abs(m.delta)*128/256;
 		/* if no other ways are within +/-dlim, the maneuver is unambiguous */
 		if (m.left < -dlim && m.right > dlim)
 			m.is_unambiguous=1;
 		/* if another way is within +/-curve_limit and on the same side as new, the maneuver is ambiguous */
-		if (dc != d) {
-			dbg(1,"d %d vs dc %d\n",d,dc);
+		if (dc != m.delta) {
+			dbg(1,"m.delta %d vs dc %d\n",m.delta,dc);
 			m.is_unambiguous=0;
 		}
 		if (!m.is_same_street && m.is_unambiguous < 1) { /* FIXME: why < 1? */
@@ -1968,7 +1967,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		} else
 			r="no: same street or unambiguous";
 #ifdef DEBUG
-		r=g_strdup_printf("%s: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", ret==1?"yes":"no", d, left, right, dlim, cat, ncat, maxcat, is_unambiguous, is_same_street);
+		r=g_strdup_printf("%s: d %d left %d right %d dlim=%d cat old:%d new:%d max:%d unambiguous=%d same_street=%d", ret==1?"yes":"no", m.delta, m.left, m.right, dlim, m.old_cat, m.new_cat, m.max_cat, m.is_unambiguous, m.is_same_street);
 #endif
 	}
 
@@ -2021,8 +2020,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		}
 	}
 
-	*delta=d;
-	dbg(lvl_debug,"reason %s, delta=%i\n",r,*delta);
+	dbg(lvl_debug,"reason %s, delta=%i\n",r,m.delta);
 
 	if (ret) {
 		*maneuver = g_new(struct navigation_maneuver, 1);
@@ -2126,16 +2124,15 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
  *
  * @param this_ The navigation object
  * @param itm The navigation item following the maneuver
- * @param delta The change in bearing at the maneuver
  * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}
  */
 static struct navigation_command *
-command_new(struct navigation *this_, struct navigation_itm *itm, int delta, struct navigation_maneuver *maneuver)
+command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
-	dbg(lvl_debug,"enter this_=%p itm=%p delta=%d\n", this_, itm, delta);
+	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
-	ret->delta=delta;
+	ret->delta=maneuver->delta;
 	ret->itm=itm;
 	/* if we're leaving a roundabout, calculate effective bearing change (between entry and exit) and set length */
 	if (itm && itm->prev && itm->way.next && itm->prev->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
@@ -2208,15 +2205,14 @@ static void
 make_maneuvers(struct navigation *this_, struct route *route)
 {
 	struct navigation_itm *itm, *last=NULL, *last_itm=NULL;
-	int delta;
 	struct navigation_maneuver *maneuver;
 	itm=this_->first;
 	this_->cmd_last=NULL;
 	this_->cmd_first=NULL;
 	while (itm) {
 		if (last) {
-			if (maneuver_required2(this_, last_itm, itm, &delta, &maneuver)) {
-				command_new(this_, itm, delta, maneuver);
+			if (maneuver_required2(this_, last_itm, itm, &maneuver)) {
+				command_new(this_, itm, maneuver);
 			}
 		} else
 			last=itm;
@@ -2225,7 +2221,7 @@ make_maneuvers(struct navigation *this_, struct route *route)
 	}
 	maneuver = g_new0(struct navigation_maneuver, 1);
 	maneuver->type = type_nav_destination;
-	command_new(this_, last_itm, 0, maneuver);
+	command_new(this_, last_itm, maneuver);
 }
 
 static int
@@ -3186,9 +3182,8 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 		case 8:
 			this_->debug_idx++;
 			if (prev) {
-				int delta=0;
 				char *reason=NULL;
-				maneuver_required2(this_->nav, prev, itm, &delta, &reason);
+				maneuver_required2(this_->nav, prev, itm, &reason);
 				this_->str=attr->u.str=g_strdup_printf("reason:%s",reason); //FIXME: we now have a struct
 				return 1;
 			}
