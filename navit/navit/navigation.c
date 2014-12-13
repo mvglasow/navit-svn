@@ -1839,9 +1839,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				}
 				/* if !is_way_allowed */
 			} /* if is_way_allowed || !is_way_allowed */
-			/*if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))*/
-			if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
-				/* FIXME: for some reason new->way has no flags set (at least in my test case), so we can't test for oneway */
+			if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
 				/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
 				through_segments++;
 			w = w->next;
