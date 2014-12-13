@@ -2696,7 +2696,11 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		if (level != -2) 
 		{
 			if (cmd->maneuver->type && cmd->maneuver->type == type_nav_straight)
-				ret=g_strdup_printf(_("Continue %1$s %2$s%3$s%4$s"), dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+				ret=g_strdup_printf(_("Continue straight %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+			else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_right)
+				ret=g_strdup_printf(_("Keep right %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+			else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_left)
+				ret=g_strdup_printf(_("Keep left %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 			else
 				/* TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street' */
 				ret=g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
@@ -2704,7 +2708,11 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		else
 		{
 			if (cmd->maneuver->type && cmd->maneuver->type == type_nav_straight)
-				ret=g_strdup_printf(_("then continue %1$s %2$s%3$s%4$s"), dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+				ret=g_strdup_printf(_("then continue straight %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+			else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_right)
+				ret=g_strdup_printf(_("Then keep right %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+			else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_left)
+				ret=g_strdup_printf(_("Then keep left %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 			else
 				/* TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination */
 				ret=g_strdup_printf(_("then turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
