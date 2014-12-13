@@ -102,7 +102,7 @@
 
 static int roundabout_extra_length=50;
 
-/* FIXME: abandon in favor of curve_limit once keep left/right maneuvers are fully implemented */
+/* FIXME: abandon in favor of min_turn_limit once keep left/right maneuvers are fully implemented */
 static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_straight
 								 * will be seen as going straight.
 								 *
@@ -116,8 +116,39 @@ static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_s
 								 *
 								 */
 
-/** Maneuvers whose absolute delta is less than this will be considered straight */
-static int curve_limit = 25;
+/** Minimum absolute delta for a turn.
+ * Maneuvers whose absolute delta is less than this will be considered straight */
+static int min_turn_limit = 25;
+
+/* FIXME: revisit these limits. IMHO (mvglasow):
+ *
+ * 0 degrees = perfect straight road
+ * 90 degrees = perfect turn
+ * 180 degrees = perfect U turn
+ *
+ * Then, by interpolation:
+ * 45 degrees = perfect "light turn"
+ * 135 degrees = perfect "sharp turn"
+ *
+ * This also agrees with the angles depicted in the maneuver icons.
+ *
+ * Thresholds should be roughly halfway between them.
+ * 25 degrees for min_turn_limit is probably OK (would be 22.5 by the above definition),
+ * but maybe the rest should be somewhat closer to 67.5-117.5-157.5 instead of 45-105-165.
+ */
+
+/** Minimum absolute delta for a turn of "normal" strength (which is always just announced as "turn left/right" even when strength is required).
+ * Maneuvers whose absolute delta is less than this will be announced as "turn easily left/right" when strength is required. */
+static int turn_2_limit = 45;
+
+/** Minimum absolute delta for a sharp turn.
+ * Maneuvers whose absolute delta is equal to or greater than this will be announced as "turn sharply left/right" when strength is required. */
+static int sharp_turn_limit = 105;
+
+/** Minimum absolute delta for a U turn.
+ * Maneuvers whose absolute delta is less than this (but at least {@code min_turn_limit}) will always be announced as turns.
+ * Note that, depending on other conditions, even maneuvers whose delta exceeds the threshold may still be announced as (sharp) turns. */
+static int u_turn_limit = 165;
 
 /* quick 'fixes it for me in dutch' see #1274
  * and has a medium to low priority,
@@ -1708,7 +1739,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	int ret=0;
 	int dw; /* temporary bearing difference between old and w (way being examined) */
 	int dlim; /* if no other ways are within +/- dlim, the maneuver is unambiguous */
-	int dc; /* if new and another way are within +/-curve_limit and on the same side, bearing difference for the other way; else d */
+	int dc; /* if new and another way are within +/-min_turn_limit and on the same side, bearing difference for the other way; else d */
 	char *r=NULL; /* human-legible reason for announcing or not announcing the maneuver */
 	struct navigation_way *w; /* temporary way to examine */
 	int wcat;
@@ -1806,10 +1837,10 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					 * (multiple near-straight roads), remove dc and the delta hack further down, and set
 					 * m.is_unambiguous instead */
 					if (dw < 0) {
-						if (dw > -curve_limit && m.delta < 0 && m.delta > -curve_limit)
+						if (dw > -min_turn_limit && m.delta < 0 && m.delta > -min_turn_limit)
 							dc=dw;
 					} else {
-						if (dw < curve_limit && m.delta > 0 && m.delta < curve_limit)
+						if (dw < min_turn_limit && m.delta > 0 && m.delta < min_turn_limit)
 							dc=dw;
 					}
 					wcat=maneuver_category(w->item.type);
@@ -1846,9 +1877,9 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			w = w->next;
 		}
 		if (m.num_options <= 1) {
-			if ((abs(m.delta) >= curve_limit) && (through_segments == 2)) {
+			if ((abs(m.delta) >= min_turn_limit) && (through_segments == 2)) {
 				/* FIXME: maybe there are cases with more than 2 through_segments...? */
-				/* If we have to make a considerable turn (curve_limit or more),
+				/* If we have to make a considerable turn (min_turn_limit or more),
 				 * check whether we are approaching a complex T junction from the "stem"
 				 * (which would need an announcement).
 				 * Complex means that the through road is a dual-carriageway road.
@@ -1881,15 +1912,15 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		/* always make an announcement if you have to make a sharp turn */
 		r="yes: delta over 75";
 		ret=1;
-	} else if (!r && abs(m.delta) >= curve_limit) {
+	} else if (!r && abs(m.delta) >= min_turn_limit) {
 		if ((m.new_cat >= maneuver_category(type_street_2_city)) && (m.num_similar_ways > 1)) {
 			/* When coming from street_2_* or higher category road, check if
 			 * - we have multiple options of the same category and
-			 * - we have to make a considerable turn (at least curve_limit)
+			 * - we have to make a considerable turn (at least min_turn_limit)
 			 * If both is the case, ANNOUNCE.
 			 */
 			ret=1;
-			r="yes: more than one similar road and delta >= curve_limit";
+			r="yes: more than one similar road and delta >= min_turn_limit";
 		}
 	}
 	if ((!r) && (m.num_options <= 1))
@@ -1913,13 +1944,13 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			/* TODO: tell motorway interchanges from exits */
 			/* m.merge_or_exit = mex_interchange; */
 			ret=1;
-		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(m.delta) >= curve_limit)) && ((m.left > -90) || (m.right < 90))) {
+		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(m.delta) >= min_turn_limit)) && ((m.left > -90) || (m.right < 90))) {
 			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
 			 * When the new way is a ramp, we check for the following criteria:
 			 * - All available ways are either motorway-like or ramps.
 			 *   This prevents this rule from firing in non-motorway settings, which is needed to avoid
 			 *   superfluous maneuvers when the minor road of a complex T junction is a ramp.
-			 * - If the above is not met, the maneuver must involve a turn (curve_limit or more) to enter the ramp.
+			 * - If the above is not met, the maneuver must involve a turn (min_turn_limit or more) to enter the ramp.
 			 * - Additionally, there must be one way (other than the new way) within +/-90°.
 			 *   This prevents the rule from essentially announcing "don't do the U turn" where the ramps for
 			 *   two opposite directions merge.
@@ -1955,7 +1986,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		/* if no other ways are within +/-dlim, the maneuver is unambiguous */
 		if (m.left < -dlim && m.right > dlim)
 			m.is_unambiguous=1;
-		/* if another way is within +/-curve_limit and on the same side as new, the maneuver is ambiguous */
+		/* if another way is within +/-min_turn_limit and on the same side as new, the maneuver is ambiguous */
 		if (dc != m.delta) {
 			dbg(1,"m.delta %d vs dc %d\n",m.delta,dc);
 			m.is_unambiguous=0;
@@ -2123,69 +2154,152 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
  *
  * @param this_ The navigation object
  * @param itm The navigation item following the maneuver
- * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}
+ * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}. For the destination,
+ * initialize a zeroed-out {@code struct navigation_maneuver} and set its {@code type} member to {@code type_nav_destination}
+ * prior to calling this function.
  */
 static struct navigation_command *
 command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
+	enum item_type r = type_none, l = type_none;
+
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
 	ret->delta=maneuver->delta;
 	ret->itm=itm;
-	/* if we're leaving a roundabout, calculate effective bearing change (between entry and exit) and set length */
-	if (itm && itm->prev && itm->way.next && itm->prev->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
-		int len=0;
-		int angle=0;
-		int entry_angle;
-		struct navigation_itm *itm2=itm->prev;
-		int exit_angle=angle_median(itm->prev->angle_end, itm->way.next->angle2);
-		dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, itm->way.next->angle2);
-		while (itm2 && (itm2->way.flags & AF_ROUNDABOUT)) {
-			len+=itm2->length;
-			angle=itm2->angle_end;
-			itm2=itm2->prev;
-		}
-		if (itm2 && itm2->next && itm2->next->way.next) {
-			itm2=itm2->next;
-			entry_angle=angle_median(angle_opposite(itm2->way.angle2), itm2->way.next->angle2);
-			dbg(lvl_debug,"entry %d median from %d(%d),%d\n", entry_angle,angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
-		} else {
-			entry_angle=angle_opposite(angle);
-		}
-		dbg(lvl_debug,"entry %d exit %d\n", entry_angle, exit_angle);
-		ret->roundabout_delta=angle_delta(entry_angle, exit_angle);
-		ret->length=len+roundabout_extra_length;
 
-		/* TODO: set ret->maneuver->type to
-			nav_roundabout_{r|l}{1..8}
+	/* Possible maneuver types:
+	 * nav_none                    (default, change wherever we encounter it – unless the maneuver is a merge, which has only merge_or_exit)
+	 * nav_straight                (set below)
+	 * nav_keep_{left|right}       (set below)
+	 * nav_{right|left}_{1..3}     (set below)
+	 * nav_turnaround              (TODO: when we have a U turn without known direction? Needs full implementation!)
+	 * nav_turnaround_{left|right} (set below)
+	 * nav_roundabout_{r|l}{1..8}  (set below, special handling)
+	 * nav_exit_{left|right}       (do not set here)
+	 * nav_merge_{left|right}      (do not set here)
+	 * nav_destination             (if this is set, leave it)
+	 * nav_position                (do not set here)
+	 */
+
+	if (ret->maneuver->type != type_nav_destination) {
+		/* if we're leaving a roundabout, special handling is needed:
+		 * - calculate effective bearing change (between entry and exit),
+		 * - set length,
+		 * - set ret->maneuver->type to nav_roundabout_{r|l}{1..8}
 		 */
-	} else {
-		/* set ret->maneuver->type */
-		/* possible maneuver types:
-			nav_merge_{left|right}      (do not set here)
-			nav_turnaround
-			nav_turnaround_{left|right}
-			nav_exit_{left|right}       (do not set here)
-			nav_keep_{left|right}
-			nav_straight
-			nav_{right|left}_{1..3}
-			nav_none                    (default)
-			nav_position
-			nav_destination
-		 */
-		if (abs(ret->delta) < curve_limit) {
-			/* if the route goes straight:
-			 * if there's another straight way on one side of the route (not both - the expression below is a logical XOR),
-			 * the maneuver is "keep left" or "keep right",
-			 * else it is "go straight" */
-			if (!(ret->maneuver->left > -curve_limit) != !(ret->maneuver->right < curve_limit)) {
-				if (ret->maneuver->left > -curve_limit)
-					ret->maneuver->type = type_nav_keep_right;
+		if (itm && itm->prev && itm->way.next && itm->prev->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
+			int len=0;
+			int angle=0;
+			int entry_angle;
+			struct navigation_itm *itm2=itm->prev;
+			int exit_angle=angle_median(itm->prev->angle_end, itm->way.next->angle2);
+			dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, itm->way.next->angle2);
+			while (itm2 && (itm2->way.flags & AF_ROUNDABOUT)) {
+				len+=itm2->length;
+				angle=itm2->angle_end;
+				itm2=itm2->prev;
+			}
+			if (itm2 && itm2->next && itm2->next->way.next) {
+				itm2=itm2->next;
+				entry_angle=angle_median(angle_opposite(itm2->way.angle2), itm2->way.next->angle2);
+				dbg(lvl_debug,"entry %d median from %d(%d),%d\n", entry_angle,angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
+			} else {
+				entry_angle=angle_opposite(angle);
+			}
+			dbg(lvl_debug,"entry %d exit %d\n", entry_angle, exit_angle);
+			ret->roundabout_delta=angle_delta(entry_angle, exit_angle);
+			ret->length=len+roundabout_extra_length;
+
+			/* set ret->maneuver->type */
+
+			/* (jandegr on original navigation_map_get_item code, which was reused here):
+			 * code suggests it picks the correct icon, but fails to in many cases */
+
+			switch (((180 + 22) - ret->roundabout_delta) / 45) {
+			case 0:
+			case 1:
+				r = type_nav_roundabout_r1;
+				l = type_nav_roundabout_l7;
+				break;
+			case 2:
+				r = type_nav_roundabout_r2;
+				l = type_nav_roundabout_l6;
+				break;
+			case 3:
+				r = type_nav_roundabout_r3;
+				l = type_nav_roundabout_l5;
+				break;
+			case 4:
+				r = type_nav_roundabout_r4;
+				l = type_nav_roundabout_l4;
+				break;
+			case 5:
+				r = type_nav_roundabout_r5;
+				l = type_nav_roundabout_l3;
+				break;
+			case 6:
+				r = type_nav_roundabout_r6;
+				l = type_nav_roundabout_l2;
+				break;
+			case 7:
+				r = type_nav_roundabout_r7;
+				l = type_nav_roundabout_l1;
+				break;
+			case 8:
+				r = type_nav_roundabout_r8;
+				l = type_nav_roundabout_l8;
+				break;
+			}
+			dbg(lvl_debug,"delta %d\n", ret->delta);
+			if (ret->delta < 0)
+				ret->maneuver->type = l;
+			else
+				ret->maneuver->type = r;
+
+			/* if leaving roundabout */
+		} else {
+			/* set ret->maneuver->type */
+			if (ret->delta >= min_turn_limit) {
+				/* if the route turns right:
+				 * examine delta to determine strength of turn */
+				if (ret->delta < angle_straight )
+					ret->maneuver->type = type_nav_straight;
+				else if (ret->delta < turn_2_limit)
+					ret->maneuver->type = type_nav_right_1;
+				else if (ret->delta < sharp_turn_limit)
+					ret->maneuver->type = type_nav_right_2;
+				else if (ret->delta < u_turn_limit)
+					ret->maneuver->type = type_nav_right_3;
 				else
-					ret->maneuver->type = type_nav_keep_left;
-			} else
-				ret->maneuver->type = type_nav_straight;
+					/* TODO: refine turnaround detection, fall back to type_nav_right_3 */
+					ret->maneuver->type=type_nav_turnaround_right;
+			} else if (ret->delta <= -min_turn_limit) {
+				/* if the route turns left:
+				 * examine delta to determine strength of turn */
+				if (-ret->delta < turn_2_limit)
+					ret->maneuver->type = type_nav_left_1;
+				else if (-ret->delta < sharp_turn_limit)
+					ret->maneuver->type = type_nav_left_2;
+				else if (-ret->delta < u_turn_limit)
+					ret->maneuver->type = type_nav_left_3;
+				else
+					/* TODO: refine turnaround detection, fall back to type_nav_left_3 */
+					ret->maneuver->type=type_nav_turnaround_left;
+			} else {
+				/* if the route goes straight:
+				 * if there's another straight way on one side of the route (not both - the expression below is a logical XOR),
+				 * the maneuver is "keep left" or "keep right",
+				 * else it is "go straight" */
+				if (!(ret->maneuver->left > -min_turn_limit) != !(ret->maneuver->right < min_turn_limit)) {
+					if (ret->maneuver->left > -min_turn_limit)
+						ret->maneuver->type = type_nav_keep_right;
+					else
+						ret->maneuver->type = type_nav_keep_left;
+				} else
+					ret->maneuver->type = type_nav_straight;
+			} /* endif ret->delta */
 		}
 	}
 
@@ -3269,10 +3383,14 @@ navigation_map_rect_destroy(struct map_rect_priv *priv)
  * This function returns an item from a map rectangle on the navigation map and advances the item pointer,
  * so that at the next call the next item will be returned.
  *
- * Earlier builds of Navit would rely on this function to determine the type of maneuver. Transition to
- * a new logic, in which the maneuver type is set upon creating the navigation maneuver and queried, is
- * currently underway. Currently, this function will check {@code maneuver->type} and {@code maneuver->merge_or_exit}
- * and, if one of them is set, use the new logic, otherwise the old logic will be used.
+ * The {@code type} member of the result, which indicates the type of maneuver, is generally copied over from
+ * {@code maneuver->type}, though some exceptions apply: The first item in the map will have a type of
+ * {@code nav_position} and the last one will have a type of {@code nav_destination}.
+ * If {@code maneuver->merge_or_exit} indicates a merge or exit, the result will be of the corresponding
+ * merge or exit type.
+ *
+ * Earlier versions of Navit had the entire logic for setting te maneuver type in this function, but this has
+ * been moved to {@code command_new()} so that other functions can use the same results.
  *
  * @param priv The {@code struct map_rect_priv} of the map rect on the navigation map from which an item
  * is to be retrieved.
@@ -3282,7 +3400,6 @@ navigation_map_rect_destroy(struct map_rect_priv *priv)
 static struct item *
 navigation_map_get_item(struct map_rect_priv *priv)
 {
-	//TODO: move maneuver detection code into maneuver_required2
 	struct item *ret=&priv->item;
 	int delta;
 	if (!priv->itm_next)
@@ -3303,7 +3420,7 @@ navigation_map_get_item(struct map_rect_priv *priv)
 		priv->cmd_itm_next=priv->cmd->itm;
 		priv->cmd_next=priv->cmd->next;
 		if (priv->cmd_itm_next && !priv->cmd_itm_next->next)
-			ret->type=type_nav_destination;
+			ret->type=type_nav_destination; /* FIXME: do we need to set that here? The generic case should catch that now... */
 		else if (priv->cmd->maneuver && ((priv->cmd->maneuver->type != type_nav_none) || (priv->cmd->maneuver->merge_or_exit & (mex_merge | mex_exit)))) {
 			/* if maneuver type or merge_or_exit is set, use these values */
 			/* FIXME: make decision to use merge_or_exit context-dependent */
@@ -3327,103 +3444,8 @@ navigation_map_get_item(struct map_rect_priv *priv)
 				 * which is to return the type field */
 				ret->type = priv->cmd->maneuver->type;
 			}
-		}
-		else { //TODO: else if (priv->cmd->maneuver) - once maneuver->type is populated
-			if (priv->itm && priv->itm->prev && !(priv->itm->way.flags & AF_ROUNDABOUT) && (priv->itm->prev->way.flags & AF_ROUNDABOUT)) {
-
-				/* code suggests it picks the correct icon, but fails to in many cases */
-
-				enum item_type r=type_none,l=type_none;
-				switch (((180+22)-priv->cmd->roundabout_delta)/45) {
-				case 0:
-				case 1:
-					r=type_nav_roundabout_r1;
-					l=type_nav_roundabout_l7;
-					break;
-				case 2:
-					r=type_nav_roundabout_r2;
-					l=type_nav_roundabout_l6;
-					break;
-				case 3:
-					r=type_nav_roundabout_r3;
-					l=type_nav_roundabout_l5;
-					break;
-				case 4:
-					r=type_nav_roundabout_r4;
-					l=type_nav_roundabout_l4;
-					break;
-				case 5:
-					r=type_nav_roundabout_r5;
-					l=type_nav_roundabout_l3;
-					break;
-				case 6:
-					r=type_nav_roundabout_r6;
-					l=type_nav_roundabout_l2;
-					break;
-				case 7:
-					r=type_nav_roundabout_r7;
-					l=type_nav_roundabout_l1;
-					break;
-				case 8:
-					r=type_nav_roundabout_r8;
-					l=type_nav_roundabout_l8;
-					break;
-				}
-				dbg(lvl_debug,"delta %d\n",priv->cmd->delta);
-				if (priv->cmd->delta < 0)
-					ret->type=l;
-				else
-					ret->type=r;
-			} else { /*TODO turn all these angles into constants with SPD for speech as well*/
-				delta=priv->cmd->delta;	
-				if (delta < -angle_straight) {
-					int absdelta=-delta;
-					if (absdelta < 45)
-						ret->type=type_nav_left_1;
-					else if (absdelta < 105)
-						ret->type=type_nav_left_2;
-					else if (absdelta < 165)
-						ret->type=type_nav_left_3;
-					else
-					 /*	ret->type=type_none; */
-						/* nice try but not good enough */
-						ret->type=type_nav_turnaround_left;
-				} else {
-					if (delta < angle_straight )
-						ret->type=type_nav_straight;
-					else if (delta < 45)
-						ret->type=type_nav_right_1;
-					else if (delta < 105)
-						ret->type=type_nav_right_2;
-					else if (delta < 165) 
-						ret->type=type_nav_right_3;
-					else
-					/*	ret->type=type_none; */
-						/* nice try but not good enough */
-						ret->type=type_nav_turnaround_right;
-				}
-			}
-			if (priv->cmd->maneuver) {
-				switch (priv->cmd->maneuver->merge_or_exit) {
-				case mex_merge_left:
-					ret->type=type_nav_merge_left;
-					break;
-				case mex_merge_right:
-					ret->type=type_nav_merge_right;
-					break;
-				case mex_exit_left:
-					ret->type=type_nav_exit_left;
-					break;
-				case mex_exit_right:
-					ret->type=type_nav_exit_right;
-					break;
-					/* exit or merge without a direction should never happen,
-					 * mex_intersection results in a regular instruction,
-					 * thus no default case is needed */
-				}
-			}
-		}
-	}
+		} /* else if priv->cmd->maneuver ... */
+	} /* if priv->cmd->itm == priv->itm */
 	navigation_map_item_coord_rewind(priv);
 	navigation_map_item_attr_rewind(priv);
 
