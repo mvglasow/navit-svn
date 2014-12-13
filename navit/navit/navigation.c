@@ -1262,7 +1262,8 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		 *
 		 * Most of the times it looks like if we have nat_ref then ref actually
 		 * holds int_ref, and if we have int_ref then ref actually holds nat_ref.
-		 * Did not come across one that had all three in use.
+		 * Unfortunatly I came across samples having all three in use, with ref 
+		 * being a duplicate of int_ref or nat_ref
 		 *
 		 * todo : combine these in a uniform way into way.name_systematic,
 		 * so we have something like (int_ref/nat_ref) in a consistant manner.
