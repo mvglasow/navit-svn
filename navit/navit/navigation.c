@@ -2693,12 +2693,21 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				street_destination_announce=g_strdup_printf(_(" towards %s"),street_destination);
 			g_free(street_destination);
 		}
-		if (level != -2) {
-			/* TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street' */
-			ret=g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
-		} else {
-			/* TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination */
-			ret=g_strdup_printf(_("then turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+		if (level != -2) 
+		{
+			if (cmd->maneuver->type && cmd->maneuver->type == type_nav_straight)
+				ret=g_strdup_printf(_("Continue %1$s %2$s%3$s%4$s"), dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+			else
+				/* TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street' */
+				ret=g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+		}
+		else
+		{
+			if (cmd->maneuver->type && cmd->maneuver->type == type_nav_straight)
+				ret=g_strdup_printf(_("then continue %1$s %2$s%3$s%4$s"), dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+			else
+				/* TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination */
+				ret=g_strdup_printf(_("then turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 		}
 		g_free(destination);
 	} else {
