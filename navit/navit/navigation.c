@@ -316,9 +316,8 @@ struct navigation_command {
 	struct navigation_command *next;       /**< next command in the list */
 	struct navigation_command *prev;       /**< previous command in the list */
 	int delta;                             /**< bearing change at maneuver */
-	int roundabout_delta;                  /**< if we are leaving a roundabout, effective bearing change (between entry and exit) */
-	int length;                            /* FIXME: length of the maneuver itself? Used for roundabout maneuvers */
-	//char * reason; //FIXME: replace this with struct navigation_maneuver
+	int roundabout_delta;                  /**< if we are leaving a roundabout, effective bearing change (between entry and exit) with some corrections applied */
+	int length;                            /**< if the maneuver is a roundabout, distance between entry and exit (plus penalty), else 0 */
 	struct navigation_maneuver *maneuver;  /**< Details on the maneuver to perform */
 };
 
@@ -2189,29 +2188,41 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 		 * - set length,
 		 * - set ret->maneuver->type to nav_roundabout_{r|l}{1..8}
 		 */
-		if (itm && itm->prev && itm->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
-			/* FIXME: why are we calculating angles for way.next? */
-			int len=0;
-			int angle=0;
-			int entry_angle;
-			struct navigation_itm *itm2=itm->prev;
-			int exit_angle=angle_median(itm->prev->angle_end, itm->way.next->angle2);
-			dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, itm->way.next->angle2);
-			while (itm2 && (itm2->way.flags & AF_ROUNDABOUT)) {
-				len+=itm2->length;
-				angle=itm2->angle_end;
-				itm2=itm2->prev;
-			}
-			if (itm2 && itm2->next && itm2->next->way.next) {
-				itm2=itm2->next;
-				entry_angle=angle_median(angle_opposite(itm2->way.angle2), itm2->way.next->angle2);
-				dbg(lvl_debug,"entry %d median from %d(%d),%d\n", entry_angle,angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
-			} else {
-				entry_angle=angle_opposite(angle);
-			}
-			dbg(lvl_debug,"entry %d exit %d\n", entry_angle, exit_angle);
-			ret->roundabout_delta=angle_delta(entry_angle, exit_angle);
-			ret->length=len+roundabout_extra_length;
+		if (itm && itm->prev && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
+			if (itm->way.next) {
+				/* Calculation of roundabout delta relies on itm->way.next.
+				 * This was introduced by martin-s aka cp15 in r2017 with a commit message of
+				 * "Fix:core:Improved angle calculation in roundabouts".
+				 * Earlier versions used the route itself, which presumably caused problems with
+				 * V-shaped approach roads at roundabouts distorting angles.
+				 *
+				 * When exiting a roundabout, itm->way.next should never be null, thus this
+				 * code will always be executed. Checking for the condition anyway ensures
+				 * that botched map data (roundabout ending with nowhere else to go) will not
+				 * cause a crash.
+				 */
+				int len=0;
+				int angle=0;
+				int entry_angle;
+				struct navigation_itm *itm2=itm->prev;
+				int exit_angle=angle_median(itm->prev->angle_end, itm->way.next->angle2);
+				dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, itm->way.next->angle2);
+				while (itm2 && (itm2->way.flags & AF_ROUNDABOUT)) {
+					len+=itm2->length;
+					angle=itm2->angle_end;
+					itm2=itm2->prev;
+				}
+				if (itm2 && itm2->next && itm2->next->way.next) {
+					itm2=itm2->next;
+					entry_angle=angle_median(angle_opposite(itm2->way.angle2), itm2->way.next->angle2);
+					dbg(lvl_debug,"entry %d median from %d(%d),%d\n", entry_angle,angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
+				} else {
+					entry_angle=angle_opposite(angle);
+				}
+				dbg(lvl_debug,"entry %d exit %d\n", entry_angle, exit_angle);
+				ret->roundabout_delta=angle_delta(entry_angle, exit_angle);
+				ret->length=len+roundabout_extra_length;
+			} /* if itm->way.next */
 
 			/* set ret->maneuver->type */
 
