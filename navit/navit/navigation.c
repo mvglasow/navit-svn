@@ -2189,7 +2189,8 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 		 * - set length,
 		 * - set ret->maneuver->type to nav_roundabout_{r|l}{1..8}
 		 */
-		if (itm && itm->prev && itm->way.next && itm->prev->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
+		if (itm && itm->prev && itm->way.next && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
+			/* FIXME: why are we calculating angles for way.next? */
 			int len=0;
 			int angle=0;
 			int entry_angle;
