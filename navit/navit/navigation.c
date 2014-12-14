@@ -340,6 +340,8 @@ struct navigation_way {
 	struct item item;				/**< The item of the way */
 	char *name;						/**< The street name ({@code street_name} attribute) */
 	char *name_systematic;			/**< The road number ({@code street_name_systematic} attribute, OSM: {@code ref}) */
+	char *exit_ref;					/**< Exit_ref if found on the first node of the way*/
+	char *exit_label;				/**< Exit_label if found on the first node of the way*/
 	struct street_destination *destination;				/**< The destination this way leads to (OSM: {@code destination}) */
 };
 
@@ -1171,6 +1173,8 @@ navigation_destroy_itms_cmds(struct navigation *this_, struct navigation_itm *en
 	
 		map_convert_free(itm->way.name);
 		map_convert_free(itm->way.name_systematic);
+		map_convert_free(itm->way.exit_ref);
+		map_convert_free(itm->way.exit_label);
 		map_convert_free(itm->way.destination);
 		navigation_itm_ways_clear(itm);
 		g_free(itm);
@@ -1358,12 +1362,12 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 						if (attr.type && attr.type == attr_label)
 						{
 							dbg(lvl_debug,"exit_label=%s\n",attr.u.str);
-							ret->way.name_systematic= map_convert_string(streetitem->map,attr.u.str);
+							ret->way.exit_label= map_convert_string(streetitem->map,attr.u.str);
 						}
 						if (attr.type == attr_ref)
 						{
 							dbg(lvl_debug,"exit_ref=%s\n",attr.u.str);
-							ret->way.name= map_convert_string(streetitem->map,attr.u.str);
+							ret->way.exit_ref= map_convert_string(streetitem->map,attr.u.str);
 						}
 						if (attr.type == attr_exit_to)
 						{
@@ -2688,11 +2692,11 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 		switch (level) {
 			case 2:
-				return g_strdup_printf(_("%1$s %2$s soon %3$s"),instruction,cmd->itm->way.name,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic);
+				return g_strdup_printf(_("%1$s %2$s soon %3$s"),instruction,cmd->itm->way.exit_ref,street_destination_announce ? street_destination_announce : cmd->itm->way.exit_label);
 			case 1:
 				{
 					d=get_distance(nav, distance, attr_navigation_short, 0);
-					return g_strdup_printf(_("%1$s %2$s %3$s %4$s"),d,instruction,cmd->itm->way.name,street_destination_announce ? street_destination_announce : cmd->itm->way.name_systematic);
+					return g_strdup_printf(_("%1$s %2$s %3$s %4$s"),d,instruction,cmd->itm->way.exit_ref,street_destination_announce ? street_destination_announce : cmd->itm->way.exit_label);
 				}
 			case -2:
 				return g_strdup_printf(_("then %1$s"), instruction);
