@@ -600,7 +600,6 @@ navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *
 	case attr_navigation_speech:
 	case attr_street_name:
 	case attr_street_name_systematic:
-	case attr_street_name_systematic_nat:
 	case attr_street_destination:
 
 		mr=map_rect_new(this_->map, NULL);
@@ -1048,8 +1047,6 @@ navigation_itm_ways_clear(struct navigation_itm *itm)
 		n = c->next;
 		map_convert_free(c->name);
 		map_convert_free(c->name_systematic);
-		map_convert_free(c->destination);
-
 		g_free(c);
 		c = n;
 	}
@@ -1175,7 +1172,7 @@ navigation_destroy_itms_cmds(struct navigation *this_, struct navigation_itm *en
 		map_convert_free(itm->way.name_systematic);
 		map_convert_free(itm->way.exit_ref);
 		map_convert_free(itm->way.exit_label);
-		map_convert_free(itm->way.destination);
+		free_list(itm->way.destination);
 		navigation_itm_ways_clear(itm);
 		g_free(itm);
 	}
@@ -3374,7 +3371,7 @@ static struct item *
 navigation_map_get_item(struct map_rect_priv *priv)
 {
 	struct item *ret=&priv->item;
-	int delta;
+/*	int delta; jandegr: not used in current version, uncomment whenever needed */
 	if (!priv->itm_next)
 		return NULL;
 	priv->itm=priv->itm_next;
