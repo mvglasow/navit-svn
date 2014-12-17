@@ -1210,9 +1210,9 @@ navigation_itm_update(struct navigation_itm *itm, struct item *ritem)
 	itm->speed=speed.u.num;
 }
 
+
+
 /*@brief
- *
- *
  *
  * routeitem has an attr. streetitem, but that is only and id and a map,
  * allowing to fetch the actual streetitem, that will live under the same name.
@@ -1223,7 +1223,6 @@ navigation_itm_update(struct navigation_itm *itm, struct item *ritem)
  * (medium priority, has no functional effect)
  *
  *
- * navigation_itm_new() holds the bulk of the changes of high_five
  *
  *
  */
@@ -1239,7 +1238,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 	struct attr street_item,direction,route_attr;
 	struct map_rect *mr;
 	struct attr attr;
-	struct coord c[256];		/* however the OSM maximum is 2000 nodes, how does maptool handle this ? */
+	struct coord c[5];
 	struct coord exitcoord;
 
 	if (routeitem) {
@@ -1260,7 +1259,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		ret->way.item=*streetitem;
 		item_hash_insert(this_->hash, streetitem, ret);
 
-		mr=map_rect_new(streetitem->map, NULL);  /* huge map but ok for get_item_byid */
+		mr=map_rect_new(streetitem->map, NULL);  
 
 		struct map *tmap = streetitem->map;  /*find better name for backup pointer to map*/
 
@@ -1276,32 +1275,8 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		if (item_attr_get(streetitem, attr_street_name, &attr))
 			ret->way.name=map_convert_string(streetitem->map,attr.u.str);
 
-		/* for highways OSM ref, nat_ref and int_ref can get a bit fuzzy.
-		 *
-		 * Most of the times it looks like if we have nat_ref then ref actually
-		 * holds int_ref, and if we have int_ref then ref actually holds nat_ref.
-		 * Unfortunatly I came across samples having all three in use, with ref 
-		 * being a duplicate of int_ref or nat_ref
-		 *
-		 * todo : combine these in a uniform way into way.name_systematic,
-		 * so we have something like (int_ref/nat_ref) in a consistant manner.
-		 * now there is some randomness, caused by the OSM data
-		 *
-		 * (medium or lower priority)
-		 *
-		 */
-
-
 		if (item_attr_get(streetitem, attr_street_name_systematic, &attr))
 			ret->way.name_systematic=map_convert_string(streetitem->map,attr.u.str);
-
-
-		/* handle later, see todo above.
-		*if (item_attr_get(streetitem, attr_street_name_systematic_nat, &attr)){
-		*			ret->way.name2_nat=map_convert_string(streetitem->map,attr.u.str);
-		*
-		*	}
-		*/
 
 		if (item_attr_get(streetitem, attr_street_destination, &attr)){
 			char *destination_raw;
@@ -1313,10 +1288,19 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		
 		navigation_itm_update(ret, routeitem);
 
-		item_coord_rewind(routeitem);
-		i= item_coord_get(routeitem, &c[0], 256);
-		if (i>255)
-			dbg(lvl_error,"streetitem has probably more than 256 coordinates\n") ; /*will probably never happen*/
+
+		while (item_coord_get(routeitem, &c[i], 1))
+		{
+			dbg(lvl_debug, "coord %d 0x%x 0x%x\n", i, c[i].x ,c[i].y);
+			if (i < 4)
+				i++;
+			else
+			{
+				c[2]=c[3];
+				c[3]=c[4];
+			}
+		}
+
 		i--;
 		if (i>=1)
 		{
@@ -1352,7 +1336,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			map_rect_destroy(mr);					/* is this usefull ? */
 			mr = map_rect_new	(tmap, &mselexit);
 
-			while (rampitem=map_rect_get_item(mr))
+			while ((rampitem=map_rect_get_item(mr)))
 			{
 				if (rampitem->type == type_highway_exit && item_coord_get(rampitem, &exitcoord, 1)
 							&& exitcoord.x == c[0].x && exitcoord.y == c[0].y)
@@ -1393,7 +1377,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		item_attr_get(routeitem, attr_route, &route_attr);
 		graph_map = route_get_graph_map(route_attr.u.route);
 
-		dbg(lvl_debug,"i=%d start %d end %d '%s' '%s'\n", i, ret->way.angle2, ret->angle_end, ret->way.name_systematic);
+		dbg(lvl_debug,"i=%d start %d end %d '%s' \n", i, ret->way.angle2, ret->angle_end, ret->way.name_systematic);
 		map_rect_destroy(mr);
 	} else {
 		if (this_->last)
