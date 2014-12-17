@@ -704,7 +704,10 @@ navigation_get_announce_level(struct navigation *this_, enum item_type type, int
 	int i;
 
 	if (type < route_item_first || type > route_item_last)
+	{
+		dbg(lvl_error," item outside routable range\n");
 		return -1;
+	}
 	for (i = 0 ; i < 3 ; i++) {
 		if (dist <= this_->announce[type-route_item_first][i])
 			return i;
@@ -2344,7 +2347,7 @@ replace_suffix(char *name, char *search, char *replace)
 	return ret;
 }
 
-/* I pretty much neglected the speach side of it and focussed
+/* I pretty much neglected the speech side of it and focussed
  * entirely on OSD in the first stage
  *
  * robotaxi's code already has something for the speaking of the destination
@@ -2564,7 +2567,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			/* TRANSLATORS: Don't forget the ending space */
 			strength=_("really strongly ");
 		} else {
-			dbg(lvl_debug,"delta=%d\n", delta);
+			dbg(lvl_error,"strength unknown, delta=%d\n", delta);
 			/* TRANSLATORS: Don't forget the ending space */
 			strength=_("unknown ");
 		}
@@ -2616,17 +2619,16 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 	 */
 
 	if (cmd->maneuver) {  
-		//if (strcmp(cmd->reason,"merge")==0){
 		if (cmd->maneuver->merge_or_exit & mex_merge) {
 			switch (level) {
 			case 2:
 				return g_strdup(_("merge soon"));
 			case 1:
-				return g_strdup_printf(_("merge"));
+				return g_strdup(_("merge"));
 			case -2:
-				return g_strdup_printf(_("then merge"));
+				return g_strdup(_("then merge"));
 			case 0:
-				return g_strdup_printf(_("merge now")); /*probably useless*/
+				return g_strdup(_("merge now")); /*probably useless*/
 			}
 		}
 	}
@@ -2643,10 +2645,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 	{
 		if ((cmd->maneuver->merge_or_exit & mex_exit) ||  (cmd->maneuver->merge_or_exit & mex_interchange))
 		{
-		char *destination = NULL;
+/*		char *destination = NULL;   uncomment whenever used */
 		char *street_destination;
-		char *instruction;
-		destination=navigation_item_destination(nav, cmd->itm, itm, " ");
+		char *instruction = NULL;
+/*		destination=navigation_item_destination(nav, cmd->itm, itm, " "); */
 		street_destination=select_announced_destinations(cmd);
 		if (street_destination)
 			street_destination_announce=g_strdup_printf(_("towards %s"),street_destination);
@@ -2655,10 +2657,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		switch (cmd->maneuver->merge_or_exit)
 		{
 			case mex_exit_left:
-				instruction = g_strdup_printf("left exit");
+				instruction = g_strdup("left exit");
 					break;
 			case mex_exit_right:
-				instruction = g_strdup_printf("right exit");
+				instruction = g_strdup("right exit");
 					break;
 			case mex_interchange:
 				if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_left)
@@ -2731,8 +2733,11 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		}
 		break;
 	default:
-
-		d=g_strdup(_("error"));
+		{
+			dbg(lvl_error," unevaluated speech level\n");
+			/*do we really want to say ERROR to the user in speech ?*/
+			d=g_strdup(_("error"));
+		}
 	}
 	if (cmd->itm->next) {
 		int tellstreetname = 0;
