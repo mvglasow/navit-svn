@@ -135,13 +135,6 @@ static int sharp_turn_limit = 105;
 static int u_turn_limit = 165;
 
 /* quick 'fixes it for me in dutch' see #1274
- * and has a medium to low priority,
- * but try to use nice-names and more constants
- * right from the start and all-over the place.
- *
- * I also have a vague impression that mixed-case
- * is not always hanled well, low priority but I make a note
- * of it anyway.
  *
  */
 struct suffix {
@@ -159,7 +152,7 @@ struct suffix {
 
 	/* some for the dutch lang. */
 	{"straat",NULL,neutral},
-	{"weg",NULL,neutral},
+/*	{"weg",NULL,neutral}, doubles-up with German */
 	{"baan",NULL,neutral},
 	{"laan",NULL,neutral},
 	{"wegel",NULL,neutral},
@@ -2667,7 +2660,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					instruction = g_strdup_printf("keep left at the interchange");
 				else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_right)
 					instruction = g_strdup_printf("keep right at the interchange");
-				else
+				else /* still needs a solution for turn left-right */
 					instruction = g_strdup_printf("continue straight at the interchange");
 					break;
 		}
