@@ -1311,8 +1311,12 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		 *  from the map.
 		 *  exit_to holds info similar to attr_street_destination, and
 		 *  we place it in way.destination as well, unless the street_destination info
-		 *  is already present
+		 *  is already present. In the future it will have to be skipped if destiantion:lanes
+		 *  info exists as well.
 		 *
+		 *	Now it still holds a bug, if a ramp splits in 2, the exit_to info can end up on
+		 *	both continuations of the ramp. Maybe this can be solved by passing the struct
+		 *	navigation_maneuver up to here to help decide on exit_to.
 		 *
 		 */
 		if (streetitem->type == type_ramp )
