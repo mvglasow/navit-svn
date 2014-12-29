@@ -124,11 +124,11 @@ msgstr "In %d Metern"
 
 #, c-format
 msgid "%d.%d miles"
-msgstr "%d.%d Meilen"
+msgstr "%d,%d Meilen"
 
 #, c-format
 msgid "in %d.%d miles"
-msgstr "in %d.%d Meilen"
+msgstr "in %d,%d Meilen"
 
 #, c-format
 msgid "%d.%d kilometers"
@@ -193,6 +193,10 @@ msgstr "%sauf das %s%s%s"
 msgid "%sinto the %s"
 msgstr "%sauf die %s"
 
+#. TRANSLATORS: straight, as in 'Continue straight'
+msgid "straight"
+msgstr "geradeaus"
+
 #. TRANSLATORS: right, as in 'Turn right'
 msgid "right"
 msgstr "rechts"
@@ -200,6 +204,10 @@ msgstr "rechts"
 #. TRANSLATORS: left, as in 'Turn left'
 msgid "left"
 msgstr "links"
+
+#, TRANSLATORS: towards, as in 'towards London'; don't forget the beginning space
+msgid " towards %s"
+msgstr " Richtung %s"
 
 #. TRANSLATORS: Don't forget the ending space
 msgid "easily "
@@ -264,15 +272,93 @@ msgid "error"
 msgstr "Fehler"
 
 # c-format
-#. TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street'
-#, c-format
-msgid "Turn %1$s%2$s %3$s%4$s"
-msgstr "%3$s %1$s%2$s abbiegen%4$s"
+msgid "merge soon"
+msgstr "In Kürze auffahren"
 
-#. TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination
+# c-format
+msgid "merge"
+msgstr "auffahren"
+
+# c-format
+msgid "then merge"
+msgstr "dann auffahren"
+
+# c-format
+msgid "merge now"
+msgstr "Jetzt auffahren"
+
+
+#. TRANSLATORS: instruction
+msgid "left exit"
+msgstr "links abfahren"
+
+msgid "right exit"
+msgstr "rechts abfahren"
+
+
+msgid "keep left at the interchange"
+msgstr "links halten an der Kreuzung"
+
+
+msgid "keep right at the interchange"
+msgstr "rechts halten an der Kreuzung"
+
+
+msgid "continue straight at the interchange"
+msgstr "geradeaus fahren an der Kreuzung"
+
+
+# c-format
+#. TRANSLATORS: 1.: instruction, e.g. 'keep left/right', 2. name of exit, e.g. 'exit no. 7 Heathrow West', 3.: destination sign, e.g. next town
+msgid "%1$s %2$s soon %3$s"
+msgstr "In Kürze %1$s %2$s %3$s"
+#. TRANSLATORS: 1.: distance, 2.: instruction, e.g. 'keep left/right', 3. name of exit, e.g. 'exit no. 7 Heathrow West', 4.: destination sign, e.g. next town
+msgid "%1$s %2$s %3$s %4$s"
+msgstr "%1$s %2$s %3$s %4$s"
+
+#. TRANSLATORS: instruction, e.g. 'keep left/right'
+msgid "then %1$s"
+msgstr "dann %1$s"
+
+msgid "%1$s now"
+msgstr "Jetzt %1$s"
+
+
+# c-format
+#. TRANSLATORS: 1.: distance, 2.: destination street name, 3.: destination sign, e.g. next town
+msgid "Continue straight %1$s%2$s%3$s"
+msgstr "%1$s geradeaus fahren %2$s%3$s"
+
+msgid "then continue straight %1$s%2$s%3$s"
+msgstr "dann %1$s geradeaus fahren %2$s%3$s"
+
+
+# c-format
+#. TRANSLATORS: 1.: distance, 2.: destination street name, 3.: destination sign, e.g. next town
+# todo unify left/right string
+msgid "Keep right %1$s%2$s%3$s"
+msgstr "%1$s rechts halten %2$s%3$s"
+
+msgid "then keep right %1$s%2$s%3$s"
+msgstr "dann %1$s rechts halten %2$s%3$s"
+
+msgid "Keep left %1$s%2$s%3$s"
+msgstr "%1$s links halten %2$s%3$s"
+
+msgid "then keep left %1$s%2$s%3$s"
+msgstr "dann %1$s links halten %2$s%3$s"
+
+
+# c-format
+#. TRANSLATORS: The first argument is strength, the second direction, the third distance, the fourth destination, the fifth destination sign. Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street' 'to London'
 #, c-format
-msgid "then turn %1$s%2$s %3$s%4$s"
-msgstr "dann %3$s %1$s%2$s abbiegen%4$s"
+msgid "Turn %1$s%2$s %3$s%4$s%5$s"
+msgstr "%3$s %1$s%2$s abbiegen%4$s%5$s"
+
+#. TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination street, fifth destination sign
+#, c-format
+msgid "then turn %1$s%2$s %3$s%4$s%5$s"
+msgstr "dann %3$s %1$s%2$s abbiegen%4$s%5$s"
 
 #, c-format
 msgid "You have reached your destination %s"
