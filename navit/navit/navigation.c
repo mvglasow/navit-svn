@@ -2648,24 +2648,24 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 /*		destination=navigation_item_destination(nav, cmd->itm, itm, " "); */
 		street_destination=select_announced_destinations(cmd);
 		if (street_destination)
-			street_destination_announce=g_strdup_printf(_("towards %s"),street_destination);
+			street_destination_announce=g_strdup_printf(_(" towards %s"),street_destination);
 		g_free(street_destination);
 
 		switch (cmd->maneuver->merge_or_exit)
 		{
 			case mex_exit_left:
-				instruction = g_strdup("left exit");
+				instruction = g_strdup_printf(_("left exit"));
 					break;
 			case mex_exit_right:
-				instruction = g_strdup("right exit");
+				instruction = g_strdup_printf(_("right exit"));
 					break;
 			case mex_interchange:
 				if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_left)
-					instruction = g_strdup_printf("keep left at the interchange");
+					instruction = g_strdup_printf(_("keep left at the interchange"));
 				else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_right)
-					instruction = g_strdup_printf("keep right at the interchange");
+					instruction = g_strdup_printf(_("keep right at the interchange"));
 				else /* still needs a solution for turn left-right */
-					instruction = g_strdup_printf("continue straight at the interchange");
+					instruction = g_strdup_printf(_("continue straight at the interchange"));
 					break;
 		}
 
@@ -2786,9 +2786,9 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			if (cmd->maneuver->type && cmd->maneuver->type == type_nav_straight)
 				ret=g_strdup_printf(_("then continue straight %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 			else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_right)
-				ret=g_strdup_printf(_("Then keep right %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+				ret=g_strdup_printf(_("then keep right %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 			else if (cmd->maneuver->type && cmd->maneuver->type == type_nav_keep_left)
-				ret=g_strdup_printf(_("Then keep left %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
+				ret=g_strdup_printf(_("then keep left %1$s%2$s%3$s"), d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
 			else
 				/* TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination */
 				ret=g_strdup_printf(_("then turn %1$s%2$s %3$s%4$s%5$s"), strength, dir, d, destination ? destination:"",street_destination_announce ? street_destination_announce:"");
