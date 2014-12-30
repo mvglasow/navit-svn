@@ -2003,11 +2003,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			if (ni && !route_leaves_motorway && is_motorway_like(&(ni->way), 0))
 				m.merge_or_exit = mex_interchange;
 			else
-				if (motorways_left)
+				if (motorways_left && (m.left > -90))
 					m.merge_or_exit = mex_exit_right;
-				else if (motorways_right)
+				else if (motorways_right && (m.right < 90))
 					m.merge_or_exit = mex_exit_left;
-				/* if there are no motorways on either side, this is not an exit
+				/* if there are no motorways within +/-90 degrees on either side, this is not an exit
 				 * (more likely the end of a motorway) */
 
 			if (m.merge_or_exit != mex_none) {
@@ -2018,14 +2018,12 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		}
 	}
 
-	dbg(lvl_debug,"reason %s, delta=%i\n",r,m.delta);
-
 	if (ret) {
 		*maneuver = g_new(struct navigation_maneuver, 1);
 		memcpy(*maneuver, &m, sizeof(struct navigation_maneuver));
 	}
 	if (r)
-		dbg(lvl_debug, "%s %s -> %s %s: %s\n", old->way.name_systematic, old->way.name, new->way.name_systematic, new->way.name, r);
+		dbg(lvl_debug, "%s %s -> %s %s: %s, delta=%i, merge_or_exit=%i\n", old->way.name_systematic, old->way.name, new->way.name_systematic, new->way.name, r, m.delta, m.merge_or_exit);
 	return ret;
 	
 
