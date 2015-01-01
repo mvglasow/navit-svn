@@ -2268,11 +2268,15 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					ret->maneuver->type=type_nav_turnaround_left;
 			} else {
 				/* if the route goes straight:
-				 * if there's another straight way on one side of the route (not both - the expression below is a logical XOR),
-				 * the maneuver is "keep left" or "keep right",
-				 * else it is "go straight" */
-				if (!(ret->maneuver->left > -min_turn_limit) != !(ret->maneuver->right < min_turn_limit)) {
-					if (ret->maneuver->left > -min_turn_limit)
+				 * If there's another way on one side of the route within 2 * min_turn_limit (not both - the expression below is a logical XOR),
+				 * the maneuver is "keep left" or "keep right", else it is "go straight".
+				 * Note that neighbors are not necessarily straight.
+				 * The boundary may need some tweaking, (2 * min_turn_limit) may not be ideal but it's a first shot which ensures that other straight ways
+				 * will always fulfill the neighbor criteria. */
+				int has_left_neighbor = (ret->maneuver->left - ret->delta > 2 * -min_turn_limit);
+				int has_right_neighbor = (ret->maneuver->right - ret->delta < 2 * min_turn_limit);
+				if (!(has_left_neighbor) != !(has_right_neighbor)) {
+					if (has_left_neighbor)
 						ret->maneuver->type = type_nav_keep_right;
 					else
 						ret->maneuver->type = type_nav_keep_left;
