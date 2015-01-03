@@ -2376,24 +2376,27 @@ static char *
 navigation_item_destination(struct navigation *nav, struct navigation_itm *itm, struct navigation_itm *next, char *prefix)
 {
 	char *ret=NULL,*name1,*sep,*name2;
-	char *name,*name_systematic;
+	char *name=NULL,*name_systematic=NULL;
 	int i,sex;
-	int vocabulary1=65535;
-	int vocabulary2=65535;
+	int vocabulary1=1;
+	int vocabulary2=1;
 	struct attr attr;
 
 	if (! prefix)
 		prefix="";
+        /* check the configuration of navit.xml */
 	if (nav->speech && speech_get_attr(nav->speech, attr_vocabulary_name, &attr, NULL))
-		vocabulary1=attr.u.num;
+		vocabulary1=attr.u.num; /* shall the street name be announced? */
 	if (nav->speech && speech_get_attr(nav->speech, attr_vocabulary_name_systematic, &attr, NULL))
-		vocabulary2=attr.u.num;
-	name=itm->way.name;
-	name_systematic=itm->way.name_systematic;
-	if (!vocabulary1)
-		name=NULL;
-	if (!vocabulary2)
-		name_systematic=NULL;
+		vocabulary2=attr.u.num; /* shall the systematic name be announced? */
+
+
+	/* On motorway links don't announce the name of the ramp as this is done by name_systematic and the street_destination. */
+	if (vocabulary1 && (itm->way.item.type != type_ramp))
+		name=itm->way.name;
+
+	if (vocabulary2)
+		name_systematic=itm->way.name_systematic;
 
 	/* Navit now knows the difference between an exit and a ramp towards ...
 	 * but if ramp is named it will probaly fail here
@@ -3232,7 +3235,7 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 		return 0;
 	case attr_street_name_systematic:
 		attr->u.str=itm->way.name_systematic;
-		this_->attr_next=attr_destination; 
+		this_->attr_next=attr_street_destination; 
 		if (attr->u.str){
 			return 1;}
 		return 0;
