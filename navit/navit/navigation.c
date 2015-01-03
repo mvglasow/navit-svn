@@ -2129,6 +2129,8 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
 	enum item_type r = type_none, l = type_none;
+	struct navigation_way *w;
+	int dtsir = 0; /* delta to stay in roundabout */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -2155,25 +2157,34 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 		 * - set length,
 		 * - set ret->maneuver->type to nav_roundabout_{r|l}{1..8}
 		 */
+		/* FIXME: this will not catch cases in which entry and exit share the same node and we just *touch* the roundabout */
 		if (itm && itm->prev && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
-			if (itm->way.next) {
-				/* Calculation of roundabout delta relies on itm->way.next.
-				 * This was introduced by martin-s aka cp15 in r2017 with a commit message of
-				 * "Fix:core:Improved angle calculation in roundabouts".
+			/* Find continuation of roundabout - don't simply use itm->way.next here, it will break
+			 * if a node in the roundabout is shared by more than one way */
+			w = itm->way.next;
+			while (w && !(w->flags & AF_ROUNDABOUT))
+				w = w->next;
+			if (w) {
+				/* Calculation of roundabout delta relies on the continuation of the roundabout.
 				 * Earlier versions used the route itself, which presumably caused problems with
 				 * V-shaped approach roads at roundabouts distorting angles.
+				 * This was changed by martin-s aka cp15 in r2017 with a commit message of
+				 * "Fix:core:Improved angle calculation in roundabouts".
+				 * Further improvements were added by mvglasow as part of Project HighFive.
 				 *
-				 * When exiting a roundabout, itm->way.next should never be null, thus this
+				 * When exiting a roundabout, w should never be null, thus this
 				 * code will always be executed. Checking for the condition anyway ensures
 				 * that botched map data (roundabout ending with nowhere else to go) will not
-				 * cause a crash.
+				 * cause a crash. For the same reason we're using dtsir with a default value of 0.
 				 */
 				int len=0;
 				int angle=0;
 				int entry_angle;
 				struct navigation_itm *itm2=itm->prev;
-				int exit_angle=angle_median(itm->prev->angle_end, itm->way.next->angle2);
-				dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, itm->way.next->angle2);
+				dtsir = angle_delta(itm->prev->angle_end, w->angle2);
+				dbg(lvl_debug,"delta to stay in roundabout %d\n", dtsir);
+				int exit_angle=angle_median(itm->prev->angle_end, w->angle2);
+				dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, w->angle2);
 				while (itm2 && (itm2->way.flags & AF_ROUNDABOUT)) {
 					len+=itm2->length;
 					angle=itm2->angle_end;
@@ -2181,6 +2192,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 				}
 				if (itm2 && itm2->next && itm2->next->way.next) {
 					itm2=itm2->next;
+					/* FIXME: don't simply use itm2->way.next for the same reasons as above */
 					entry_angle=angle_median(angle_opposite(itm2->way.angle2), itm2->way.next->angle2);
 					dbg(lvl_debug,"entry %d median from %d(%d),%d\n", entry_angle,angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
 				} else {
@@ -2189,12 +2201,15 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 				dbg(lvl_debug,"entry %d exit %d\n", entry_angle, exit_angle);
 				ret->roundabout_delta=angle_delta(entry_angle, exit_angle);
 				ret->length=len+roundabout_extra_length;
-			} /* if itm->way.next */
+			} /* if w */
 
 			/* set ret->maneuver->type */
 
 			/* (jandegr on original navigation_map_get_item code, which was reused here):
 			 * code suggests it picks the correct icon, but fails to in many cases */
+			/* mvglasow: this has to do with roundabout_delta, which is hard to determine
+			 * (we need a roundabout_delta that matches how the driver perceives it, even
+			 * at the expense of geometric correctness */
 
 			switch (((180 + 22) - ret->roundabout_delta) / 45) {
 			case 0:
@@ -2232,7 +2247,9 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 				break;
 			}
 			dbg(lvl_debug,"delta %d\n", ret->delta);
-			if (ret->delta < 0)
+			/* if delta to leave the roundabout (ret->delta) is less than delta to stay in roundabout (dtsir),
+			 * we're exiting to the left, so we're probably in a clockwise roundabout, and vice versa */
+			if (ret->delta < dtsir)
 				ret->maneuver->type = l;
 			else
 				ret->maneuver->type = r;
