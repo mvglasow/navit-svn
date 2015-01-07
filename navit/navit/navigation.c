@@ -2644,7 +2644,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					destination=navigation_item_destination(nav, cmd, itm, NULL);
 				if (!destination)
 					destination = g_strdup("");
-				if (level==-2 || level == 0 || level == 1)
+				if (level==-2 || level == 0)
 					skip_roads = count_possible_turns(nav,cmd->prev ? cmd->prev->itm : nav->first,cmd->itm,90);
 				if (skip_roads)
 				{
