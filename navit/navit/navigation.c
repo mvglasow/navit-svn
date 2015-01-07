@@ -157,16 +157,8 @@ struct suffix {
 	{"laan",NULL,neutral},
 	{"wegel",NULL,neutral},
 
-	/* some for the french lang. */
-	{"boulevard",NULL,male},
-	{"avenue",NULL,female},
-	{"chemin",NULL,neutral},
-	{"rue",NULL,female},
-
 	/* some for the english lang. */
 	{"street",NULL,male},
-/*	{"avenue",NULL,female}, doubles up with french, not sure what to do in such cases */
-/*	{"boulevard",NULL,male}, likewise doubles up*/
 	{"drive",NULL,male},
 
 };
