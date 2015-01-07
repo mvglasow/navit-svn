@@ -1654,6 +1654,15 @@ static int maneuver_category(enum item_type type)
  *
  * @return True if entry is permitted, false otherwise. If {@code nav->vehicleprofile} is null, true is returned.
  */
+ 
+ /* (jandegr) this gets called from within show_maneuver with mode=3 for roundabouts
+ * and with mode=4 from within count_possible_turns() for the use with
+ * 'take the manieTH road to the left/right'
+ * However over here mode is ignored, so the 'manieTH' road exludes unallowed oneway's,
+ * but IMHO it should count all drivable roads. For roundabouts it seems to be ok.
+ *
+ */
+ 
 static int
 is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode)
 {
