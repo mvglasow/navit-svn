@@ -36,7 +36,25 @@
  * (#519)
  *
  */
-
+ 
+/* KNOWN ISSUES
+ *
+ * a) In case of the following OSM anomaly :
+ * 		a road and a duplicate of it are perfectly on top of each other,
+ * 		almost completely invisible with the eye, with the exception that sometimes
+ * 		there are many more road labels (or road names) rendered.
+ * then Navit sees 2 possible roads ahead, and advises the driver to take the most
+ * left one by default (sounds a little like 'can not go straight' from before :) ),
+ * by means of a 'keep left' command.
+ * In case there are many nodes involved, this can lead to a big bunch of false
+ * commands in a row. Cases were observed where this was assumed to be the cause of
+ * false (or unwanted) turn commands as well.
+ *
+ * b) in navigation_itm_new() : If a ramp splits in 2, the exit and exit_to info ends up on
+ *	both continuations of the ramp, sometimes leading to wrong guidance
+ *
+ *
+ */
 
 /**
  * Navit, a modular navigation system.
