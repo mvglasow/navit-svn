@@ -2507,8 +2507,8 @@ if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_
 	return ret;
 }
 
-/* todo : reintroduce 'at the interchange' phrase
- * 		: rework the roundabout speech for destination info
+/*
+ * todo	: rework the roundabout speech for destination info
  *
  */
 static char *
@@ -2640,7 +2640,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 			}
 
-
+	if (cmd->maneuver->merge_or_exit == mex_none )
 		switch (cmd->maneuver->type)
 
 		{
@@ -2784,21 +2784,6 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				if (!skip_roads)
 					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("strongly ")),(_("left")),d,destination);
 				break;
-		/* Deal with whenever commands become available
-		*		temporary solution lower
-		*	case type_nav_merge_right :
-		*		instruction = g_strdup(_("merge right"));
-		*		break;
-		*	case type_nav_merge_left :
-		*		instruction = g_strdup(_("merge left"));
-		*		break;
-		*	case type_nav_exit_right :
-		*		instruction = g_strdup(_("right exit"));
-		*		break;
-		*	case type_nav_exit_left :
-		*		instruction = g_strdup(_("left exit"));
-		*		break;
-		*/
 			case  type_nav_turnaround_left:
 					instruction = g_strdup_printf(_("%1$s left turnaround"),d);
 				break;
@@ -2814,7 +2799,12 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				 * Even if there is no driving command to be announced, in some cases
 				 * there is an overhead roadsign in preparation of an upcoming road-split,
 				 * and then we can give usefull info to the driver.
+				 *
+				 *  UNTESTED !
+				 *
 				 */
+
+				instruction = g_strdup("follow ");
 				break;
 			case type_nav_destination:
 				/* the old code used to clear the route destination when this was the only
@@ -2831,9 +2821,9 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				dbg(lvl_error,"unhandled instruction\n");
 				break;
 		}
-	}
 
 
+	else{
 		switch (cmd->maneuver->merge_or_exit) {
 					case mex_merge_left:
 						if (tellstreetname)
@@ -2859,19 +2849,60 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						instruction = g_strdup_printf(_("%1$s right exit %2$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref :
 								cmd->itm->way.exit_label ? cmd->itm->way.exit_label :" ");
 						break;
-						/*	default:
-						 * exit or merge without a direction should never happen,
-						 * mex_intersection results in a regular instruction,
-						 * thus all these are handled by the default case,
-						 * which is to return the type field
-						 * ret->type = priv->cmd->maneuver->type;
- 	 	 	 	 	 	 * For maneuvres at an interchange, the phrase 'at the intherchange'
- 	 	 	 	 	 	 * is not added yet, in most cases the interchange is the only place where the
- 	 	 	 	 	 	 * maneuvre can be done.
- 	 	 	 	 	 	 */
+					case  type_nav_none:
+									/*An empty placeholder that we can use in the future for
+									 * some motorway commands that are now suppressed but we
+									 * can in some cases make it say here :
+									 * 'follow destination blabla' without any further driving instructions,
+									 * in cases where relevant destination info is available.
+									 * Even if there is no driving command to be announced, in some cases
+									 * there is an overhead roadsign in preparation of an upcoming road-split,
+									 * and then we can give usefull info to the driver.
+									 *
+									 * UNTESTED !
+									 *
+									 */
+						instruction = g_strdup("follow ");
+						break;
 					}
-	
 
+		if (!instruction){
+			char *at;
+
+			at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_(" the exit ")) : (_(" the interchange ")),
+					cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
+
+			switch (cmd->maneuver->type)
+			{
+					case type_nav_straight :
+						/*to be rearranged for the translations*/
+						instruction = g_strdup_printf(_("%1$s continue straight at%2$s"),d, at);
+						break;
+					case type_nav_keep_right :
+						/*to be rearranged for the translations*/
+						instruction = g_strdup_printf(_("%1$s keep right at%2$s"),d, at);
+						break;
+					case type_nav_keep_left :
+						/*to be rearragend for the translations*/
+						instruction = g_strdup_printf(_("%1$s keep left at%2$s"),d, at);
+						break;
+					default :
+						/* in case we end up here in the merge_or_exit situation, it can be either
+						 * a classic turn instruction or an illgeal and/or mortal instruction for
+						 * motorways.
+						 *
+						 * During early testing these are deliberatly not handled in the speech and
+						 * some info is provided
+						 *
+						 */
+						instruction = g_strdup_printf("%1$s %2$s %3$s",d,"unhandled mex instruction ",at);
+						dbg(lvl_error,"unhandled mex instruction\n");
+						break;
+			}
+			g_free(at);
+		}
+		}
+	}
 		switch (level) {
 
 				case 3:
