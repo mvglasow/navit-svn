@@ -2507,8 +2507,7 @@ if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_
 	return ret;
 }
 
-/*
- * todo	: rework the roundabout speech for destination info
+/* @brief creates turn by turn guidance sentences for the speech and for the route description
  *
  */
 static char *
@@ -2534,7 +2533,6 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		level = 1;
 
 
-
 	if (type != attr_navigation_long_exact)
 		distance=round_distance(distance);
 	if (type == attr_navigation_speech) {
@@ -2548,6 +2546,14 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		}
 		dbg(lvl_debug,"distance=%d level=%d type=0x%x\n", distance, level, itm->way.item.type);
 	}
+
+
+	street_destination=select_announced_destinations(cmd);
+				if (street_destination)
+					street_destination_announce=g_strdup_printf(_("towards %s"),street_destination);
+				else street_destination_announce=g_strdup("");
+					g_free(street_destination);
+
 
 	if (cmd->itm->prev->way.flags & AF_ROUNDABOUT) {
 		cur = cmd->itm->prev;
@@ -2568,23 +2574,17 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			g_free(d);
 			return ret;
 		case -2:
-			return g_strdup_printf(_("then leave the roundabout at the %s"), get_exit_count_str(count_roundabout));
+			return g_strdup_printf(_("then leave the roundabout at the %1$s %2$s"), get_exit_count_str(count_roundabout),street_destination_announce);
 		case 0:
-			return g_strdup_printf(_("Leave the roundabout at the %s"), get_exit_count_str(count_roundabout));
+			return g_strdup_printf(_("Leave the roundabout at the %1$s %2$s"), get_exit_count_str(count_roundabout),street_destination_announce);
 		}
 	}
 
-			street_destination=select_announced_destinations(cmd);
-			if (street_destination)
-				street_destination_announce=g_strdup_printf(_(" towards %s"),street_destination);
-			else street_destination_announce=g_strdup("");
-				g_free(street_destination);
 
-	if (cmd->maneuver	&& cmd->maneuver->type)
+
+	if (cmd->maneuver && cmd->maneuver->type)
 	{
-
 			if (cmd->itm->next) {
-
 
 						if(type == attr_navigation_speech) { /* In voice mode */
 							/* In Voice Mode only tell the street name in level 1 or in level 0 if level 1
@@ -2613,7 +2613,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			 * 3 = follow the road for the next ...
 			 * 2 = soon
 			 * 1 = in nnn (kilo)meter
-			 * 0 = now (or the %i street or after %i roads)
+			 * 0 = now (or the %ith street or after %i roads)
 			 * -2 = then (connected)
 			 *
 			 */
@@ -2785,10 +2785,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("strongly ")),(_("left")),d,destination);
 				break;
 			case  type_nav_turnaround_left:
-					instruction = g_strdup_printf(_("%1$s left turnaround"),d);
+				instruction = g_strdup_printf(_("%1$s left turnaround"),d);
 				break;
 			case  type_nav_turnaround_right:
-					instruction = g_strdup_printf(_("%1$s right turnaround"),d);
+				instruction = g_strdup_printf(_("%1$s right turnaround"),d);
 				break;
 			case  type_nav_none:
 				/*An empty placeholder that we can use in the future for
@@ -2811,6 +2811,8 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				 * instruction left. Was that usefull ?
 				 * Should be tested with the old code what happens if the driver
 				 * 'overshoots' the destination and the route destination is already cleared.
+				 * I suppose it will now keep guiding the user to destination untill another one
+				 * is set or a 'stop navigation' action is done using the gui.
 				 */
 				if (level == -2)
 					instruction=g_strdup(_("then you have reached your destination."));
@@ -2822,58 +2824,50 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				break;
 		}
 
+	else
+		{
+		switch (cmd->maneuver->merge_or_exit)
+			{
+				case mex_merge_left:
+					if (tellstreetname)
+						destination=navigation_item_destination(nav, cmd, itm, NULL);
+					else destination = g_strdup("");
+						g_free(instruction);
+					instruction = g_strdup_printf(_("%1$s merge left %2$s"),d,destination);
+					break;
+				case mex_merge_right:
+					if (tellstreetname)
+						destination=navigation_item_destination(nav, cmd, itm, NULL);
+					else destination = g_strdup("");
+						g_free(instruction);
+					instruction = g_strdup_printf(_("%1$s merge right %2$s"),d,destination);
+					break;
+				/* for mex_exit_left/right, exit_label is not announced in case there is
+				 * destination info following to avoid redundancy and not let the sentence
+				 * become too long
+				 */
+				case mex_exit_left:
+					g_free(instruction);
+					instruction = g_strdup_printf(_("%1$s left exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+							street_destination_announce ?
+									cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
+							break;
+				case mex_exit_right:
+					g_free(instruction);
+					instruction = g_strdup_printf(_("%1$s right exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+							street_destination_announce ?
+									cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" : "");
+					break;
+			}
 
-	else{
-		switch (cmd->maneuver->merge_or_exit) {
-					case mex_merge_left:
-						if (tellstreetname)
-							destination=navigation_item_destination(nav, cmd, itm, NULL);
-						else destination = g_strdup("");
-						g_free(instruction);
-						instruction = g_strdup_printf(_("%1$s merge left %2$s"),d,destination);
-						break;
-					case mex_merge_right:
-						if (tellstreetname)
-							destination=navigation_item_destination(nav, cmd, itm, NULL);
-						else destination = g_strdup("");
-						g_free(instruction);
-						instruction = g_strdup_printf(_("%1$s merge right %2$s"),d,destination);
-						break;
-					case mex_exit_left:
-						g_free(instruction);
-						instruction = g_strdup_printf(_("%1$s left exit %2$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref :
-								cmd->itm->way.exit_label ? cmd->itm->way.exit_label :" ");
-						break;
-					case mex_exit_right:
-						g_free(instruction);
-						instruction = g_strdup_printf(_("%1$s right exit %2$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref :
-								cmd->itm->way.exit_label ? cmd->itm->way.exit_label :" ");
-						break;
-					case  type_nav_none:
-									/*An empty placeholder that we can use in the future for
-									 * some motorway commands that are now suppressed but we
-									 * can in some cases make it say here :
-									 * 'follow destination blabla' without any further driving instructions,
-									 * in cases where relevant destination info is available.
-									 * Even if there is no driving command to be announced, in some cases
-									 * there is an overhead roadsign in preparation of an upcoming road-split,
-									 * and then we can give usefull info to the driver.
-									 *
-									 * UNTESTED !
-									 *
-									 */
-						instruction = g_strdup("follow ");
-						break;
-					}
-
-		if (!instruction){
-			char *at;
-
-			at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_(" the exit ")) : (_(" the interchange ")),
+			if (!instruction)
+			{
+				char *at;
+				at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_(" the exit ")) : (_(" the interchange ")),
 					cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
 
-			switch (cmd->maneuver->type)
-			{
+				switch (cmd->maneuver->type)
+				{
 					case type_nav_straight :
 						/*to be rearranged for the translations*/
 						instruction = g_strdup_printf(_("%1$s continue straight at%2$s"),d, at);
@@ -2888,55 +2882,56 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						break;
 					default :
 						/* in case we end up here in the merge_or_exit situation, it can be either
-						 * a classic turn instruction or an illgeal and/or mortal instruction for
-						 * motorways.
+						 * a classic turn instruction or an illegal and/or mortal instruction for
+						 * motorways. For street_n_lanes this criterion could be relaxed.
 						 *
-						 * During early testing these are deliberatly not handled in the speech and
+						 * During early testing these are deliberately not handled in the speech and
 						 * some info is provided
 						 *
 						 */
 						instruction = g_strdup_printf("%1$s %2$s %3$s",d,"unhandled mex instruction ",at);
 						dbg(lvl_error,"unhandled mex instruction\n");
 						break;
+				}
+				g_free(at);
 			}
-			g_free(at);
-		}
 		}
 	}
-		switch (level) {
+	switch (level)
+	{
 
-				case 3:
-					d=get_distance(nav, distance, type, 1);
-					ret=g_strdup_printf(_("Follow the road for the next %s"), d);
-					break;
-				case 2:
-					ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
-					break;
-				case 1:
-					ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
-					break;
-				case -2:
-					ret= g_strdup_printf(("%1$s %2$s"), instruction,street_destination_announce);
-					break;
-				case 0:
-					ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
-					break;
-				/*this must be where the old code used to say 'error' to the driver*/
-				default :
-				{
-					ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
-					dbg(lvl_error,"unevaluated speech level\n");
-					break;
-				}
-			}
+		case 3:
+			d=get_distance(nav, distance, type, 1);
+			ret=g_strdup_printf(_("Follow the road for the next %s"), d);
+			break;
+		case 2:
+			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			break;
+		case 1:
+			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			break;
+		case -2:
+			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			break;
+		case 0:
+			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			break;
+		/*this must be where the old code used to say 'error' to the driver*/
+		default :
+			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			dbg(lvl_error,"unevaluated speech level\n");
+			break;
 
-		g_free(d);
-		g_free(destination);
-		g_free(instruction);
-		g_free(street_destination_announce);
-		return ret;
+	}
+
+	g_free(d);
+	g_free(destination);
+	g_free(instruction);
+	g_free(street_destination_announce);
+	return ret;
 
 }
+
 
 /**
  * @brief Creates announcements for maneuvers, plus maneuvers immediately following the next maneuver
