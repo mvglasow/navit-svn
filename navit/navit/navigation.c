@@ -164,6 +164,7 @@ struct suffix {
 	{"weg",NULL,male},
 	{"platz","pl.",male},
 	{"ring",NULL,male},
+	{"bogen",NULL,male},
 	{"allee",NULL,female},
 	{"gasse",NULL,female},
 	{"straße","str.",female},
