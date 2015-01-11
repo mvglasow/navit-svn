@@ -2426,8 +2426,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						delta1 += 360;
 					}
 
-					/* FIXME: handle ret->delta == dtsir */
-					roundabout_length = len * 360 / (delta2 + (ret->delta > dtsir) ? -180 : +180);
+					roundabout_length = len * 360 / (delta2 + (ret->delta < dtsir) ? 180 : -180);
 
 					/* we assume approach roads to be no longer than half the roundabout length */
 					dist_left = roundabout_length / 2;
@@ -2475,13 +2474,6 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 			} /* if w */
 
 			/* set ret->maneuver->type */
-
-			/* (jandegr on original navigation_map_get_item code, which was reused here):
-			 * code suggests it picks the correct icon, but fails to in many cases */
-			/* mvglasow: this has to do with roundabout_delta, which is hard to determine
-			 * (we need a roundabout_delta that matches how the driver perceives it, even
-			 * at the expense of geometric correctness */
-
 			switch (((180 + 22) - ret->roundabout_delta) / 45) {
 			case 0:
 			case 1:
