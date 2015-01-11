@@ -1915,8 +1915,8 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 
 	dbg(lvl_debug,"enter %p %p %p\n",old, new, maneuver);
 /*	dbg(0,"old=%s %s, new=%s %s, angle old=%d, angle new=%d, d=%i\n ",old->way.name,old->way.name_systematic,new->way.name,new->way.name_systematic,old->angle_end, new->way.angle2,d); */
-	if (!new->way.next) {
-		/* No announcement necessary */
+	if (!new->way.next || (new->way.next && (new->way.next->angle2 == new->way.angle2) && !new->way.next->next)) {
+		/* No announcement necessary (with extra magic to eliminate duplicate ways) */
 		r="no: Only one possibility";
 	} else if (!new->way.next->next && new->way.next->item.type == type_ramp && !is_way_allowed(nav,new->way.next,1)) {
 		/* If the other way is only a ramp and it is one-way in the wrong direction, no announcement necessary */
@@ -1947,80 +1947,80 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		dc=m.delta;
 		/* Check whether the street keeps its name */
 		while (w) {
-			dw=angle_delta(old->angle_end, w->angle2);
-			if (is_way_allowed(nav,w,1)) {
-				m.num_options++;
-				/* ways of similar category */
-				if (maneuver_category(w->item.type) == m.old_cat) {
-					/* TODO: decide if a maneuver_category difference of 1 is still similar */
-					m.num_similar_ways++;
-				}
-				/* motorway-like ways */
-				if (is_motorway_like(w, 0)) {
-					m.num_new_motorways++;
-				} else if (!is_motorway_like(w, 1)) {
-					m.num_other_ways++;
-				}
-				if (w != &(new->way)) {
-					/* if we're exiting from a motorway, check which side of the ramp the motorway is on */
-					if (is_motorway_like(w, 0) && is_motorway_like(&(old->way), 0) && new->way.item.type == type_ramp) {
+			/* in case of overlapping ways, avoid counting the way on the route twice */
+			if ((w->angle2 != new->way.angle2) || (w == &(new->way))) {
+				dw=angle_delta(old->angle_end, w->angle2);
+				if (is_way_allowed(nav,w,1)) {
+					m.num_options++;
+					/* ways of similar category */
+					if (maneuver_category(w->item.type) == m.old_cat) {
+						/* TODO: decide if a maneuver_category difference of 1 is still similar */
+						m.num_similar_ways++;
+					}
+					/* motorway-like ways */
+					if (is_motorway_like(w, 0)) {
+						m.num_new_motorways++;
+					} else if (!is_motorway_like(w, 1)) {
+						m.num_other_ways++;
+					}
+					if (w != &(new->way)) {
+						/* if we're exiting from a motorway, check which side of the ramp the motorway is on */
+						if (is_motorway_like(w, 0) && is_motorway_like(&(old->way), 0) && new->way.item.type == type_ramp) {
 							if (dw < m.delta)
 								motorways_left++;
 							else
 								motorways_right++;
-					}
+						}
 
-					if (dw < m.delta) {
-						if (dw > m.left)
-							m.left=dw;
-					} else {
-						if (dw < m.right)
-							m.right=dw;
-					}
+						if (dw < m.delta) {
+							if (dw > m.left)
+								m.left=dw;
+						} else {
+							if (dw < m.right)
+								m.right=dw;
+						}
 
-					/* FIXME: once we have a better way of determining whether a turn instruction is ambiguous
-					 * (multiple near-straight roads), remove dc and the delta hack further down, and set
-					 * m.is_unambiguous instead */
-					if (dw < 0) {
-						if (dw > -min_turn_limit && m.delta < 0 && m.delta > -min_turn_limit)
-							dc=dw;
-					} else {
-						if (dw < min_turn_limit && m.delta > 0 && m.delta < min_turn_limit)
-							dc=dw;
+						if (dw < 0) {
+							if (dw > -min_turn_limit && m.delta < 0 && m.delta > -min_turn_limit)
+								dc=dw;
+						} else {
+							if (dw < min_turn_limit && m.delta > 0 && m.delta < min_turn_limit)
+								dc=dw;
+						}
+						wcat=maneuver_category(w->item.type);
+						/* If any other street has the same name, we can't use the same name criterion.
+						 * Exceptions apply if we're coming from a motorway-like road and:
+						 * - the other road is motorway-like (a motorway might split up temporarily) or
+						 * - the other road is a ramp or service road (they are sometimes tagged with the name of the motorway)
+						 * The second one is really a workaround for bad tagging practice in OSM. Since entering
+						 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
+						 * side effects.
+						 */
+						if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+							//if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || !is_motorway_like(w, 1)) && is_way_allowed(nav,w,2))
+							m.is_same_street=0;
+						/* Mark if the street has a higher or the same category */
+						if (wcat > m.max_cat)
+							m.max_cat=wcat;
+					} /* if w != new->way */
+					/* if is_way_allowed */
+				} else {
+					/* If we're merging onto a motorway, check which side of the ramp the motorway is on.
+					 * This requires examining the candidate ways which are NOT allowed. */
+					if (is_motorway_like(w, 0) && is_motorway_like(&(new->way), 0) && old->way.item.type == type_ramp) {
+						if (dw < 0)
+							motorways_left++;
+						else
+							motorways_right++;
 					}
-					wcat=maneuver_category(w->item.type);
-					/* If any other street has the same name, we can't use the same name criterion.
-					 * Exceptions apply if we're coming from a motorway-like road and:
-					 * - the other road is motorway-like (a motorway might split up temporarily) or
-					 * - the other road is a ramp or service road (they are sometimes tagged with the name of the motorway)
-					 * The second one is really a workaround for bad tagging practice in OSM. Since entering
-					 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
-					 * side effects.
-					 */
-					if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
-					//if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || !is_motorway_like(w, 1)) && is_way_allowed(nav,w,2))
-						m.is_same_street=0;
-					/* Mark if the street has a higher or the same category */
-					if (wcat > m.max_cat)
-						m.max_cat=wcat;
-				} /* if w != new->way */
-				/* if is_way_allowed */
-			} else {
-				/* If we're merging onto a motorway, check which side of the ramp the motorway is on.
-				 * This requires examining the candidate ways which are NOT allowed. */
-				if (is_motorway_like(w, 0) && is_motorway_like(&(new->way), 0) && old->way.item.type == type_ramp) {
-					if (dw < 0)
-						motorways_left++;
-					else
-						motorways_right++;
-				}
-				/* if !is_way_allowed */
-			} /* if is_way_allowed || !is_way_allowed */
-			if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
-				/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
-				through_segments++;
+					/* if !is_way_allowed */
+				} /* if is_way_allowed || !is_way_allowed */
+				if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+					/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
+					through_segments++;
+			} /* if w... */
 			w = w->next;
-		}
+		} /* while w */
 		if (m.num_options <= 1) {
 			if ((abs(m.delta) >= min_turn_limit) && (through_segments == 2)) {
 				/* FIXME: maybe there are cases with more than 2 through_segments...? */
