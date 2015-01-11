@@ -86,6 +86,9 @@
 
 static int roundabout_extra_length=50;
 
+/* TODO: find out if this is being used elsewhere and, if so, move this definition somewhere more generic */
+static int invalid_angle = 361;
+
 /* FIXME: abandon in favor of min_turn_limit once keep left/right maneuvers are fully implemented */
 static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_straight
 								 * will be seen as going straight.
@@ -726,6 +729,15 @@ navigation_get_announce_level_cmd(struct navigation *this_, struct navigation_it
 }
 
 /* 0=N,90=E */
+/**
+ * @brief Gets the bearing from one point to another
+ *
+ * @param c1 The first coordinate
+ * @param c2 The second coordinate
+ * @param dir The direction: if it is -1, the bearing from c2 to c1 is returned, else the bearing from c1 to c2
+ *
+ * @return The bearing in degrees, {@code 0 <= result < 360}.
+ */
 static int
 road_angle(struct coord *c1, struct coord *c2, int dir)
 {
@@ -937,7 +949,7 @@ navigation_way_init(struct navigation_way *w)
 	struct map_rect *mr;
 	struct attr attr;
 
-	w->angle2=361;
+	w->angle2 = invalid_angle;
 	mr = map_rect_new(w->item.map, NULL);
 	if (!mr)
 		return;
@@ -999,10 +1011,12 @@ navigation_way_init(struct navigation_way *w)
  * @brief Returns the bearing at the end of a way
  *
  * @param w The way to examine
+ *
+ * @return The bearing, {@code 0 <= bearing < 360}.
  */
 static int
 navigation_way_get_exit_angle(struct navigation_way *w) {
-	int ret = 361;
+	int ret = invalid_angle;
 	struct coord cbuf[2];
 	struct item *realitem;
 	struct coord c;
@@ -1051,6 +1065,88 @@ navigation_way_get_exit_angle(struct navigation_way *w) {
 
 	ret = road_angle(&cbuf[1],&cbuf[0],0);
 
+	return ret;
+}
+
+
+/**
+ * @brief Returns the bearing of a way at a given distance from its start
+ *
+ * {@code invalid_angle} will be returned if one of the following errors occurs:
+ * <ul>
+ * <li>The item is not found on the map</li>
+ * <li>The item is not of the correct type</li>
+ * <li>The item is shorter than {@code distance}</li>
+ * </ul>
+ *
+ * @param pro The projection used by the map
+ * @param w The way to examine
+ * @param dist The distance from the start of the way at which to determine bearing
+ *
+ * @return The bearing, {@code 0 <= bearing < 360}, or {@code invalid_angle} if an error occurred.
+ */
+static int
+navigation_way_get_angle_at(struct navigation_way *w, enum projection pro, double dist) {
+	double dist_left = dist; /* distance from last examined point */
+	int ret = invalid_angle;
+	struct coord cbuf[2];
+	struct item *realitem;
+	struct coord c;
+	struct map_rect *mr;
+
+	mr = map_rect_new(w->item.map, NULL);
+	if (!mr)
+		return ret;
+
+	realitem = map_rect_get_item_byid(mr, w->item.id_hi, w->item.id_lo);
+	if (!realitem) {
+		dbg(lvl_warning,"Item from segment not found on map!\n");
+		map_rect_destroy(mr);
+		return ret;
+	}
+
+	if (realitem->type < type_line || realitem->type >= type_area) {
+		map_rect_destroy(mr);
+		return ret;
+	}
+
+	if (item_coord_get(realitem, &cbuf[1], 1) != 1) {
+		dbg(lvl_warning,"item has no coords\n");
+		map_rect_destroy(mr);
+		return ret;
+	}
+
+	if (w->dir < 0) {
+		/* we're going against the direction of the item:
+		 * measure its total length and set distance_left to difference of total length and distance */
+		dist_left = 0;
+		while (item_coord_get(realitem, &c, 1)) {
+			cbuf[0] = cbuf[1];
+			cbuf[1] = c;
+			dist_left += transform_distance(pro, &cbuf[0], &cbuf[1]);
+		}
+
+		item_coord_rewind(realitem);
+
+		if (item_coord_get(realitem, &cbuf[1], 1) != 1) {
+			dbg(lvl_warning,"item has no more coords after rewind\n");
+			map_rect_destroy(mr);
+			return ret;
+		}
+	}
+
+	while (item_coord_get(realitem, &c, 1)) {
+		cbuf[0] = cbuf[1];
+		cbuf[1] = c;
+		dist_left -= transform_distance(pro, &cbuf[0], &cbuf[1]);
+		if (dist_left <= 0) {
+			ret = road_angle(&cbuf[0], &cbuf[1], w->dir);
+			map_rect_destroy(mr);
+			return ret;
+		}
+	}
+
+	map_rect_destroy(mr);
 	return ret;
 }
 
@@ -2193,14 +2289,17 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 
 	/* Only needed for roundabouts */
 	int len=0; /* length of roundabout segment */
+	int roundabout_length; /* estimated total length of roundabout */
 	int angle=0;
 	int entry_angle; /* angle at which we enter the roundabout, offset by 90 degrees */
 	int exit_angle; /* angle at which we leave the roundabout, offset by 90 degrees */
-	struct navigation_itm *itm2;
+	struct navigation_itm *itm2; /* items before itm to examine, up to first roundabout segment on route */
+	struct navigation_itm *itm3; /* items before itm2 and after itm to examine */
 	struct navigation_way *w; /* continuation of the roundabout after we leave it */
 	struct navigation_way *w2; /* segment of the roundabout leading to the point at which we enter it */
 	int dtsir = 0; /* delta to stay in roundabout */
 	int delta1, delta2, error1, error2; /* for roundabout delta calculated with different approaches, and error margin */
+	int dist_left; /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -2307,7 +2406,42 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						delta1 += 360;
 					}
 
-					error1 = error2; /* FIXME: calculate real error */
+					/* FIXME: handle ret->delta == dtsir */
+					roundabout_length = len * 360 / (delta2 + (ret->delta > dtsir) ? -180 : +180);
+
+					/* we assume approach roads to be no longer than half the roundabout length */
+					dist_left = roundabout_length / 2;
+
+					/* examine items before roundabout */
+					itm3 = itm2->prev;
+					while (itm3->prev && (itm3->way.flags & AF_ONEWAYMASK) && (dist_left >= itm3->length)) {
+						dist_left -= itm3->length;
+						itm3 = itm3->prev;
+					}
+					if (dist_left == 0) {
+						error1 = abs(itm3->angle_end - itm2->angle_end);
+					} else if (dist_left <= itm3->length) {
+						error1 = abs(navigation_way_get_angle_at(&(itm3->way), map_projection(this_->map), itm3->length - dist_left) - itm2->angle_end);
+					} else {
+						/* not enough objects in navigation map, use most distant one */
+						error1 = abs(itm3->way.angle2 - itm2->angle_end);
+					}
+
+					/* examine items after roundabout */
+					dist_left = roundabout_length / 2;
+					itm3 = itm;
+					while (itm3->next && (itm3->way.flags & AF_ONEWAYMASK) && (dist_left >= itm3->length)) {
+						dist_left -= itm3->length;
+						itm3 = itm3->next;
+					}
+					if (dist_left == 0) {
+						error1 = (error1 + abs(itm3->way.angle2 - itm->way.angle2)) / 2;
+					} else if (dist_left <= itm3->length) {
+						error1 = (error1 + abs(navigation_way_get_angle_at(&(itm3->way), map_projection(this_->map), dist_left) - itm->way.angle2)) / 2;
+					} else {
+						/* not enough objects in navigation map, use most distant one */
+						error1 = (error1 + abs(itm3->angle_end - itm->way.angle2)) / 2;
+					}
 
 					dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
 
