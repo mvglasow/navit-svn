@@ -2655,6 +2655,7 @@ if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_
 			||(cmd->maneuver->merge_or_exit==mex_merge_right) ))
 	{
 		if (name || name_systematic)
+		/* TRANSLATORS: %1$s is the name_systematic of the next road to merge onto, %2$s it's name*/
 		return g_strdup_printf(_("onto the %1$s %2$s"),name_systematic ? name_systematic : "",
 				name ? name : "");
 		else return g_strdup("");
@@ -2782,6 +2783,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 	street_destination=select_announced_destinations(cmd);
 				if (street_destination)
+					/* TRANSLATORS: the argument is the destination to follow */
 					street_destination_announce=g_strdup_printf(_("towards %s"),street_destination);
 				else street_destination_announce=g_strdup("");
 					g_free(street_destination);
@@ -2806,8 +2808,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			g_free(d);
 			return ret;
 		case -2:
+			/* TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow */
 			return g_strdup_printf(_("then leave the roundabout at the %1$s %2$s"), get_exit_count_str(count_roundabout),street_destination_announce);
 		case 0:
+			/* TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow */
 			return g_strdup_printf(_("Leave the roundabout at the %1$s %2$s"), get_exit_count_str(count_roundabout),street_destination_announce);
 		}
 	}
@@ -2878,15 +2882,15 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		{
 
 			case type_nav_straight :
-				/*to be rearranged for the translations*/
+				/* TRANSLATORS: the arg. is distance  */
 				instruction = g_strdup_printf(_("%1$s continue straight"),d);
 				break;
 			case type_nav_keep_right :
-				/*to be rearranged for the translations*/
+				/* TRANSLATORS: the arg. is distance  */
 				instruction = g_strdup_printf(_("%1$s keep right"),d);
 				break;
 			case type_nav_keep_left :
-				/*to be rearragend for the translations*/
+				/* TRANSLATORS: the arg. is distance  */
 				instruction = g_strdup_printf(_("%1$s keep left"),d);
 				break;
 			case type_nav_right_1 :
@@ -2909,6 +2913,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					}
 				}
 				if (!skip_roads)
+					/* TRANSLATORS: the first arg. is strength, the second is direction, the third is distance, the fourth is destination  */
 					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("easily ")),(_("right")),d,destination);
 				break;
 			case type_nav_right_2 :
@@ -3017,9 +3022,11 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("strongly ")),(_("left")),d,destination);
 				break;
 			case  type_nav_turnaround_left:
+				/* TRANSLATORS: the arg. is distance  */
 				instruction = g_strdup_printf(_("%1$s left turnaround"),d);
 				break;
 			case  type_nav_turnaround_right:
+				/* TRANSLATORS: the arg. is distance  */
 				instruction = g_strdup_printf(_("%1$s right turnaround"),d);
 				break;
 			case  type_nav_none:
@@ -3049,6 +3056,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				if (level == -2)
 					instruction=g_strdup(_("then you have reached your destination."));
 				else
+					/* TRANSLATORS: the arg. is distance  */
 					instruction=g_strdup_printf(_("You have reached your destination %s"), d);
 				break;
 			default:
@@ -3065,6 +3073,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						destination=navigation_item_destination(nav, cmd, itm, NULL);
 					else destination = g_strdup("");
 						g_free(instruction);
+					/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
 					instruction = g_strdup_printf(_("%1$s merge left %2$s"),d,destination);
 					break;
 				case mex_merge_right:
@@ -3072,6 +3081,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						destination=navigation_item_destination(nav, cmd, itm, NULL);
 					else destination = g_strdup("");
 						g_free(instruction);
+					/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
 					instruction = g_strdup_printf(_("%1$s merge right %2$s"),d,destination);
 					break;
 				/* for mex_exit_left/right, exit_label is not announced in case there is
@@ -3080,12 +3090,14 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				 */
 				case mex_exit_left:
 					g_free(instruction);
+					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
 					instruction = g_strdup_printf(_("%1$s left exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
 							street_destination_announce ?
 									cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
 							break;
 				case mex_exit_right:
 					g_free(instruction);
+					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
 					instruction = g_strdup_printf(_("%1$s right exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
 							street_destination_announce ?
 									cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" : "");
@@ -3101,15 +3113,15 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				switch (cmd->maneuver->type)
 				{
 					case type_nav_straight :
-						/*to be rearranged for the translations*/
+						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
 						instruction = g_strdup_printf(_("%1$s continue straight at%2$s"),d, at);
 						break;
 					case type_nav_keep_right :
-						/*to be rearranged for the translations*/
+						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
 						instruction = g_strdup_printf(_("%1$s keep right at%2$s"),d, at);
 						break;
 					case type_nav_keep_left :
-						/*to be rearragend for the translations*/
+						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
 						instruction = g_strdup_printf(_("%1$s keep left at%2$s"),d, at);
 						break;
 					default :
