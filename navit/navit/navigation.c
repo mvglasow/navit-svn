@@ -39,19 +39,11 @@
  
 /* KNOWN ISSUES
  *
- * a) In case of the following OSM anomaly :
- * 		a road and a duplicate of it are perfectly on top of each other,
- * 		almost completely invisible with the eye, with the exception that sometimes
- * 		there are many more road labels (or road names) rendered.
- * then Navit sees 2 possible roads ahead, and advises the driver to take the most
- * left one by default (sounds a little like 'can not go straight' from before :) ),
- * by means of a 'keep left' command.
- * In case there are many nodes involved, this can lead to a big bunch of false
- * commands in a row. Cases were observed where this was assumed to be the cause of
- * false (or unwanted) turn commands as well.
  *
- * b) in navigation_itm_new() : If a ramp splits in 2, the exit and exit_to info ends up on
+ *  in navigation_itm_new() : If a way splits in 2, exit_to info ends up on
  *	both continuations of the ramp, sometimes leading to wrong guidance
+ *	The case where a ramp itself splits in 2 is already covered by ignoring exit_to info
+ *	in such cases.
  *
  *
  */
@@ -1371,9 +1363,7 @@ navigation_itm_update(struct navigation_itm *itm, struct item *ritem)
 	itm->speed=speed.u.num;
 }
 
-
-
-/*@brief
+/*@ brief creates and adds a new navigation_itm to a linked list of such
  *
  * routeitem has an attr. streetitem, but that is only and id and a map,
  * allowing to fetch the actual streetitem, that will live under the same name.
@@ -1383,12 +1373,12 @@ navigation_itm_update(struct navigation_itm *itm, struct item *ritem)
  * Solves a confusion and improves my first-try solution
  * (medium priority, has no functional effect)
  *
- *
- *
+ *@ param : the navigation
+ *@ param : the routeitem from which to create a navigation item
+ *@ return : the new navigation_itm (used nowhere)
  *
  */
-
-
+ 
 static struct navigation_itm *
 navigation_itm_new(struct navigation *this_, struct item *routeitem)
 {
@@ -1477,14 +1467,6 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		 *  specifically handled, but no occurence known so far either.
 		 *  If present, obtain exit_ref, exit_label and exit_to
 		 *  from the map.
-		 *  exit_to holds info similar to attr_street_destination, and
-		 *  we place it in way.destination as well, unless the street_destination info
-		 *  is already present. In the future it will have to be skipped if destiantion:lanes
-		 *  info exists as well.
-		 *
-		 *	Now it still holds a bug, if a ramp splits in 2, the exit_to info can end up on
-		 *	both continuations of the ramp. Maybe this can be solved by passing the struct
-		 *	navigation_maneuver up to here to help decide on exit_to.
 		 *
 		 */
 		if (streetitem->type == type_ramp )
@@ -1520,18 +1502,24 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 						}
 						if (attr.type == attr_exit_to)
 						{
-						if (attr.u.str && !ret->way.destination){
-							char *destination_raw;
-							destination_raw=map_convert_string(streetitem->map,attr.u.str);
-							dbg(lvl_debug,"destination_raw from exit_to =%s\n",destination_raw);
-							if ((split_string_to_list(&(ret->way),destination_raw, ';')) < 2)
+							/* use exit_to as a fall back in case :
+							 * - there is no regular destination info
+							 * - we are not coming from a ramp already
+							 */
+							if (attr.u.str && !ret->way.destination && (this_->last) && (!(this_->last->way.item.type == type_ramp)))
+							{
+								char *destination_raw;
+								destination_raw=map_convert_string(streetitem->map,attr.u.str);
+								dbg(lvl_debug,"destination_raw from exit_to =%s\n",destination_raw);
+								if ((split_string_to_list(&(ret->way),destination_raw, ';')) < 2)
 								/*
 								 * if a first try did not result in an actual splitting
-								 * retry with ',' as a separator
-								 *
-								 * */
+								 * retry with ',' as a separator because in France a bad
+								 * mapping practice exists to separate exit_to with ','
+								 * instead of ';'
+								 */
 								(split_string_to_list(&(ret->way),destination_raw, ','));
-							g_free(destination_raw);
+								g_free(destination_raw);
 							}
 						}
 					}
