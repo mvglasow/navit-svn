@@ -1995,10 +1995,20 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 						 * The second one is really a workaround for bad tagging practice in OSM. Since entering
 						 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
 						 * side effects.
+						 * We'll consider the other street to have the same name even if name_systematic differs because in
+						 * built-up areas, roads may split in two (for local vs. long-distance traffic), with both roads
+						 * retaining the name but only one retaining the name_systematic.
+						 * (Note that name_systematic still needs to be compared for roads that have no name.)
 						 */
-						if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+						if (m.is_same_street && (is_same_street2(old->way.name, NULL, w->name, NULL) || is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic)) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
 							//if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || !is_motorway_like(w, 1)) && is_way_allowed(nav,w,2))
 							m.is_same_street=0;
+						/* If the route category changes to a lower one but another road has the same route category as old,
+						 * it is not clear which of the two the driver would perceive as the "same street", hence reset is_same_street */
+						/* FIXME: does this improve anything or just make matters worse?
+						if (m.is_same_street && (m.old_cat > m.new_cat) && wcat == m.old_cat)
+							m.is_same_street = 0;
+						*/
 						/* Mark if the street has a higher or the same category */
 						if (wcat > m.max_cat)
 							m.max_cat=wcat;
@@ -2128,7 +2138,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 * dlim is 128/256 times (i.e. one half) the delta of the maneuver */
 		else if (m.max_cat < m.new_cat && m.max_cat < m.old_cat)
 			dlim=abs(m.delta)*128/256;
+		/* ensure close-to-straight roads are always within dlim
+		 * (if the route is very straight, the previous calculations would produce a very low limit) */
 		/* if no other ways are within +/-dlim, the maneuver is unambiguous */
+		if (dlim < min_turn_limit)
+			dlim = min_turn_limit;
 		if (m.left < -dlim && m.right > dlim)
 			m.is_unambiguous=1;
 		/* if another way is within +/-min_turn_limit and on the same side as new, the maneuver is ambiguous */
@@ -2200,7 +2214,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		memcpy(*maneuver, &m, sizeof(struct navigation_maneuver));
 	}
 	if (r)
-		dbg(lvl_debug, "%s %s -> %s %s: %s, delta=%i, merge_or_exit=%i\n", old->way.name_systematic, old->way.name, new->way.name_systematic, new->way.name, r, m.delta, m.merge_or_exit);
+		dbg(lvl_debug, "%s %s %s -> %s %s %s: %s, delta=%i, merge_or_exit=%i\n", item_to_name(old->way.item.type), old->way.name_systematic, old->way.name, item_to_name(new->way.item.type), new->way.name_systematic, new->way.name, r, m.delta, m.merge_or_exit);
 	return ret;
 	
 
