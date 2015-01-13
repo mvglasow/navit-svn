@@ -1995,12 +1995,8 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 						 * The second one is really a workaround for bad tagging practice in OSM. Since entering
 						 * a ramp always creates a maneuver, we don't expect the workaround to have any unwanted
 						 * side effects.
-						 * We'll consider the other street to have the same name even if name_systematic differs because in
-						 * built-up areas, roads may split in two (for local vs. long-distance traffic), with both roads
-						 * retaining the name but only one retaining the name_systematic.
-						 * (Note that name_systematic still needs to be compared for roads that have no name.)
 						 */
-						if (m.is_same_street && (is_same_street2(old->way.name, NULL, w->name, NULL) || is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic)) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
+						if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || (!is_motorway_like(w, 0) && w->item.type != type_ramp)) && is_way_allowed(nav,w,2))
 							//if (m.is_same_street && is_same_street2(old->way.name, old->way.name_systematic, w->name, w->name_systematic) && (!is_motorway_like(&(old->way), 0) || !is_motorway_like(w, 1)) && is_way_allowed(nav,w,2))
 							m.is_same_street=0;
 						/* If the route category changes to a lower one but another road has the same route category as old,
