@@ -1429,13 +1429,43 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		if (item_attr_get(streetitem, attr_street_name_systematic, &attr))
 			ret->way.name_systematic=map_convert_string(streetitem->map,attr.u.str);
 
-		if (item_attr_get(streetitem, attr_street_destination, &attr)){
-			char *destination_raw;
-			destination_raw=map_convert_string(streetitem->map,attr.u.str);
-			dbg(lvl_debug,"destination_raw =%s\n",destination_raw);
-			split_string_to_list(&(ret->way),destination_raw, ';');
-			g_free(destination_raw);
-		}
+		if (ret->way.flags && (ret->way.flags & AF_ONEWAY))
+			{
+				if (item_attr_get(streetitem, attr_street_destination, &attr))
+				{
+					char *destination_raw;
+					destination_raw=map_convert_string(streetitem->map,attr.u.str);
+					dbg(lvl_debug,"destination_raw =%s\n",destination_raw);
+					split_string_to_list(&(ret->way),destination_raw, ';');
+					g_free(destination_raw);
+				}
+			}
+		else
+			{
+				if (ret->way.dir == 1)
+				{
+					if (item_attr_get(streetitem, attr_street_destination_forward, &attr))
+					{
+						char *destination_raw;
+						destination_raw=map_convert_string(streetitem->map,attr.u.str);
+						dbg(lvl_debug,"destination_raw forward =%s\n",destination_raw);
+						split_string_to_list(&(ret->way),destination_raw, ';');
+						g_free(destination_raw);
+					}
+
+				}
+				if (ret->way.dir == -1)
+				{
+					if (item_attr_get(streetitem, attr_street_destination_backward, &attr))
+					{
+						char *destination_raw;
+						destination_raw=map_convert_string(streetitem->map,attr.u.str);
+						dbg(lvl_debug,"destination_raw backward =%s\n",destination_raw);
+						split_string_to_list(&(ret->way),destination_raw, ';');
+						g_free(destination_raw);
+					}
+				}
+			}
 		
 		navigation_itm_update(ret, routeitem);
 
