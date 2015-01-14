@@ -3588,8 +3588,34 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 	case attr_street_destination:
 		this_->attr_next=attr_debug;
 		if (itm->way.destination && itm->way.destination->destination)
-			attr->u.str=select_announced_destinations(cmd);
+		this_->str=attr->u.str=select_announced_destinations(cmd);
 		else attr->u.str=NULL;
+		if (attr->u.str){
+			return 1;}
+		return 0;
+
+		/* attr_name returns exit_ref and exit_label if available
+		 * preceeded by the word 'exit'
+		 *
+		 * if exit_label alone is available, it returns the word
+		 * 'interchange' followed by exit_label
+		 *
+		 * otherwise returns street name and name_systematic if available
+		 *
+		 * FIXME should a new attr. be defined for this and if yes, which ?
+		 *
+		 */
+	case attr_name:
+		this_->attr_next=attr_debug;
+		attr->u.str=NULL;
+		if (itm->way.exit_ref)
+			this_->str=attr->u.str=g_strdup_printf(("%s %s %s"),_("exit"),itm->way.exit_ref,
+					itm->way.exit_label ? itm->way.exit_label :"");
+		if (!attr->u.str && itm->way.exit_label)
+			this_->str=attr->u.str=g_strdup_printf(("%s %s"),_("interchange"),itm->way.exit_label);
+		else if (itm->way.name || itm->way.name_systematic)
+			this_->str=attr->u.str=g_strdup_printf(_("%s %s"),
+					itm->way.name ? itm->way.name : "",itm->way.name_systematic ? itm->way.name_systematic : "");
 		if (attr->u.str){
 			return 1;}
 		return 0;
