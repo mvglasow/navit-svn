@@ -1909,7 +1909,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	m.max_cat = -1;
 	m.left = -180;
 	m.right = 180;
-	m.is_unambiguous = 0;
+	m.is_unambiguous = 1;
 	/* Check whether the street keeps its name */
 	m.is_same_street = is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 
@@ -1980,6 +1980,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 								m.right=dw;
 						}
 
+						/* If almost-straight ways are present, the maneuver is ambiguous. We are counting only ways having
+						 * a nonzero maneuver category (street_0 or higher), excluding ramps, service roads and anything closed
+						 * to motorized traffic. Exceptions apply when the new way itself has a maneuver category of 0.
+						 * Note that this is in addition for the dlim calculations we do further below, as they fail to
+						 * catch some ambiguous cases for very low deltas. */
+						if ((dw > -min_turn_limit) && (dw < min_turn_limit) && ((maneuver_category(w->item.type) != 0) || (maneuver_category(new->way.item.type) == 0)))
+							m.is_unambiguous = 0;
+
 						if (dw < 0) {
 							if (dw > -min_turn_limit && m.delta < 0 && m.delta > -min_turn_limit)
 								dc=dw;
@@ -2001,10 +2009,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 							m.is_same_street=0;
 						/* If the route category changes to a lower one but another road has the same route category as old,
 						 * it is not clear which of the two the driver would perceive as the "same street", hence reset is_same_street */
-						/* FIXME: does this improve anything or just make matters worse?
-						if (m.is_same_street && (m.old_cat > m.new_cat) && wcat == m.old_cat)
-							m.is_same_street = 0;
-						*/
 						/* Mark if the street has a higher or the same category */
 						if (wcat > m.max_cat)
 							m.max_cat=wcat;
@@ -2134,13 +2138,9 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 * dlim is 128/256 times (i.e. one half) the delta of the maneuver */
 		else if (m.max_cat < m.new_cat && m.max_cat < m.old_cat)
 			dlim=abs(m.delta)*128/256;
-		/* ensure close-to-straight roads are always within dlim
-		 * (if the route is very straight, the previous calculations would produce a very low limit) */
 		/* if no other ways are within +/-dlim, the maneuver is unambiguous */
-		if (dlim < min_turn_limit)
-			dlim = min_turn_limit;
-		if (m.left < -dlim && m.right > dlim)
-			m.is_unambiguous=1;
+		if (m.left >= -dlim || m.right <= dlim)
+			m.is_unambiguous = 0;
 		/* if another way is within +/-min_turn_limit and on the same side as new, the maneuver is ambiguous */
 		if (dc != m.delta) {
 			dbg(1,"m.delta %d vs dc %d\n",m.delta,dc);
