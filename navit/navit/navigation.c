@@ -3643,7 +3643,7 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 					itm->way.exit_label ? itm->way.exit_label :"");
 		if (!attr->u.str && itm->way.exit_label)
 			this_->str=attr->u.str=g_strdup_printf(("%s %s"),_("interchange"),itm->way.exit_label);
-		else if (itm->way.name || itm->way.name_systematic)
+		else if (!attr->u.str && (itm->way.name || itm->way.name_systematic))
 			this_->str=attr->u.str=g_strdup_printf(_("%s %s"),
 					itm->way.name ? itm->way.name : "",itm->way.name_systematic ? itm->way.name_systematic : "");
 		if (attr->u.str){
