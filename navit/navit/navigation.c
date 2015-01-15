@@ -2335,7 +2335,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
 	enum item_type r = type_none, l = type_none;
 
-	/* Only needed for roundabouts */
+	/* Some variables needed only for roundabouts */
 	int len=0; /* length of roundabout segment */
 	int roundabout_length; /* estimated total length of roundabout */
 	int angle=0;
@@ -2348,6 +2348,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	int dtsir = 0; /* delta to stay in roundabout */
 	int delta1, delta2, error1, error2; /* for roundabout delta calculated with different approaches, and error margin */
 	int dist_left; /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
+	int central_angle; /* approximate central angle for the roundabout arc that is part of the route */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -2441,26 +2442,37 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 				if (itm2->prev) {
 					delta1 = angle_delta(itm2->prev->angle_end, itm->way.angle2);
 					/* If we are turning around and there are V-shaped approach segments, delta1 will point
-					 * in the wrong direction, hence we need to add or subtract 360 degrees.
+					 * in the wrong direction. This may also happen with sharp turns, taking the last exit.
+					 * Hence we need to add or subtract 360 degrees in these cases.
 					 * This is the case when both delta1 and delta2 are somewhat close to +/-180
-					 * but in opposite directions. We're using 90 degrees as the threshold. */
-					if ((ret->delta > dtsir) && (delta2 < -90) && (delta1 > 90)) {
+					 * but in opposite directions. We're using 0 degrees as the threshold, which should be OK because
+					 * delta2 tends to underestimate the central angle. (+/-90 fails to catch some cases.)*/
+					if ((ret->delta > dtsir) && (delta2 < 0) && (delta1 > 90)) {
 						/* counterclockwise roundabout */
 						dbg(lvl_debug,"correcting delta1 %d to %d\n", delta1, delta1 - 360);
 						delta1 -= 360;
-					} if ((ret->delta < dtsir) && (delta2 > 90) && (delta1 < -90)) {
+					} if ((ret->delta < dtsir) && (delta2 > 0) && (delta1 < -90)) {
 						/* clockwise roundabout */
 						dbg(lvl_debug,"correcting delta1 %d to %d\n", delta1, delta1 + 360);
 						delta1 += 360;
 					}
 
-					roundabout_length = len * 360 / (delta2 + (ret->delta < dtsir) ? 180 : -180);
+					/* Approximate roundabout circumference based on len and approximate central angle of route segment.
+					 * The central angle is approximated using the unweighted average of delta1 and delta2,
+					 * which is somewhat crude but should be OK for error estimates. */
+					central_angle = abs((delta1 + delta2) / 2 + ((ret->delta < dtsir) ? 180 : -180));
+					roundabout_length = len * 360 / central_angle;
+					dbg(lvl_debug,"roundabout_length = %dm (for central_angle = %d degrees)\n", roundabout_length, central_angle);
 
-					/* we assume approach roads to be no longer than half the roundabout length */
+					/* in the case of separate carriageways, approach roads become hard to identify, thus we keep a cap on distance.
+					 * Currently this is at most half the length of the roundabout. */
+					/* FIXME: experiment with different values here */
 					dist_left = roundabout_length / 2;
+					dbg(lvl_debug,"examining roads for up to %dm to estimate error for delta1\n", dist_left);
 
 					/* examine items before roundabout */
 					itm3 = itm2->prev;
+					/* FIXME: stop not only where oneway begins but also where a ramp begins or other ways join/leave */
 					while (itm3->prev && (itm3->way.flags & AF_ONEWAYMASK) && (dist_left >= itm3->length)) {
 						dist_left -= itm3->length;
 						itm3 = itm3->prev;
