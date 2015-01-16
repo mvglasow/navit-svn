@@ -1881,6 +1881,19 @@ is_motorway_like(struct navigation_way *way, int extended)
 }
 
 /**
+ * @brief Checks whether a way is a ramp
+ *
+ * @param way The way to be examined
+ * @return True for ramp, false otherwise
+ */
+static int
+is_ramp(struct navigation_way *way) {
+	if (way->item.type == type_ramp)
+		return 1;
+	return 0;
+}
+
+/**
  * @brief Checks if navit has to create a maneuver to drive from old to new
  *
  * This function checks if it has to create a "maneuver" - i.e. guide the user - to drive 
@@ -2472,8 +2485,13 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 
 					/* examine items before roundabout */
 					itm3 = itm2->prev;
-					/* FIXME: stop not only where oneway begins but also where a ramp begins or other ways join/leave */
-					while (itm3->prev && (itm3->way.flags & AF_ONEWAYMASK) && (dist_left >= itm3->length)) {
+					while (itm3->prev && (dist_left >= itm3->length)) {
+						if (!(itm3->way.flags & AF_ONEWAYMASK))
+							break;
+						if (itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way)))
+							break;
+						if (itm3->next && itm3->next->way.next)
+							break;
 						dist_left -= itm3->length;
 						itm3 = itm3->prev;
 					}
@@ -2489,7 +2507,13 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					/* examine items after roundabout */
 					dist_left = roundabout_length / 2;
 					itm3 = itm;
-					while (itm3->next && (itm3->way.flags & AF_ONEWAYMASK) && (dist_left >= itm3->length)) {
+					while (itm3->next && (dist_left >= itm3->length)) {
+						if (!(itm3->way.flags & AF_ONEWAYMASK))
+							break;
+						if (itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way)))
+							break;
+						if (itm3->prev && itm3->prev->way.next)
+							break;
 						dist_left -= itm3->length;
 						itm3 = itm3->next;
 					}
