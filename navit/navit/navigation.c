@@ -2494,15 +2494,37 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						itm3 = itm3->next;
 					}
 					if (dist_left == 0) {
-						error1 = (error1 + abs(itm3->way.angle2 - itm->way.angle2)) / 2;
+						error1 += abs(itm3->way.angle2 - itm->way.angle2);
 					} else if (dist_left <= itm3->length) {
-						error1 = (error1 + abs(navigation_way_get_angle_at(&(itm3->way), map_projection(this_->map), dist_left) - itm->way.angle2)) / 2;
+						error1 += abs(navigation_way_get_angle_at(&(itm3->way), map_projection(this_->map), dist_left) - itm->way.angle2);
 					} else {
 						/* not enough objects in navigation map, use most distant one */
-						error1 = (error1 + abs(itm3->angle_end - itm->way.angle2)) / 2;
+						error1 += abs(itm3->angle_end - itm->way.angle2);
 					}
 
 					dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
+
+					/* We now have two approximations delta1 and delta2 with corresponding errors.
+					 * However, deltas are biased as each constitutes a boundary of its possible range.
+					 * We need to correct this so that each delta will be in the middle of its range.
+					 * This requires knowing the direction of the roundabout.
+					 * To avoid mis-guessing, we use two approaches and use results only if both agree.
+					 * Note that we divide the error range by two even if we can't guess the direction.
+					 * While not 100% correct, it has no impact on results as long as the ratio is maintained.
+					 * Adding 1 before dividing ensures we round up. */
+					error1 = (error1 + 1) / 2;
+					error2 = (error2 + 1) / 2;
+					if ((ret->delta > dtsir) && (delta1 < delta2)) {
+						/* counterclockwise; exit right; delta1 (approach ways) further left (i.e. smaller) than delta2 (tangents) */
+						delta1 += error1;
+						delta2 -= error2;
+						dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
+					} else if ((ret->delta < dtsir) && (delta1 > delta2)) {
+						/* clockwise; exit left; delta1 (approach ways) further right (greater) than delta2 (tangents) */
+						delta1 -= error1;
+						delta2 += error2;
+						dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
+					}
 
 					ret->roundabout_delta = (delta1 * error2 + delta2 * error1) / (error1 + error2);
 					dbg(lvl_debug,"roundabout_delta %d\n", ret->roundabout_delta);
