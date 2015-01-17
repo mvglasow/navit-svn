@@ -2490,10 +2490,10 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 							break;
 						if (itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way)))
 							break;
-						if (itm3->next && itm3->next->way.next)
-							break;
 						dist_left -= itm3->length;
 						itm3 = itm3->prev;
+						if (itm3->next && itm3->next->way.next)
+							break;
 					}
 					if (dist_left == 0) {
 						error1 = abs(itm3->angle_end - itm2->angle_end);
@@ -2512,10 +2512,10 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 							break;
 						if (itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way)))
 							break;
-						if (itm3->prev && itm3->prev->way.next)
-							break;
 						dist_left -= itm3->length;
 						itm3 = itm3->next;
+						if (itm3->way.next)
+							break;
 					}
 					if (dist_left == 0) {
 						error1 += abs(itm3->way.angle2 - itm->way.angle2);
