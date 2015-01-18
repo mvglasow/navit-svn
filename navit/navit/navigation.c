@@ -2525,6 +2525,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						/* not enough objects in navigation map, use most distant one */
 						error1 += abs(itm3->angle_end - itm->way.angle2);
 					}
+					error1 = (error1 + 1) / 2;
 
 					dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
 
