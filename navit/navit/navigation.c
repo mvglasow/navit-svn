@@ -3147,8 +3147,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			if (!instruction)
 			{
 				char *at;
-				at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_( " at the exit ")) : (_(" at the interchange ")),
-					cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
+				if (cmd->itm->way.exit_ref || cmd->itm->way.exit_label)
+					at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_( " at the exit ")) : (_(" at the interchange ")),
+							cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
+				else at = g_strdup(" ");
 
 				switch (cmd->maneuver->type)
 				{
