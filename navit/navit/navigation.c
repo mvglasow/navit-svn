@@ -3147,22 +3147,22 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			if (!instruction)
 			{
 				char *at;
-				at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_(" the exit ")) : (_(" the interchange ")),
+				at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_( " at the exit ")) : (_(" at the interchange ")),
 					cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
 
 				switch (cmd->maneuver->type)
 				{
 					case type_nav_straight :
 						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
-						instruction = g_strdup_printf(_("%1$s continue straight at%2$s"),d, at);
+						instruction = g_strdup_printf(_("%1$s continue straight%2$s"),d, at);
 						break;
 					case type_nav_keep_right :
 						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
-						instruction = g_strdup_printf(_("%1$s keep right at%2$s"),d, at);
+						instruction = g_strdup_printf(_("%1$s keep right%2$s"),d, at);
 						break;
 					case type_nav_keep_left :
 						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
-						instruction = g_strdup_printf(_("%1$s keep left at%2$s"),d, at);
+						instruction = g_strdup_printf(_("%1$s keep left%2$s"),d, at);
 						break;
 					default :
 						/* in case we end up here in the merge_or_exit situation, it can be either
