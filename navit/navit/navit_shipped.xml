@@ -1504,8 +1504,11 @@ Waypoint</text></img>
 				<itemgra item_types="nav_straight" order="0-">
 					<icon src="nav_straight_bk.svg" w="32" h="32"/>
 				</itemgra>
-				<itemgra item_types="nav_turnaround" order="0-">
+				<itemgra item_types="nav_turnaround_left" order="0-">
 					<icon src="nav_turnaround_left_bk.svg" w="32" h="32"/>
+				</itemgra>
+				<itemgra item_types="nav_turnaround_right" order="0-">
+					<icon src="nav_turnaround_right_bk.svg" w="32" h="32"/>
 				</itemgra>
 				<itemgra item_types="nav_roundabout_l1" order="0-">
 					<icon src="nav_roundabout_l1_bk.svg" w="32" h="32"/>
@@ -2985,8 +2988,11 @@ Waypoint</text></img>
 				<itemgra item_types="nav_straight" order="0-">
 					<icon src="nav_straight_bk.svg" w="32" h="32"/>
 				</itemgra>
-				<itemgra item_types="nav_turnaround" order="0-">
+				<itemgra item_types="nav_turnaround_left" order="0-">
 					<icon src="nav_turnaround_left_bk.svg" w="32" h="32"/>
+				</itemgra>
+				<itemgra item_types="nav_turnaround_right" order="0-">
+					<icon src="nav_turnaround_right_bk.svg" w="32" h="32"/>
 				</itemgra>
 				<itemgra item_types="nav_roundabout_l1" order="0-">
 					<icon src="nav_roundabout_l1_bk.svg" w="32" h="32"/>
@@ -4325,8 +4331,11 @@ Waypoint</text></img>
         <itemgra item_types="nav_straight" order="0-">
           <icon src="nav_straight_bk.png" w="32" h="32" />
         </itemgra>
-        <itemgra item_types="nav_turnaround" order="0-">
+        <itemgra item_types="nav_turnaround_left" order="0-">
           <icon src="nav_turnaround_left_bk.png" w="32" h="32" />
+        </itemgra>
+	 <itemgra item_types="nav_turnaround_right" order="0-">
+          <icon src="nav_turnaround_right_bk.png" w="32" h="32" />
         </itemgra>
         <itemgra item_types="nav_roundabout_l1" order="0-">
           <icon src="nav_roundabout_l1_bk.png" w="32" h="32" />
@@ -5995,8 +6004,11 @@ Waypoint</text></img>
 				<itemgra item_types="nav_straight" order="0-">
 					<icon src="nav_straight_bk.svg" w="32" h="32"/>
 				</itemgra>
-				<itemgra item_types="nav_turnaround" order="0-">
+				<itemgra item_types="nav_turnaround_left" order="0-">
 					<icon src="nav_turnaround_left_bk.svg" w="32" h="32"/>
+				</itemgra>
+				<itemgra item_types="nav_turnaround_right" order="0-">
+					<icon src="nav_turnaround_right_bk.svg" w="32" h="32"/>
 				</itemgra>
 				<itemgra item_types="nav_roundabout_l1" order="0-">
 					<icon src="nav_roundabout_l1_bk.svg" w="32" h="32"/>
