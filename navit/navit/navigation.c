@@ -2593,7 +2593,20 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 			} /* endif ret->delta */
 		}
 	}
+/*temporary solution to recover some motorway
+ *exits that get a (slight)turn left/rigth 
+ */
+		if (itm->way.exit_ref){
+			if (ret->delta < 0){
+				ret->maneuver->merge_or_exit = mex_exit_left;
+			}
+			if (ret->delta > 0){
+				ret->maneuver->merge_or_exit = mex_exit_right;
+			}
+			if (ret->delta < angle_straight )
+				ret->maneuver->type = type_nav_straight;
 
+		}
 	if (this_->cmd_last) {
 		this_->cmd_last->next=ret;
 		ret->prev = this_->cmd_last;
