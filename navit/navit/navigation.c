@@ -2929,9 +2929,86 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 			}
 
-	if (cmd->maneuver->merge_or_exit == mex_none )
-		switch (cmd->maneuver->type)
+	if (!(cmd->maneuver->merge_or_exit == mex_none ))
+			{
+					switch (cmd->maneuver->merge_or_exit)
+						{
+							case mex_merge_left:
+								if (tellstreetname)
+									destination=navigation_item_destination(nav, cmd, itm, NULL);
+								else destination = g_strdup("");
+									g_free(instruction);
+								/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
+								instruction = g_strdup_printf(_("%1$s merge left %2$s"),d,destination);
+								break;
+							case mex_merge_right:
+								if (tellstreetname)
+									destination=navigation_item_destination(nav, cmd, itm, NULL);
+								else destination = g_strdup("");
+									g_free(instruction);
+								/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
+								instruction = g_strdup_printf(_("%1$s merge right %2$s"),d,destination);
+								break;
+							/* for mex_exit_left/right, exit_label is not announced in case there is
+							 * destination info following to avoid redundancy and not let the sentence
+							 * become too long
+							 */
+							case mex_exit_left:
+								g_free(instruction);
+								/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
+								instruction = g_strdup_printf(_("%1$s left exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+										street_destination_announce ?
+												cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
+										break;
+							case mex_exit_right:
+								g_free(instruction);
+								/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
+								instruction = g_strdup_printf(_("%1$s right exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+										street_destination_announce ?
+												cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" : "");
+								break;
+						}
 
+						if (!instruction)
+						{
+							char *at;
+							if (cmd->itm->way.exit_ref || cmd->itm->way.exit_label)
+								at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_( " at the exit ")) : (_(" at the interchange ")),
+										cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
+							else at = g_strdup(" ");
+							switch (cmd->maneuver->type)
+							{
+								case type_nav_straight :
+									/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
+									instruction = g_strdup_printf(_("%1$s continue straight%2$s"),d, at);
+									break;
+								case type_nav_keep_right :
+									/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
+									instruction = g_strdup_printf(_("%1$s keep right%2$s"),d, at);
+									break;
+								case type_nav_keep_left :
+									/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
+									instruction = g_strdup_printf(_("%1$s keep left%2$s"),d, at);
+									break;
+								default :
+									/* in case we end up here in the merge_or_exit situation, it can be either
+									 * a classic turn instruction or an illegal and/or mortal instruction for
+									 * motorways. For street_n_lanes this criterion could be relaxed.
+									 *
+									 * During early testing these are deliberately not handled in the speech and
+									 * some info is provided
+									 *
+									 */
+								//	instruction = g_strdup_printf("%1$s %2$s %3$s",d,"unhandled mex instruction ",at);
+									dbg(lvl_error,"unhandled mex instruction\n");
+									break;
+							}
+							g_free(at);
+						}
+					}
+				}
+	if (!instruction){
+	switch (cmd->maneuver->type)
 		{
 
 			case type_nav_straight :
@@ -3113,88 +3190,11 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					instruction=g_strdup_printf(_("You have reached your destination %s"), d);
 				break;
 			default:
-				dbg(lvl_error,"unhandled instruction\n");
+				dbg(lvl_error,"unhandled instruction %s\n",attr_to_name(cmd->maneuver->type));
 				break;
 		}
 
-	else
-		{
-		switch (cmd->maneuver->merge_or_exit)
-			{
-				case mex_merge_left:
-					if (tellstreetname)
-						destination=navigation_item_destination(nav, cmd, itm, NULL);
-					else destination = g_strdup("");
-						g_free(instruction);
-					/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
-					instruction = g_strdup_printf(_("%1$s merge left %2$s"),d,destination);
-					break;
-				case mex_merge_right:
-					if (tellstreetname)
-						destination=navigation_item_destination(nav, cmd, itm, NULL);
-					else destination = g_strdup("");
-						g_free(instruction);
-					/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
-					instruction = g_strdup_printf(_("%1$s merge right %2$s"),d,destination);
-					break;
-				/* for mex_exit_left/right, exit_label is not announced in case there is
-				 * destination info following to avoid redundancy and not let the sentence
-				 * become too long
-				 */
-				case mex_exit_left:
-					g_free(instruction);
-					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
-					instruction = g_strdup_printf(_("%1$s left exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
-							street_destination_announce ?
-									cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
-							break;
-				case mex_exit_right:
-					g_free(instruction);
-					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
-					instruction = g_strdup_printf(_("%1$s right exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
-							street_destination_announce ?
-									cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" : "");
-					break;
-			}
 
-			if (!instruction)
-			{
-				char *at;
-				if (cmd->itm->way.exit_ref || cmd->itm->way.exit_label)
-					at = g_strdup_printf("%1$s%2$s %3$s",cmd->itm->way.exit_ref ? (_( " at the exit ")) : (_(" at the interchange ")),
-							cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",cmd->itm->way.exit_label ? cmd->itm->way.exit_label : " ");
-				else at = g_strdup(" ");
-
-				switch (cmd->maneuver->type)
-				{
-					case type_nav_straight :
-						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
-						instruction = g_strdup_printf(_("%1$s continue straight%2$s"),d, at);
-						break;
-					case type_nav_keep_right :
-						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
-						instruction = g_strdup_printf(_("%1$s keep right%2$s"),d, at);
-						break;
-					case type_nav_keep_left :
-						/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuvre */
-						instruction = g_strdup_printf(_("%1$s keep left%2$s"),d, at);
-						break;
-					default :
-						/* in case we end up here in the merge_or_exit situation, it can be either
-						 * a classic turn instruction or an illegal and/or mortal instruction for
-						 * motorways. For street_n_lanes this criterion could be relaxed.
-						 *
-						 * During early testing these are deliberately not handled in the speech and
-						 * some info is provided
-						 *
-						 */
-						instruction = g_strdup_printf("%1$s %2$s %3$s",d,"unhandled mex instruction ",at);
-						dbg(lvl_error,"unhandled mex instruction\n");
-						break;
-				}
-				g_free(at);
-			}
-		}
 	}
 	switch (level)
 	{
