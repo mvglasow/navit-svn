@@ -1157,7 +1157,14 @@ navigation_way_get_angle_at(struct navigation_way *w, enum projection pro, doubl
 
 
 /**
- * @brief Returns the maximum absolute delta between a reference bearing and any segment of a given way, up to a given distance from its start
+ * @brief Returns the maximum delta between a reference bearing and any segment of a given way, up to a given distance from its start
+ *
+ * The return value is the maximum delta (in terms of absolute value), but the sign is preserved. If the maximum delta is encountered
+ * more than once but with different signs, {@code dir} controls which of the two values is returned:
+ * <ul>
+ * <li>+1: Return the first maximum encountered when following the direction of the route</li>
+ * <li>-1: Return the first maximum encountered when going against the direction of the route</li>
+ * </ul>
  *
  * {@code invalid_angle} will be returned if one of the following errors occurs:
  * <ul>
@@ -1173,11 +1180,12 @@ navigation_way_get_angle_at(struct navigation_way *w, enum projection pro, doubl
  * @param w The way to examine
  * @param angle The reference bearing
  * @param dist The distance from the start of the way at which to determine bearing
+ * @param dir Controls how to handle when the same delta is encountered multiple times but with different signs
  *
- * @return The delta, {@code 0 <= delta <= 180}, or {@code invalid_angle} if an error occurred.
+ * @return The delta, {@code -180 <= delta <= 180}, or {@code invalid_angle} if an error occurred.
  */
 static int
-navigation_way_get_max_abs_delta(struct navigation_way *w, enum projection pro, int angle, double dist) {
+navigation_way_get_max_delta(struct navigation_way *w, enum projection pro, int angle, double dist, int dir) {
 	double dist_left = dist; /* distance from last examined point */
 	int ret = invalid_angle;
 	int tmp_delta;
@@ -1219,9 +1227,11 @@ navigation_way_get_max_abs_delta(struct navigation_way *w, enum projection pro, 
 		}
 
 		/* if dist is less that the distance of the way, make dist_left the distance from the other end
-		 * else leave it at total length of the way (so we'll examine the whole way) */
+		 * else set it to zero (so we'll examine the whole way) */
 		if (dist_left > dist)
 			dist_left -= dist;
+		else
+			dist_left = 0;
 
 		item_coord_rewind(realitem);
 
@@ -1232,12 +1242,16 @@ navigation_way_get_max_abs_delta(struct navigation_way *w, enum projection pro, 
 		}
 	}
 
-	while (item_coord_get(realitem, &c, 1) && (dist_left > 0)) {
+	while (item_coord_get(realitem, &c, 1)) {
+		if ((w->dir > 0) && (dist_left <= 0))
+			break;
 		cbuf[0] = cbuf[1];
 		cbuf[1] = c;
 		dist_left -= transform_distance(pro, &cbuf[0], &cbuf[1]);
-		tmp_delta = abs(angle_delta(angle, road_angle(&cbuf[0], &cbuf[1], w->dir)));
-		if ((ret == invalid_angle) || (ret < tmp_delta))
+		if ((w->dir < 0) && (dist_left > 0))
+			continue;
+		tmp_delta = angle_delta(angle, road_angle(&cbuf[0], &cbuf[1], w->dir));
+		if ((ret == invalid_angle) || (abs(ret) < abs(tmp_delta)) || ((abs(ret) == abs(tmp_delta)) && ((dir * w->dir) < 0)))
 			ret = tmp_delta;
 	}
 
@@ -2475,6 +2489,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	 */
 
 	if (ret->maneuver->type != type_nav_destination) {
+		// TODO: make this a separate function (improves code legibility)
 		/* if we're leaving a roundabout, special handling is needed:
 		 * - calculate effective bearing change (between entry and exit),
 		 * - set length,
@@ -2594,7 +2609,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 							break;
 						if (itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way)))
 							break;
-						error1 = max(error1, navigation_way_get_max_abs_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left));
+						error1 = max(error1, abs(navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1)));
 						dist_left -= itm3->length;
 						itm3 = itm3->prev;
 						if (itm3->next && itm3->next->way.next)
@@ -2603,7 +2618,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					if (dist_left == 0) {
 						error1 = max(error1, abs(itm3->angle_end - itm2->angle_end));
 					} else if (dist_left <= itm3->length) {
-						error1 = max(error1, navigation_way_get_max_abs_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left));
+						error1 = max(error1, abs(navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1)));
 					} else {
 						/* not enough objects in navigation map, use most distant one */
 						error1 = max(error1, abs(itm3->way.angle2 - itm2->angle_end));
@@ -2617,7 +2632,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 							break;
 						if (itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way)))
 							break;
-						error1b = max(error1b, navigation_way_get_max_abs_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left));
+						error1b = max(error1b, abs(navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1)));
 						dist_left -= itm3->length;
 						itm3 = itm3->next;
 						if (itm3->way.next)
@@ -2626,6 +2641,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					if (dist_left == 0) {
 						error1b = max(error1b, abs(itm3->way.angle2 - itm->way.angle2));
 					} else if (dist_left <= itm3->length) {
+						// FIXME: what should happen in this case?
 					} else {
 						/* not enough objects in navigation map, use most distant one */
 						error1b = max(error1b, abs(itm3->angle_end - itm->way.angle2));
