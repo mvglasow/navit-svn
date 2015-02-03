@@ -2684,7 +2684,10 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
 					}
 
-					ret->roundabout_delta = (delta1 * error2 + delta2 * error1) / (error1 + error2);
+					if ((error1 == 0) && (error2 == 0))
+						ret->roundabout_delta = (delta1 + delta2) / 2;
+					else
+						ret->roundabout_delta = (delta1 * error2 + delta2 * error1) / (error1 + error2);
 					dbg(lvl_debug,"roundabout_delta %d\n", ret->roundabout_delta);
 				} else {
 					/* we don't know where we entered the roundabout, so we can't calculate delta1 */
