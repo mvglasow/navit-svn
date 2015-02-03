@@ -1182,7 +1182,7 @@ navigation_way_get_angle_at(struct navigation_way *w, enum projection pro, doubl
  * @param dist The distance from the start of the way at which to determine bearing
  * @param dir Controls how to handle when the same delta is encountered multiple times but with different signs
  *
- * @return The delta, {@code -180 <= delta <= 180}, or {@code invalid_angle} if an error occurred.
+ * @return The delta, {@code -180 < delta <= 180}, or {@code invalid_angle} if an error occurred.
  */
 static int
 navigation_way_get_max_delta(struct navigation_way *w, enum projection pro, int angle, double dist, int dir) {
@@ -2465,7 +2465,8 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	struct navigation_way *w; /* continuation of the roundabout after we leave it */
 	struct navigation_way *w2; /* segment of the roundabout leading to the point at which we enter it */
 	int dtsir = 0; /* delta to stay in roundabout */
-	int delta1, delta2, error1 = 0, error1b = 0, error2; /* for roundabout delta calculated with different approaches, and error margin */
+	int d, dmax = 0; /* when examining deltas of roundabout approaches, current and maximum encountered */
+	int delta1, delta2, error1 = 0, error2; /* for roundabout delta calculated with different approaches, and error margin */
 	int dist_left; /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
 	int central_angle; /* approximate central angle for the roundabout arc that is part of the route */
 
@@ -2605,48 +2606,59 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					/* examine items before roundabout */
 					itm3 = itm2->prev;
 					while (itm3->prev && (dist_left >= itm3->length)) {
-						if (!(itm3->way.flags & AF_ONEWAYMASK))
+						if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
+							dist_left = 0; /* to make sure we don't examine the following way in depth */
 							break;
-						if (itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way)))
-							break;
-						error1 = max(error1, abs(navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1)));
+						}
+						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1);
+						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+							dmax = d;
 						dist_left -= itm3->length;
 						itm3 = itm3->prev;
 						if (itm3->next && itm3->next->way.next)
 							break;
 					}
 					if (dist_left == 0) {
-						error1 = max(error1, abs(itm3->angle_end - itm2->angle_end));
+						d = angle_delta(itm3->angle_end, itm2->angle_end);
 					} else if (dist_left <= itm3->length) {
-						error1 = max(error1, abs(navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1)));
+						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1);
 					} else {
 						/* not enough objects in navigation map, use most distant one */
-						error1 = max(error1, abs(itm3->way.angle2 - itm2->angle_end));
+						d = angle_delta(itm3->way.angle2, itm2->angle_end);
 					}
+					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+						dmax = d;
+					error1 = abs(dmax);
+					//TODO delta3
 
 					/* examine items after roundabout */
 					dist_left = roundabout_length / 2;
 					itm3 = itm;
 					while (itm3->next && (dist_left >= itm3->length)) {
-						if (!(itm3->way.flags & AF_ONEWAYMASK))
+						if ((itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
+							dist_left = 0; /* to make sure we don't examine the following way in depth */
 							break;
-						if (itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way)))
-							break;
-						error1b = max(error1b, abs(navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1)));
+						}
+						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
+						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+							dmax = d;
 						dist_left -= itm3->length;
 						itm3 = itm3->next;
 						if (itm3->way.next)
 							break;
 					}
 					if (dist_left == 0) {
-						error1b = max(error1b, abs(itm3->way.angle2 - itm->way.angle2));
+						d = angle_delta(itm->way.angle2, itm3->way.angle2);
 					} else if (dist_left <= itm3->length) {
-						// FIXME: what should happen in this case?
+						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
 					} else {
 						/* not enough objects in navigation map, use most distant one */
-						error1b = max(error1b, abs(itm3->angle_end - itm->way.angle2));
+						d = angle_delta(itm->way.angle2, itm3->angle_end);
 					}
-					error1 = (error1 + error1b + 1) / 2;
+					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+						dmax = d;
+					error1 = (error1 + abs(dmax) + 1) / 2;
+					// TODO delta3
 
 					dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
 
