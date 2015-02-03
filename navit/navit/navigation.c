@@ -2388,8 +2388,10 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 							dmax = d;
 						dist_left -= itm3->length;
 						itm3 = itm3->prev;
-						if (itm3->next && itm3->next->way.next)
+						if (itm3->next && itm3->next->way.next) {
+							dist_left = 0;
 							break;
+						}
 					}
 					if (dist_left == 0) {
 						d = angle_delta(itm3->angle_end, itm2->angle_end);
@@ -2417,8 +2419,10 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 							dmax = d;
 						dist_left -= itm3->length;
 						itm3 = itm3->next;
-						if (itm3->way.next)
+						if (itm3->way.next) {
+							dist_left = 0;
 							break;
+						}
 					}
 					if (dist_left == 0) {
 						d = angle_delta(itm->way.angle2, itm3->way.angle2);
