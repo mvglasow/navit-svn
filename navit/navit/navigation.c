@@ -2904,6 +2904,9 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		}
 		switch (level)
 		{
+			case 3:
+				d=get_distance(nav, distance, type, 1);
+				return g_strdup_printf(_("Follow the road for the next %s"), d);
 			case 2:
 				return g_strdup(_("Enter the roundabout soon"));
 			case 1:
