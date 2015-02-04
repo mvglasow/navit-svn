@@ -345,6 +345,7 @@ struct navigation_itm {
 struct street_destination {
 	struct street_destination *next;
 	char *destination;
+	int rank;
 };
 
 
