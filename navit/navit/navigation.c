@@ -408,11 +408,14 @@ free_list(struct street_destination *list) {
 	}
 }
 
-
 /*@brief splits a string into a list, the separator to split on can
- * 	be any character.
+ * 	be any character, and sets their initial rank to 0
  *
- * @param way, a navigation_way holding the list to be fille up
+ *  splits a string into a list, the separator to split on can
+ * 	be any character, removes preceding white-space char's and sets
+ * 	the initial rank to 0
+ *
+ * @param way, a navigation_way holding the list to be fill up
  * @param raw_string, a string to be splitted
  * @param sep, a char to be used as separator to split the raw_string
  * @return an integer, the number of entries in the list
@@ -420,37 +423,118 @@ free_list(struct street_destination *list) {
 
 
 static int
-split_string_to_list(struct navigation_way *way, char* raw_string, char sep){
+split_string_to_list(struct navigation_way *way, char* raw_string, char sep)
+{
 
-struct street_destination *new_street_destination = NULL;
-struct street_destination *next_street_destination_remember = NULL;
-char *pos1 = raw_string;
-char *pos2;
-int count = 0;
+	struct street_destination *new_street_destination = NULL;
+	struct street_destination *next_street_destination_remember = NULL;
+	char *pos1 = raw_string;
+	char *pos2;
+	int count = 0;
 
-free_list(way->destination); /*in case this is a retry with a different separator.*/
-dbg(lvl_debug,"raw_string=%s split with %c\n",raw_string, sep);
-if (strlen(raw_string)>0){
-	count = 1;
-	while (pos1){
-		new_street_destination = g_new(struct street_destination, 1);
-		new_street_destination->next = next_street_destination_remember;
-		next_street_destination_remember = new_street_destination ;
-		if ((pos2 = strrchr(pos1, sep)) != NULL) {
-			new_street_destination->destination = g_strdup(pos2+1);
-			*pos2 = '\0' ;
-			dbg(lvl_debug,"splitted_off_string=%s\n",new_street_destination->destination);
-			count++;
-		} else {
-			new_street_destination->destination = g_strdup(pos1);
-			pos1 = NULL;
-			dbg(lvl_debug,"head_of_string=%s\n",new_street_destination->destination);
+	free_list(way->destination); /*in case this is a retry with a different separator.*/
+	dbg(lvl_debug,"raw_string=%s split with %c\n",raw_string, sep);
+	if (strlen(raw_string)>0)
+		{
+		count = 1;
+		while (pos1)
+			{
+				new_street_destination = g_new(struct street_destination, 1);
+				new_street_destination->next = next_street_destination_remember;
+				next_street_destination_remember = new_street_destination ;
+				if ((pos2 = strrchr(pos1, sep)) != NULL)
+				{
+					*pos2 = '\0' ;
+					while (isspace(pos2[1]))
+						pos2++;
+					new_street_destination->destination = g_strdup(pos2+1);
+					new_street_destination->rank=0;
+					dbg(lvl_debug,"splitted_off_string=%s\n",new_street_destination->destination);
+					count++;
+				}
+				else
+				{
+					while (isspace(pos1[0]))
+						pos1++;
+					new_street_destination->destination = g_strdup(pos1);
+					new_street_destination->rank=0;
+					pos1 = NULL;
+					dbg(lvl_debug,"head_of_string=%s\n",new_street_destination->destination);
+				}
+				way->destination = next_street_destination_remember;
+			}
 		}
-		way->destination = next_street_destination_remember;
-		}
-	}
-return count;
+	return count;
 }
+
+
+
+/*@brief returns the first destination with a rank higher than zero,
+ * 		 returns the first one in the list if all have rank zero.
+ *
+ */
+
+static struct street_destination *
+get_bestranked(struct street_destination *street_destination)
+{
+	struct street_destination *selected_street_destination;
+
+	selected_street_destination = street_destination;
+	while (selected_street_destination)
+	{
+		if (selected_street_destination->rank > 0)
+			return selected_street_destination;
+		selected_street_destination = selected_street_destination->next;
+	}
+	return street_destination;
+}
+
+/*@brief Assigns a high rank to a matching destination in the next
+ * 		command having destination info, and reset existing ranks to zero
+ *
+ *@param street destination to be given a high rank
+ *@param command
+ *@return success=1 if succeeded, zero otherwise
+ */
+static int
+set_highrank(struct street_destination *street_destination, struct navigation_command *command)
+{
+	struct street_destination *future_street_destination;
+	struct navigation_command *next_command;
+	char* destination_string;
+	int success = 0;
+	destination_string = street_destination->destination;
+
+	if (command->next)
+	{
+		next_command=command->next;
+		while (next_command)
+		{
+			if (next_command->itm->way.destination)
+				break;
+			if (!next_command->next)
+				break;
+			next_command=next_command->next;
+		}
+		if (next_command->itm->way.destination)
+			future_street_destination = next_command->itm->way.destination;
+		else future_street_destination = NULL;
+	}
+
+	while (future_street_destination)
+	{
+		if ((strcmp(destination_string,future_street_destination->destination)==0))
+		{
+			future_street_destination->rank=99;
+			success =1;
+		}
+		else
+			future_street_destination->rank=0;
+		future_street_destination=future_street_destination->next;
+	}
+	return success;
+}
+
 
 /** @brief Selects the destination-names for the next announcement from the
  *         destination-names that are registered in the following command items.
@@ -465,53 +549,48 @@ select_announced_destinations(struct navigation_command *current_command)
 	struct street_destination *current_destination = NULL;  /* the list pointer of the destination_names of the current command. */
 	struct street_destination *search_destination = NULL;   /* the list pointer of the destination_names of the respective search_command. */
 
-	struct navigation_command *search_command = NULL;   /* loop through every navigation command up to the end. */
+	struct navigation_command *search_command = NULL;
 
-	/* limits the number of entries of a destination sign as well as the number of command items to investigate */
-	#define MAX_LOOPS 10
-
-	int destination_count[MAX_LOOPS] = {0,0,0,0,0,0,0,0,0,0};	/* countains the hits of identical destination signs over all */
+	#define MAX_LOOPS 10 /* limits the number of next command items to investigate over */
+	#define MAX_DESTINATIONS 10	/* limits the number of destination entries to investigate */
+	int destination_count[MAX_DESTINATIONS]; /* contains the hits of identical destinations over all */
 						/* investigated command items - a 'high score' of destination names */
-	int destination_index = 0, search_command_counter = 0;
-	int i, max_hits, max_hit_index;
+	int destination_index = 0;
+	int search_command_counter = 0;
+	int i, max_hits=0, max_hit_index;
 
 	/* search over every following command for seeking identical destination_names */
 	if (current_command->itm->way.destination)
 	{	/* can we investigate over the following commands? */
 		if (current_command->next)
-		{	/* loop over every destination sign of the current command, as far as there are not more than 10 entries. */
-			destination_index = 0; /* Do only the first MAX_LOOPS destination_signs */
+		{	/* loop over every destination of the current command, as far as there are not more than MAX_DESTINATIONS entries. */
+			destination_index = 0; /* start with the first destination */
 			current_destination = current_command->itm->way.destination;
-			while (current_destination && (destination_index < MAX_LOOPS))
+			destination_count[destination_index]=0;
+			while (current_destination && (destination_index < MAX_DESTINATIONS))
 			{	/* initialize the search command */
 				search_command = current_command->next;
-				search_command_counter = 0; // Do only the first MAX_LOOPS commands.
+				search_command_counter = 0;
 				while (search_command && (search_command_counter < MAX_LOOPS))
 				{
-					if (search_command->itm)
-					{	/* has the search command any destination_signs? */
-						if (search_command->itm->way.destination)
-						{
-							search_destination = search_command->itm->way.destination;
-							while (search_destination)
-							{	/* Search this name in the destination list of the current command. */
-								if (0 == strcmp(current_destination->destination, search_destination->destination))
-								{	/* enter the destination_name in the investigation list*/
-									destination_count[destination_index]++;
-									search_destination = NULL; /* break condition */
-								}
-								else
-								{
-									search_destination = search_destination->next;
-								}
+					if (search_command->itm && search_command->itm->way.destination)
+					{	/* has the search command any destinations ? */
+						search_destination = search_command->itm->way.destination;
+						while (search_destination)
+						{	/* Search this name in the destination list of the current command. */
+							if (0 == strcmp(current_destination->destination, search_destination->destination))
+							{	/* enter the destination_name in the investigation list*/
+								destination_count[destination_index]++;
+								search_destination = NULL; /* break condition */
 							}
+							else search_destination = search_destination->next;
 						}
 					}
 					search_command_counter++;
 					search_command = search_command->next;
 				}
-
 				destination_index++;
+				destination_count[destination_index]=0;
 				current_destination = current_destination->next;
 			}
 
@@ -532,12 +611,18 @@ select_announced_destinations(struct navigation_command *current_command)
 			{
 				current_destination = current_destination->next;
 			}
+
+			dbg(lvl_debug,"%s, max hits =%i\n",current_destination->destination,max_hits);
+			set_highrank(current_destination,current_command);
 		}
 	}
 
 	/* return the best candidate, if there is any.*/
-	return g_strdup(current_destination ? current_destination->destination:NULL);
+	if (max_hits)
+		return g_strdup(current_destination->destination);
+	return g_strdup(current_destination ? get_bestranked(current_destination)->destination:NULL);
 }
+
 
 int
 navigation_get_attr(struct navigation *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter)
