@@ -2493,6 +2493,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					//TODO delta3
 
 					/* examine items after roundabout */
+					dmax = 0;
 					dist_left = roundabout_length / 2;
 					itm3 = itm;
 					while (itm3->next && (dist_left >= itm3->length)) {
