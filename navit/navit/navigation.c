@@ -3093,7 +3093,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				}
 				if (!skip_roads)
 					/* TRANSLATORS: the first arg. is strength, the second is direction, the third is distance, the fourth is destination  */
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("easily ")),(_("right")),d,destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"),(_("easily ")),(_("right")),d,destination);
 				break;
 			case type_nav_right_2 :
 				if (tellstreetname)
@@ -3114,7 +3114,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						}
 				}
 				if (!skip_roads)
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(""),(_("right")),d,destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"),(""),(_("right")),d,destination);
 				break;
 			case type_nav_right_3 :
 				if (tellstreetname)
@@ -3135,7 +3135,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					}
 				}
 				if (!skip_roads)
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("strongly ")),(_("right")),d,destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"),(_("strongly ")),(_("right")),d,destination);
 				break;
 			case type_nav_left_1 :
 				if (tellstreetname)
@@ -3156,7 +3156,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						}
 					}
 				if (!skip_roads)
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("easily ")),(_("left")),d,destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"),(_("easily ")),(_("left")),d,destination);
 				break;
 			case type_nav_left_2 :
 				if (tellstreetname)
@@ -3177,7 +3177,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 						}
 					}
 				if (!skip_roads)
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(""),(_("left")),d,destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"),(""),(_("left")),d,destination);
 				break;
 			case type_nav_left_3 :
 				if (tellstreetname)
@@ -3198,7 +3198,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					}
 				}
 				if (!skip_roads)
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"),(_("strongly ")),(_("left")),d,destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"),(_("strongly ")),(_("left")),d,destination);
 				break;
 			case  type_nav_turnaround_left:
 				/* TRANSLATORS: the arg. is distance  */
