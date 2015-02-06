@@ -2541,7 +2541,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 				dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
 			}
 
-			delta3 = angle_delta(entry_road_angle, exit_road_angle);
+			delta3 = adjust_delta(angle_delta(entry_road_angle, exit_road_angle), delta2);
 			dbg(lvl_debug,"delta3 %d\n", delta3);
 
 			if ((error1 == 0) && (error2 == 0))
