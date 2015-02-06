@@ -2465,13 +2465,13 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					dbg(lvl_debug,"examining roads for up to %dm to estimate error for delta1\n", dist_left);
 
 					/* examine items before roundabout */
-					itm3 = itm2->prev;
+					itm3 = itm2->prev; /* last segment before roundabout */
 					while (itm3->prev && (dist_left >= itm3->length)) {
 						if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
 							dist_left = 0; /* to make sure we don't examine the following way in depth */
 							break;
 						}
-						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1);
+						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
 						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 							dmax = d;
 						dist_left -= itm3->length;
@@ -2482,18 +2482,18 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						}
 					}
 					if (dist_left == 0) {
-						d = angle_delta(itm3->angle_end, itm2->angle_end);
+						d = angle_delta(itm3->angle_end, itm2->prev->angle_end);
 					} else if (dist_left <= itm3->length) {
-						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->angle_end, itm3->length - dist_left, -1);
+						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
 					} else {
 						/* not enough objects in navigation map, use most distant one */
-						d = angle_delta(itm3->way.angle2, itm2->angle_end);
+						d = angle_delta(itm3->way.angle2, itm2->prev->angle_end);
 					}
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 						dmax = d;
 					error1 = abs(dmax);
-					entry_road_angle = itm2->angle_end - dmax;
-					dbg(lvl_debug,"entry_road_angle %d (%d - %d)\n", entry_road_angle, itm2->angle_end, dmax);
+					entry_road_angle = itm2->prev->angle_end - dmax;
+					dbg(lvl_debug,"entry_road_angle %d (%d - %d)\n", entry_road_angle, itm2->prev->angle_end, dmax);
 
 					/* examine items after roundabout */
 					dmax = 0;
