@@ -2538,8 +2538,12 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					}
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 						dmax = d;
-					error1 = (error1 + abs(dmax) + 1) / 2;
-					//TODO: if delta1 is outside +/-180, ensure error1 is at least 2*(abs(delta1)-180)
+
+					/* If delta1 is outside +/-180, this is another input factor for error1.
+					 * Using max() ensures that (if delta1 is within +/-180, the second argument
+					 * is negative and the first one takes precedence). */
+					error1 = max((error1 + abs(dmax) + 1) / 2, 2 * (abs(delta1) - 180));
+
 					exit_road_angle = itm->way.angle2 + dmax;
 					dbg(lvl_debug,"exit_road_angle %d (%d + %d)\n", exit_road_angle, itm->way.angle2, dmax);
 
