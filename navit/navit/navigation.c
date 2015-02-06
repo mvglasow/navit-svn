@@ -2295,6 +2295,27 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 }
 
 /**
+ * @brief Adjusts a bearing delta to point in the same direction as a reference delta.
+ *
+ * Calculated delta results are constrained to -180 <= delta <= +180 degrees. Some heuristics, however, require values outside
+ * that range, e.g. -190 rather than 170 degrees. Given a reference with approximately correct orientation, this function corrects
+ * that delta to match the reference as closely as possible. This is done by adding or subtracting 360 degrees as needed.
+ *
+ * @param delta The delta to adjust. {@code abs(delta)} must be no greater than 180.
+ * @param reference The reference delta. {@code abs(reference)} must be no greater then 180.
+ * @return The adjusted delta, which is numerically within +/-180 degrees of the reference. If {@code delta} or {@code reference}
+ * are outside of their specified range, the result is undefined.
+ */
+int adjust_delta(int delta, int reference) {
+	if ((delta >= 0) && (delta - reference) > 180)
+		return delta - 360;
+	else if ((delta <= 0) && (reference - delta) > 180)
+		return delta + 360;
+	else
+		return delta;
+}
+
+/**
  * @brief Creates a new {@code struct navigation_command} for a maneuver.
  *
  * This function also parses {@code maneuver} and sets its {@code type} appropriately so that other
@@ -2422,22 +2443,9 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 				dbg(lvl_debug,"delta2 %d error %d\n", delta2, error2);
 
 				if (itm2->prev) {
-					delta1 = angle_delta(itm2->prev->angle_end, itm->way.angle2);
-					/* If we are turning around and there are V-shaped approach segments, delta1 will point
-					 * in the wrong direction. This may also happen with sharp turns, taking the last exit.
-					 * Hence we need to add or subtract 360 degrees in these cases.
-					 * This is the case when both delta1 and delta2 are somewhat close to +/-180
-					 * but in opposite directions. We're using 0 degrees as the threshold, which should be OK because
-					 * delta2 tends to underestimate the central angle. (+/-90 fails to catch some cases.)*/
-					if ((ret->delta > dtsir) && (delta2 < 0) && (delta1 > 90)) {
-						/* counterclockwise roundabout */
-						dbg(lvl_debug,"correcting delta1 %d to %d\n", delta1, delta1 - 360);
-						delta1 -= 360;
-					} if ((ret->delta < dtsir) && (delta2 > 0) && (delta1 < -90)) {
-						/* clockwise roundabout */
-						dbg(lvl_debug,"correcting delta1 %d to %d\n", delta1, delta1 + 360);
-						delta1 += 360;
-					}
+					/* If there are V-shaped approach segments and we are turning around or making a sharp turn,
+					 * delta1 may point in the wrong direction, thus we need adjust_delta() to correct this. */
+					delta1 = adjust_delta(angle_delta(itm2->prev->angle_end, itm->way.angle2), delta2);
 
 					/* Now try to figure out the error range for delta1. Errors are caused by turns in the approach segments
 					 * just before the roundabout. We use the last segment before the approach as a reference.
@@ -2531,6 +2539,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 						dmax = d;
 					error1 = (error1 + abs(dmax) + 1) / 2;
+					//TODO: if delta1 is outside +/-180, ensure error1 is at least 2*(abs(delta1)-180)
 					exit_road_angle = itm->way.angle2 + dmax;
 					dbg(lvl_debug,"exit_road_angle %d (%d + %d)\n", exit_road_angle, itm->way.angle2, dmax);
 
