@@ -2466,27 +2466,30 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 
 					/* examine items before roundabout */
 					itm3 = itm2->prev; /* last segment before roundabout */
-					while (itm3->prev && (dist_left >= itm3->length)) {
+					while (itm3->prev) {
 						if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
 							dist_left = 0; /* to make sure we don't examine the following way in depth */
 							break;
 						}
+						if (dist_left >= itm3->length)
+							break;
 						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
 						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 							dmax = d;
-						dist_left -= itm3->length;
-						itm3 = itm3->prev;
-						if (itm3->next && itm3->next->way.next) {
-							dist_left = 0;
+						if (itm3->way.next) {
+							dist_left = itm3->length;
 							break;
 						}
+						dist_left -= itm3->length;
+						itm3 = itm3->prev;
 					}
 					if (dist_left == 0) {
 						d = angle_delta(itm3->angle_end, itm2->prev->angle_end);
-					} else if (dist_left <= itm3->length) {
+					} else if (dist_left < itm3->length) {
 						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
 					} else {
-						/* not enough objects in navigation map, use most distant one */
+						/* not enough objects in navigation map, use most distant one
+						 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
 						d = angle_delta(itm3->way.angle2, itm2->prev->angle_end);
 					}
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
@@ -2498,28 +2501,31 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					/* examine items after roundabout */
 					dmax = 0;
 					dist_left = roundabout_length / 2;
-					itm3 = itm;
-					while (itm3->next && (dist_left >= itm3->length)) {
+					itm3 = itm; /* first segment after roundabout */
+					while (itm3->next) {
 						if ((itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
 							dist_left = 0; /* to make sure we don't examine the following way in depth */
 							break;
 						}
+						if (dist_left >= itm3->length)
+							break;
 						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
 						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 							dmax = d;
-						dist_left -= itm3->length;
-						itm3 = itm3->next;
-						if (itm3->way.next) {
-							dist_left = 0;
+						if (itm3->next->way.next) {
+							dist_left = itm3->length;
 							break;
 						}
+						dist_left -= itm3->length;
+						itm3 = itm3->next;
 					}
 					if (dist_left == 0) {
 						d = angle_delta(itm->way.angle2, itm3->way.angle2);
-					} else if (dist_left <= itm3->length) {
+					} else if (dist_left < itm3->length) {
 						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
 					} else {
-						/* not enough objects in navigation map, use most distant one */
+						/* not enough objects in navigation map, use most distant one
+						 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
 						d = angle_delta(itm->way.angle2, itm3->angle_end);
 					}
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
