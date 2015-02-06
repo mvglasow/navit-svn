@@ -2316,30 +2316,40 @@ int adjust_delta(int delta, int reference) {
 }
 
 /**
- * @brief Creates a new {@code struct navigation_command} for a maneuver.
+ * @brief Analyzes a roundabout and sets maneuver information
  *
- * This function also parses {@code maneuver} and sets its {@code type} appropriately so that other
- * functions can rely on that. This is currently underway and only a few maneuver types are implemented
- * thus far.
+ * Exit from a roundabout requires a somewhat complex analysis of the ways involved in order to:
+ * <ul>
+ * <li>Calculate effective bearing change (between entry and exit) and store it in {@code cmd->roundabout_delta}</li>
+ * <li>Set {@code cmd->maneuver->type} to {@code nav_roundabout_{r|l}{1..8}}, based on bearing change</li>
+ * <li>Set {@code cmd->length}</li>
+ * </ul>
+ *
+ * Bearing change must be as close as possible to how drivers would perceive it.
+ * Builds prior to r2017 used the difference between the last way before and the first way after the roundabout,
+ * which tends to overestimate the angle when the ways leading towards and/or away from the roundabout split into
+ * separate carriageways in a Y-shape.
+ *
+ * In r2017 a different approach was introduced, which essentially distorts the roads so they enter and leave
+ * the roundabout at a 90 degree angle. (To make calculations simpler, tangents of the roundabout at the entry
+ * and exit points are used, with one of them reversed in direction, instead of the approach roads.)
+ * However, this approach tends to underestimate the angle when the distance between approach roads is large.
+ *
+ * Project HighFive introduced a new approach of combining both previous two approaches, calculating error estimates for each
+ * and using a weighted average between the two delta estimates so that the errors cancel each other out as far as possible.
  *
  * @param this_ The navigation object
- * @param itm The navigation item following the maneuver
- * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}. For the destination,
- * initialize a zeroed-out {@code struct navigation_maneuver} and set its {@code type} member to {@code type_nav_destination}
- * prior to calling this function.
+ * @param cmd A {@code struct navigation_cmd}, whose {@code delta} and {@code maneuver} members must be set prior to calling
+ * this function
+ * @param itm The navigation item for the maneuver to exit the roundabout
  */
-static struct navigation_command *
-command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
-{
-	struct navigation_command *ret=g_new0(struct navigation_command, 1);
+void navigation_analyze_roundabout(struct navigation *this_, struct navigation_command *cmd, struct navigation_itm *itm) {
 	enum item_type r = type_none, l = type_none;
-
-	/* Some variables needed only for roundabouts */
-	int len=0; /* length of roundabout segment */
+	int len = 0; /* length of roundabout segment */
 	int roundabout_length; /* estimated total length of roundabout */
-	int angle=0;
-	int entry_angle; /* angle at which we enter the roundabout, offset by 90 degrees */
-	int exit_angle; /* angle at which we leave the roundabout, offset by 90 degrees */
+	int angle = 0;
+	int entry_tangent; /* tangent of the roundabout at entry point, against direction of route */
+	int exit_tangent; /* tangent of the roundabout at exit point, in direction of route */
 	int entry_road_angle, exit_road_angle; /* angles before and after approach segments */
 	struct navigation_itm *itm2; /* items before itm to examine, up to first roundabout segment on route */
 	struct navigation_itm *itm3; /* items before itm2 and after itm to examine */
@@ -2351,6 +2361,263 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	int delta3; /* roundabout delta calculated from entry_road_angle and exit_road_angle, currently not used in calculations */
 	int dist_left; /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
 	int central_angle; /* approximate central angle for the roundabout arc that is part of the route */
+
+	/* Find continuation of roundabout after the exit. Don't simply use itm->way.next here, it will break
+	 * if a node in the roundabout is shared by more than one way */
+	w = itm->way.next;
+	while (w && !(w->flags & AF_ROUNDABOUT))
+		w = w->next;
+	if (w) {
+		/* When exiting a roundabout, w should never be null, thus this
+		 * code will always be executed. Checking for the condition anyway ensures
+		 * that botched map data (roundabout ending with nowhere else to go) will not
+		 * cause a crash. For the same reason we're using dtsir with a default value of 0.
+		 */
+
+		/* approximate error for delta2: central angle (=bearing change) of roundabout segment after exit */
+		error2 = abs(angle_delta(itm->prev->angle_end, navigation_way_get_exit_angle(w)));
+
+		dtsir = angle_delta(itm->prev->angle_end, w->angle2);
+		dbg(lvl_debug,"delta to stay in roundabout %d\n", dtsir);
+
+		exit_tangent = angle_median(itm->prev->angle_end, w->angle2);
+		dbg(lvl_debug,"exit %d median from %d, %d\n", exit_tangent, itm->prev->angle_end, w->angle2);
+
+		/* Move back to where we enter the roundabout, calculate length in roundabout */
+		itm2=itm;
+		while (itm2->prev && (itm2->prev->way.flags & AF_ROUNDABOUT)) {
+			itm2=itm2->prev;
+			len+=itm2->length;
+			angle=itm2->angle_end;
+		}
+
+		/* Find the segment of the roundabout leading up to the point at which we enter it. Again, don't simply
+		 * use itm2->way.next here, it will break if a node in the roundabout is shared by more than one way */
+		w2 = itm2->way.next;
+		while (w2 && !(w2->flags & AF_ROUNDABOUT))
+			w2 = w2->next;
+
+		/* Calculate entry angle */
+		if (itm2 && w2) {
+			/* improve error estimate for delta2: average of central angles (=bearing change) of the roundabout
+			 * segments before entry and after exit */
+			error2 = (error2 + abs(angle_delta(angle_opposite(itm2->way.angle2), navigation_way_get_exit_angle(w2)))) / 2;
+			entry_tangent = angle_median(angle_opposite(itm2->way.angle2), w2->angle2);
+			dbg(lvl_debug, "entry %d median from %d (%d), %d\n", entry_tangent, angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
+		} else {
+			entry_tangent = angle_opposite(angle);
+		} /* endif itm2 && w2 */
+		dbg(lvl_debug, "entry %d exit %d\n", entry_tangent, exit_tangent);
+
+		delta2 = angle_delta(entry_tangent, exit_tangent);
+		dbg(lvl_debug, "delta2 %d error %d\n", delta2, error2);
+
+		if (itm2->prev) {
+			/* If there are V-shaped approach segments and we are turning around or making a sharp turn,
+			 * delta1 may point in the wrong direction, thus we need adjust_delta() to correct this. */
+			delta1 = adjust_delta(angle_delta(itm2->prev->angle_end, itm->way.angle2), delta2);
+
+			/* Now try to figure out the error range for delta1. Errors are caused by turns in the approach segments
+			 * just before the roundabout. We use the last segment before the approach as a reference.
+			 * We assume the approach to begin when one of the following is true:
+			 * - a way turns into a ramp
+			 * - a way turns into a one-way road
+			 * - a certain distance from the roundabout, proportional to its circumference, is exceeded
+			 * Simply comparing bearings at these points may cause confusion with certain road layouts (namely
+			 * S-shaped dual-carriageway roads), hence we examine the entire approach segment and take the largest
+			 * delta (relative to the end of the approach segment) which we encounter.
+			 * This is done for both ends of the roundabout.
+			 */
+
+			/* Approximate roundabout circumference based on len and approximate central angle of route segment.
+			 * The central angle is approximated using the unweighted average of delta1 and delta2,
+			 * which is somewhat crude but should be OK for error estimates. */
+			central_angle = abs((delta1 + delta2) / 2 + ((cmd->delta < dtsir) ? 180 : -180));
+			roundabout_length = len * 360 / central_angle;
+			dbg(lvl_debug,"roundabout_length = %dm (for central_angle = %d degrees)\n", roundabout_length, central_angle);
+
+			/* in the case of separate carriageways, approach roads become hard to identify, thus we keep a cap on distance.
+			 * Currently this is at most half the length of the roundabout. */
+			/* FIXME: experiment with different values here */
+			dist_left = roundabout_length / 2;
+			dbg(lvl_debug,"examining roads for up to %dm to estimate error for delta1\n", dist_left);
+
+			/* examine items before roundabout */
+			itm3 = itm2->prev; /* last segment before roundabout */
+			while (itm3->prev) {
+				if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
+					dist_left = 0; /* to make sure we don't examine the following way in depth */
+					break;
+				}
+				if (dist_left >= itm3->length)
+					break;
+				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
+				if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+					dmax = d;
+				if (itm3->way.next) {
+					dist_left = itm3->length;
+					break;
+				}
+				dist_left -= itm3->length;
+				itm3 = itm3->prev;
+			}
+			if (dist_left == 0) {
+				d = angle_delta(itm3->angle_end, itm2->prev->angle_end);
+			} else if (dist_left < itm3->length) {
+				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
+			} else {
+				/* not enough objects in navigation map, use most distant one
+				 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
+				d = angle_delta(itm3->way.angle2, itm2->prev->angle_end);
+			}
+			if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+				dmax = d;
+			error1 = abs(dmax);
+			entry_road_angle = itm2->prev->angle_end - dmax;
+			dbg(lvl_debug,"entry_road_angle %d (%d - %d)\n", entry_road_angle, itm2->prev->angle_end, dmax);
+
+			/* examine items after roundabout */
+			dmax = 0;
+			dist_left = roundabout_length / 2;
+			itm3 = itm; /* first segment after roundabout */
+			while (itm3->next) {
+				if ((itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
+					dist_left = 0; /* to make sure we don't examine the following way in depth */
+					break;
+				}
+				if (dist_left >= itm3->length)
+					break;
+				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
+				if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+					dmax = d;
+				if (itm3->next->way.next) {
+					dist_left = itm3->length;
+					break;
+				}
+				dist_left -= itm3->length;
+				itm3 = itm3->next;
+			}
+			if (dist_left == 0) {
+				d = angle_delta(itm->way.angle2, itm3->way.angle2);
+			} else if (dist_left < itm3->length) {
+				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
+			} else {
+				/* not enough objects in navigation map, use most distant one
+				 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
+				d = angle_delta(itm->way.angle2, itm3->angle_end);
+			}
+			if ((d != invalid_angle) && (abs(d) > abs(dmax)))
+				dmax = d;
+
+			/* If delta1 is outside +/-180, this is another input factor for error1.
+			 * Using max() ensures that (if delta1 is within +/-180, the second argument
+			 * is negative and the first one takes precedence). */
+			error1 = max((error1 + abs(dmax) + 1) / 2, 2 * (abs(delta1) - 180));
+
+			exit_road_angle = itm->way.angle2 + dmax;
+			dbg(lvl_debug,"exit_road_angle %d (%d + %d)\n", exit_road_angle, itm->way.angle2, dmax);
+
+			dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
+
+			/* We now have two approximations delta1 and delta2 with corresponding errors.
+			 * However, deltas are biased as each constitutes a boundary of its possible range.
+			 * We need to correct this so that each delta will be in the middle of its range.
+			 * This requires knowing the direction of the roundabout.
+			 * To avoid mis-guessing, we use two approaches and use results only if both agree.
+			 * Note that we divide the error range by two even if we can't guess the direction.
+			 * While not 100% correct, it has no impact on results as long as the ratio is maintained.
+			 * Adding 1 before dividing ensures we round up. */
+			error1 = (error1 + 1) / 2;
+			error2 = (error2 + 1) / 2;
+			if ((cmd->delta > dtsir) && (delta1 < delta2)) {
+				/* counterclockwise; exit right; delta1 (approach ways) further left (i.e. smaller) than delta2 (tangents) */
+				delta1 += error1;
+				delta2 -= error2;
+				dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
+			} else if ((cmd->delta < dtsir) && (delta1 > delta2)) {
+				/* clockwise; exit left; delta1 (approach ways) further right (greater) than delta2 (tangents) */
+				delta1 -= error1;
+				delta2 += error2;
+				dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
+			}
+
+			delta3 = angle_delta(entry_road_angle, exit_road_angle);
+			dbg(lvl_debug,"delta3 %d\n", delta3);
+
+			if ((error1 == 0) && (error2 == 0))
+				cmd->roundabout_delta = (delta1 + delta2) / 2;
+			else
+				cmd->roundabout_delta = (delta1 * error2 + delta2 * error1) / (error1 + error2);
+			dbg(lvl_debug,"roundabout_delta %d\n", cmd->roundabout_delta);
+		} else {
+			/* we don't know where we entered the roundabout, so we can't calculate delta1 */
+			cmd->roundabout_delta = delta2;
+		} /* endif itm2->prev */
+		cmd->length=len+roundabout_extra_length;
+	} /* if w */
+
+	/* set cmd->maneuver->type */
+	switch (((180 + 22) - cmd->roundabout_delta) / 45) {
+	case 0:
+	case 1:
+		r = type_nav_roundabout_r1;
+		l = type_nav_roundabout_l7;
+		break;
+	case 2:
+		r = type_nav_roundabout_r2;
+		l = type_nav_roundabout_l6;
+		break;
+	case 3:
+		r = type_nav_roundabout_r3;
+		l = type_nav_roundabout_l5;
+		break;
+	case 4:
+		r = type_nav_roundabout_r4;
+		l = type_nav_roundabout_l4;
+		break;
+	case 5:
+		r = type_nav_roundabout_r5;
+		l = type_nav_roundabout_l3;
+		break;
+	case 6:
+		r = type_nav_roundabout_r6;
+		l = type_nav_roundabout_l2;
+		break;
+	case 7:
+		r = type_nav_roundabout_r7;
+		l = type_nav_roundabout_l1;
+		break;
+	case 8:
+		r = type_nav_roundabout_r8;
+		l = type_nav_roundabout_l8;
+		break;
+	}
+	dbg(lvl_debug,"delta %d\n", cmd->delta);
+	/* if delta to leave the roundabout (cmd->delta) is less than delta to stay in roundabout (dtsir),
+	 * we're exiting to the left, so we're probably in a clockwise roundabout, and vice versa */
+	if (cmd->delta < dtsir)
+		cmd->maneuver->type = l;
+	else
+		cmd->maneuver->type = r;
+}
+
+
+/**
+ * @brief Creates a new {@code struct navigation_command} for a maneuver.
+ *
+ * This function also parses {@code maneuver} and sets its {@code type} appropriately so that other
+ * functions can rely on that.
+ *
+ * @param this_ The navigation object
+ * @param itm The navigation item following the maneuver
+ * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}. For the destination,
+ * initialize a zeroed-out {@code struct navigation_maneuver} and set its {@code type} member to {@code type_nav_destination}
+ * prior to calling this function.
+ */
+static struct navigation_command *
+command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
+{
+	struct navigation_command *ret=g_new0(struct navigation_command, 1);
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -2372,265 +2639,9 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	 */
 
 	if (ret->maneuver->type != type_nav_destination) {
-		// TODO: make this a separate function (improves code legibility)
-		/* if we're leaving a roundabout, special handling is needed:
-		 * - calculate effective bearing change (between entry and exit),
-		 * - set length,
-		 * - set ret->maneuver->type to nav_roundabout_{r|l}{1..8}.
-		 *
-		 * Bearing change must be as close as possible to how drivers would perceive it.
-		 * Builds prior to r2017 used the difference between the last way before and the first way after the roundabout,
-		 * which tends to overestimate the angle when V-shaped approach roads are involved.
-		 *
-		 * In r2017 a different approach was introduced, which essentially distorts the roads so they enter and leave
-		 * the roundabout at a 90 degree angle. (To make calculations simpler, tangents of the roundabout at the entry
-		 * and exit points are used, with one of them reversed in direction, instead of the approach roads.)
-		 * However, this approach tends to underestimate the angle when the distance between approach roads is large.
-		 *
-		 * Project HighFive combines these two approaches, using a weighted average between the two so that the errors
-		 * cancel each other out as far as possible.
-		 */
 		/* FIXME: this will not catch cases in which entry and exit share the same node and we just *touch* the roundabout */
 		if (itm && itm->prev && !(itm->way.flags & AF_ROUNDABOUT) && (itm->prev->way.flags & AF_ROUNDABOUT)) {
-			/* Find continuation of roundabout after the exit. Don't simply use itm->way.next here, it will break
-			 * if a node in the roundabout is shared by more than one way */
-			w = itm->way.next;
-			while (w && !(w->flags & AF_ROUNDABOUT))
-				w = w->next;
-			if (w) {
-				/* When exiting a roundabout, w should never be null, thus this
-				 * code will always be executed. Checking for the condition anyway ensures
-				 * that botched map data (roundabout ending with nowhere else to go) will not
-				 * cause a crash. For the same reason we're using dtsir with a default value of 0.
-				 */
-
-				/* approximate error for delta2: central angle (=bearing change) of roundabout segment after exit */
-				error2 = abs(angle_delta(itm->prev->angle_end, navigation_way_get_exit_angle(w)));
-
-				dtsir = angle_delta(itm->prev->angle_end, w->angle2);
-				dbg(lvl_debug,"delta to stay in roundabout %d\n", dtsir);
-
-				exit_angle=angle_median(itm->prev->angle_end, w->angle2);
-				dbg(lvl_debug,"exit %d median from %d,%d\n", exit_angle,itm->prev->angle_end, w->angle2);
-
-				/* Move back to where we enter the roundabout, calculate length in roundabout */
-				itm2=itm;
-				while (itm2->prev && (itm2->prev->way.flags & AF_ROUNDABOUT)) {
-					itm2=itm2->prev;
-					len+=itm2->length;
-					angle=itm2->angle_end;
-				}
-
-				/* Find the segment of the roundabout leading up to the point at which we enter it. Again, don't simply
-				 * use itm2->way.next here, it will break if a node in the roundabout is shared by more than one way */
-				w2 = itm2->way.next;
-				while (w2 && !(w2->flags & AF_ROUNDABOUT))
-					w2 = w2->next;
-
-				/* Calculate entry angle */
-				if (itm2 && w2) {
-					/* improve error estimate for delta2: average of central angles (=bearing change) of the roundabout
-					 * segments before entry and after exit */
-					error2 = (error2 + abs(angle_delta(angle_opposite(itm2->way.angle2), navigation_way_get_exit_angle(w2)))) / 2;
-					entry_angle=angle_median(angle_opposite(itm2->way.angle2), w2->angle2);
-					dbg(lvl_debug,"entry %d median from %d(%d),%d\n", entry_angle,angle_opposite(itm2->way.angle2), itm2->way.angle2, itm2->way.next->angle2);
-				} else {
-					entry_angle=angle_opposite(angle);
-				} /* endif itm2 && w2 */
-				dbg(lvl_debug,"entry %d exit %d\n", entry_angle, exit_angle);
-
-				delta2 = angle_delta(entry_angle, exit_angle);
-				dbg(lvl_debug,"delta2 %d error %d\n", delta2, error2);
-
-				if (itm2->prev) {
-					/* If there are V-shaped approach segments and we are turning around or making a sharp turn,
-					 * delta1 may point in the wrong direction, thus we need adjust_delta() to correct this. */
-					delta1 = adjust_delta(angle_delta(itm2->prev->angle_end, itm->way.angle2), delta2);
-
-					/* Now try to figure out the error range for delta1. Errors are caused by turns in the approach segments
-					 * just before the roundabout. We use the last segment before the approach as a reference.
-					 * We assume the approach to begin when one of the following is true:
-					 * - a way turns into a ramp
-					 * - a way turns into a one-way road
-					 * - a certain distance from the roundabout, proportional to its circumference, is exceeded
-					 * Simply comparing bearings at these points may cause confusion with certain road layouts (namely
-					 * S-shaped dual-carriageway roads), hence we examine the entire approach segment and take the largest
-					 * delta (relative to the end of the approach segment) which we encounter.
-					 * This is done for both ends of the roundabout.
-					 */
-
-					/* Approximate roundabout circumference based on len and approximate central angle of route segment.
-					 * The central angle is approximated using the unweighted average of delta1 and delta2,
-					 * which is somewhat crude but should be OK for error estimates. */
-					central_angle = abs((delta1 + delta2) / 2 + ((ret->delta < dtsir) ? 180 : -180));
-					roundabout_length = len * 360 / central_angle;
-					dbg(lvl_debug,"roundabout_length = %dm (for central_angle = %d degrees)\n", roundabout_length, central_angle);
-
-					/* in the case of separate carriageways, approach roads become hard to identify, thus we keep a cap on distance.
-					 * Currently this is at most half the length of the roundabout. */
-					/* FIXME: experiment with different values here */
-					dist_left = roundabout_length / 2;
-					dbg(lvl_debug,"examining roads for up to %dm to estimate error for delta1\n", dist_left);
-
-					/* examine items before roundabout */
-					itm3 = itm2->prev; /* last segment before roundabout */
-					while (itm3->prev) {
-						if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
-							dist_left = 0; /* to make sure we don't examine the following way in depth */
-							break;
-						}
-						if (dist_left >= itm3->length)
-							break;
-						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
-						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
-							dmax = d;
-						if (itm3->way.next) {
-							dist_left = itm3->length;
-							break;
-						}
-						dist_left -= itm3->length;
-						itm3 = itm3->prev;
-					}
-					if (dist_left == 0) {
-						d = angle_delta(itm3->angle_end, itm2->prev->angle_end);
-					} else if (dist_left < itm3->length) {
-						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
-					} else {
-						/* not enough objects in navigation map, use most distant one
-						 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
-						d = angle_delta(itm3->way.angle2, itm2->prev->angle_end);
-					}
-					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
-						dmax = d;
-					error1 = abs(dmax);
-					entry_road_angle = itm2->prev->angle_end - dmax;
-					dbg(lvl_debug,"entry_road_angle %d (%d - %d)\n", entry_road_angle, itm2->prev->angle_end, dmax);
-
-					/* examine items after roundabout */
-					dmax = 0;
-					dist_left = roundabout_length / 2;
-					itm3 = itm; /* first segment after roundabout */
-					while (itm3->next) {
-						if ((itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
-							dist_left = 0; /* to make sure we don't examine the following way in depth */
-							break;
-						}
-						if (dist_left >= itm3->length)
-							break;
-						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
-						if ((d != invalid_angle) && (abs(d) > abs(dmax)))
-							dmax = d;
-						if (itm3->next->way.next) {
-							dist_left = itm3->length;
-							break;
-						}
-						dist_left -= itm3->length;
-						itm3 = itm3->next;
-					}
-					if (dist_left == 0) {
-						d = angle_delta(itm->way.angle2, itm3->way.angle2);
-					} else if (dist_left < itm3->length) {
-						d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
-					} else {
-						/* not enough objects in navigation map, use most distant one
-						 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
-						d = angle_delta(itm->way.angle2, itm3->angle_end);
-					}
-					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
-						dmax = d;
-
-					/* If delta1 is outside +/-180, this is another input factor for error1.
-					 * Using max() ensures that (if delta1 is within +/-180, the second argument
-					 * is negative and the first one takes precedence). */
-					error1 = max((error1 + abs(dmax) + 1) / 2, 2 * (abs(delta1) - 180));
-
-					exit_road_angle = itm->way.angle2 + dmax;
-					dbg(lvl_debug,"exit_road_angle %d (%d + %d)\n", exit_road_angle, itm->way.angle2, dmax);
-
-					dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
-
-					/* We now have two approximations delta1 and delta2 with corresponding errors.
-					 * However, deltas are biased as each constitutes a boundary of its possible range.
-					 * We need to correct this so that each delta will be in the middle of its range.
-					 * This requires knowing the direction of the roundabout.
-					 * To avoid mis-guessing, we use two approaches and use results only if both agree.
-					 * Note that we divide the error range by two even if we can't guess the direction.
-					 * While not 100% correct, it has no impact on results as long as the ratio is maintained.
-					 * Adding 1 before dividing ensures we round up. */
-					error1 = (error1 + 1) / 2;
-					error2 = (error2 + 1) / 2;
-					if ((ret->delta > dtsir) && (delta1 < delta2)) {
-						/* counterclockwise; exit right; delta1 (approach ways) further left (i.e. smaller) than delta2 (tangents) */
-						delta1 += error1;
-						delta2 -= error2;
-						dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
-					} else if ((ret->delta < dtsir) && (delta1 > delta2)) {
-						/* clockwise; exit left; delta1 (approach ways) further right (greater) than delta2 (tangents) */
-						delta1 -= error1;
-						delta2 += error2;
-						dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
-					}
-
-					delta3 = angle_delta(entry_road_angle, exit_road_angle);
-					dbg(lvl_debug,"delta3 %d\n", delta3);
-
-					if ((error1 == 0) && (error2 == 0))
-						ret->roundabout_delta = (delta1 + delta2) / 2;
-					else
-						ret->roundabout_delta = (delta1 * error2 + delta2 * error1) / (error1 + error2);
-					dbg(lvl_debug,"roundabout_delta %d\n", ret->roundabout_delta);
-				} else {
-					/* we don't know where we entered the roundabout, so we can't calculate delta1 */
-					ret->roundabout_delta = delta2;
-				} /* endif itm2->prev */
-				ret->length=len+roundabout_extra_length;
-			} /* if w */
-
-			/* set ret->maneuver->type */
-			switch (((180 + 22) - ret->roundabout_delta) / 45) {
-			case 0:
-			case 1:
-				r = type_nav_roundabout_r1;
-				l = type_nav_roundabout_l7;
-				break;
-			case 2:
-				r = type_nav_roundabout_r2;
-				l = type_nav_roundabout_l6;
-				break;
-			case 3:
-				r = type_nav_roundabout_r3;
-				l = type_nav_roundabout_l5;
-				break;
-			case 4:
-				r = type_nav_roundabout_r4;
-				l = type_nav_roundabout_l4;
-				break;
-			case 5:
-				r = type_nav_roundabout_r5;
-				l = type_nav_roundabout_l3;
-				break;
-			case 6:
-				r = type_nav_roundabout_r6;
-				l = type_nav_roundabout_l2;
-				break;
-			case 7:
-				r = type_nav_roundabout_r7;
-				l = type_nav_roundabout_l1;
-				break;
-			case 8:
-				r = type_nav_roundabout_r8;
-				l = type_nav_roundabout_l8;
-				break;
-			}
-			dbg(lvl_debug,"delta %d\n", ret->delta);
-			/* if delta to leave the roundabout (ret->delta) is less than delta to stay in roundabout (dtsir),
-			 * we're exiting to the left, so we're probably in a clockwise roundabout, and vice versa */
-			if (ret->delta < dtsir)
-				ret->maneuver->type = l;
-			else
-				ret->maneuver->type = r;
-
-			/* if leaving roundabout */
+			navigation_analyze_roundabout(this_, ret, itm);
 		} else {
 			/* set ret->maneuver->type */
 			if (ret->delta >= min_turn_limit) {
