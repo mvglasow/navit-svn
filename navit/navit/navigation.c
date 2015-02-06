@@ -2319,6 +2319,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	int angle=0;
 	int entry_angle; /* angle at which we enter the roundabout, offset by 90 degrees */
 	int exit_angle; /* angle at which we leave the roundabout, offset by 90 degrees */
+	int entry_road_angle, exit_road_angle; /* angles before and after approach segments */
 	struct navigation_itm *itm2; /* items before itm to examine, up to first roundabout segment on route */
 	struct navigation_itm *itm3; /* items before itm2 and after itm to examine */
 	struct navigation_way *w; /* continuation of the roundabout after we leave it */
@@ -2326,6 +2327,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	int dtsir = 0; /* delta to stay in roundabout */
 	int d, dmax = 0; /* when examining deltas of roundabout approaches, current and maximum encountered */
 	int delta1, delta2, error1 = 0, error2; /* for roundabout delta calculated with different approaches, and error margin */
+	int delta3; /* roundabout delta calculated from entry_road_angle and exit_road_angle, currently not used in calculations */
 	int dist_left; /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
 	int central_angle; /* approximate central angle for the roundabout arc that is part of the route */
 
@@ -2490,7 +2492,8 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 						dmax = d;
 					error1 = abs(dmax);
-					//TODO delta3
+					entry_road_angle = itm2->angle_end - dmax;
+					dbg(lvl_debug,"entry_road_angle %d (%d - %d)\n", entry_road_angle, itm2->angle_end, dmax);
 
 					/* examine items after roundabout */
 					dmax = 0;
@@ -2522,7 +2525,8 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 					if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 						dmax = d;
 					error1 = (error1 + abs(dmax) + 1) / 2;
-					// TODO delta3
+					exit_road_angle = itm->way.angle2 + dmax;
+					dbg(lvl_debug,"exit_road_angle %d (%d + %d)\n", exit_road_angle, itm->way.angle2, dmax);
 
 					dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
 
@@ -2547,6 +2551,9 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 						delta2 += error2;
 						dbg(lvl_debug,"Corrected delta1 %d error %d, delta2 %d error %d\n", delta1, error1, delta2, error2);
 					}
+
+					delta3 = angle_delta(entry_road_angle, exit_road_angle);
+					dbg(lvl_debug,"delta3 %d\n", delta3);
 
 					if ((error1 == 0) && (error2 == 0))
 						ret->roundabout_delta = (delta1 + delta2) / 2;
