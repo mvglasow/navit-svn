@@ -1218,7 +1218,8 @@ navigation_way_get_angle_at(struct navigation_way *w, enum projection pro, doubl
  * @param w The way to examine
  * @param angle The reference bearing
  * @param dist The distance from the start of the way at which to determine bearing
- * @param dir Controls how to handle when the same delta is encountered multiple times but with different signs
+ * @param dir Controls how to handle when the same delta is encountered multiple times but with different signs,
+ * permissible values are either -1 or +1
  *
  * @return The delta, {@code -180 < delta <= 180}, or {@code invalid_angle} if an error occurred.
  */
@@ -1227,6 +1228,7 @@ navigation_way_get_max_delta(struct navigation_way *w, enum projection pro, int 
 	double dist_left = dist; /* distance from last examined point */
 	int ret = invalid_angle;
 	int tmp_delta;
+	int eff_dir = dir * w->dir; /* effective direction: +1 to examine section from start of way, -1 from end of way  */
 	struct coord cbuf[2];
 	struct item *realitem;
 	struct coord c;
@@ -1254,7 +1256,7 @@ navigation_way_get_max_delta(struct navigation_way *w, enum projection pro, int 
 		return ret;
 	}
 
-	if (w->dir < 0) {
+	if (eff_dir < 0) {
 		/* we're going against the direction of the item:
 		 * measure its total length and set dist_left to difference of total length and distance */
 		dist_left = 0;
@@ -1281,15 +1283,15 @@ navigation_way_get_max_delta(struct navigation_way *w, enum projection pro, int 
 	}
 
 	while (item_coord_get(realitem, &c, 1)) {
-		if ((w->dir > 0) && (dist_left <= 0))
+		if ((eff_dir > 0) && (dist_left <= 0))
 			break;
 		cbuf[0] = cbuf[1];
 		cbuf[1] = c;
 		dist_left -= transform_distance(pro, &cbuf[0], &cbuf[1]);
-		if ((w->dir < 0) && (dist_left > 0))
+		if ((eff_dir < 0) && (dist_left > 0))
 			continue;
 		tmp_delta = angle_delta(angle, road_angle(&cbuf[0], &cbuf[1], w->dir));
-		if ((ret == invalid_angle) || (abs(ret) < abs(tmp_delta)) || ((abs(ret) == abs(tmp_delta)) && ((dir * w->dir) < 0)))
+		if ((ret == invalid_angle) || (abs(ret) < abs(tmp_delta)) || ((abs(ret) == abs(tmp_delta)) && (eff_dir < 0)))
 			ret = tmp_delta;
 	}
 
@@ -2307,10 +2309,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
  * are outside of their specified range, the result is undefined.
  */
 int adjust_delta(int delta, int reference) {
-	if ((delta >= 0) && (delta - reference) > 180)
+	if ((delta >= 0) && (delta - reference) > 180) {
+		dbg(lvl_debug,"adjusting delta from %d to %d\n", delta, delta - 360);
 		return delta - 360;
-	else if ((delta <= 0) && (reference - delta) > 180)
+	}
+	else if ((delta <= 0) && (reference - delta) > 180) {
+		dbg(lvl_debug,"adjusting delta from %d to %d\n", delta, delta + 360);
 		return delta + 360;
+	}
 	else
 		return delta;
 }
@@ -2446,15 +2452,19 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			itm3 = itm2->prev; /* last segment before roundabout */
 			while (itm3->prev) {
 				if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
+					dbg(lvl_debug,"items before roundabout: break because ramp or oneway ends, %dm left\n", dist_left);
 					dist_left = 0; /* to make sure we don't examine the following way in depth */
 					break;
 				}
-				if (dist_left >= itm3->length)
+				if (dist_left <= itm3->length) {
+					dbg(lvl_debug,"items before roundabout: maximum distance reached, %dm left, item length %dm\n", dist_left, itm3->length);
 					break;
-				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
+				}
+				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, dist_left, -1);
 				if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 					dmax = d;
 				if (itm3->way.next) {
+					dbg(lvl_debug,"items before roundabout: break because of potential maneuver, %dm left\n", dist_left);
 					dist_left = itm3->length;
 					break;
 				}
@@ -2464,7 +2474,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			if (dist_left == 0) {
 				d = angle_delta(itm3->angle_end, itm2->prev->angle_end);
 			} else if (dist_left < itm3->length) {
-				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, itm3->length - dist_left, -1);
+				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, dist_left, -1);
 			} else {
 				/* not enough objects in navigation map, use most distant one
 				 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
@@ -2473,8 +2483,8 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 				dmax = d;
 			error1 = abs(dmax);
-			entry_road_angle = itm2->prev->angle_end - dmax;
-			dbg(lvl_debug,"entry_road_angle %d (%d - %d)\n", entry_road_angle, itm2->prev->angle_end, dmax);
+			entry_road_angle = itm2->prev->angle_end + dmax;
+			dbg(lvl_debug,"entry_road_angle %d (%d + %d)\n", entry_road_angle, itm2->prev->angle_end, dmax);
 
 			/* examine items after roundabout */
 			dmax = 0;
@@ -2482,15 +2492,19 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			itm3 = itm; /* first segment after roundabout */
 			while (itm3->next) {
 				if ((itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
+					dbg(lvl_debug,"items after roundabout: break because ramp or oneway ends, %dm left\n", dist_left);
 					dist_left = 0; /* to make sure we don't examine the following way in depth */
 					break;
 				}
-				if (dist_left >= itm3->length)
+				if (dist_left <= itm3->length) {
+					dbg(lvl_debug,"items after roundabout: maximum distance reached, %dm left, item length %dm\n", dist_left, itm3->length);
 					break;
+				}
 				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
 				if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 					dmax = d;
 				if (itm3->next->way.next) {
+					dbg(lvl_debug,"items after roundabout: break because of potential maneuver, %dm left\n", dist_left);
 					dist_left = itm3->length;
 					break;
 				}
@@ -2602,6 +2616,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 		cmd->maneuver->type = l;
 	else
 		cmd->maneuver->type = r;
+	dbg(lvl_debug,"type %s\n", item_to_name(cmd->maneuver->type));
 }
 
 
