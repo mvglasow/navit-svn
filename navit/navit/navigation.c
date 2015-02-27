@@ -500,7 +500,7 @@ get_bestranked(struct street_destination *street_destination)
 static int
 set_highrank(struct street_destination *street_destination, struct navigation_command *command)
 {
-	struct street_destination *future_street_destination;
+	struct street_destination *future_street_destination = NULL;
 	struct navigation_command *next_command;
 	char* destination_string;
 	int success = 0;
