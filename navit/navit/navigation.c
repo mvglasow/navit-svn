@@ -3239,7 +3239,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					instruction=g_strdup_printf(_("You have reached your destination %s"), d);
 				break;
 			default:
-				dbg(lvl_error,"unhandled instruction %s\n",attr_to_name(cmd->maneuver->type));
+				dbg(lvl_error,"unhandled instruction\n");
 				break;
 		}
 	}
