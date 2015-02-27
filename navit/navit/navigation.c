@@ -1696,8 +1696,8 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 			}
 		}
 
-		item_attr_get(routeitem, attr_route, &route_attr);
-		graph_map = route_get_graph_map(route_attr.u.route);
+		if(item_attr_get(routeitem, attr_route, &route_attr))
+			graph_map = route_get_graph_map(route_attr.u.route);
 
 		dbg(lvl_debug,"i=%d start %d end %d '%s' \n", i, ret->way.angle2, ret->angle_end, ret->way.name_systematic);
 		map_rect_destroy(mr);
