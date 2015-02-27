@@ -2655,7 +2655,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 /*temporary solution to recover some motorway
  *exits that get a (slight)turn left/rigth 
  */
-		if (itm->way.exit_ref)
+		if (itm && itm->way.exit_ref)
 		{
 			if (ret->delta < 0){
 				ret->maneuver->merge_or_exit = mex_exit_left;
