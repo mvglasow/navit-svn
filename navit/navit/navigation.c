@@ -567,11 +567,11 @@ select_announced_destinations(struct navigation_command *current_command)
 		{	/* loop over every destination of the current command, as far as there are not more than MAX_DESTINATIONS entries. */
 			destination_index = 0; /* start with the first destination */
 			current_destination = current_command->itm->way.destination;
-			destination_count[destination_index]=0;
 			while (current_destination && (destination_index < MAX_DESTINATIONS))
 			{	/* initialize the search command */
 				search_command = current_command->next;
 				search_command_counter = 0;
+				destination_count[destination_index]=0;
 				while (search_command && (search_command_counter < MAX_LOOPS))
 				{
 					if (search_command->itm && search_command->itm->way.destination)
@@ -591,7 +591,6 @@ select_announced_destinations(struct navigation_command *current_command)
 					search_command = search_command->next;
 				}
 				destination_index++;
-				destination_count[destination_index]=0;
 				current_destination = current_destination->next;
 			}
 
