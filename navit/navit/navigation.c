@@ -2656,14 +2656,11 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
  */
 		if (itm && itm->way.exit_ref)
 		{
-			if (ret->delta < 0){
+			if (ret->maneuver->type == type_nav_keep_left || ret->maneuver->type == type_nav_left_1 || ret->maneuver->type == type_nav_left_2)
 				ret->maneuver->merge_or_exit = mex_exit_left;
-			}
-			if (ret->delta > 0){
+
+			if (ret->maneuver->type == type_nav_keep_right || ret->maneuver->type == type_nav_right_1 || ret->maneuver->type == type_nav_right_2)
 				ret->maneuver->merge_or_exit = mex_exit_right;
-			}
-			if (ret->delta < angle_straight )
-				ret->maneuver->type = type_nav_straight;
 		}
 
 	if (this_->cmd_last) {
