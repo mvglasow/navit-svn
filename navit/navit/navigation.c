@@ -3053,7 +3053,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			}
 		}
 	}
-	if (!instruction)
+	if (!instruction && cmd->maneuver)
 	{
 		switch (cmd->maneuver->type)
 		{
