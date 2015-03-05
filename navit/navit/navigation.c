@@ -121,6 +121,11 @@ static int min_turn_limit = 25;
  * Thresholds should be roughly halfway between them.
  * 25 degrees for min_turn_limit is probably OK (would be 22.5 by the above definition),
  * but maybe the rest should be somewhat closer to 67.5-117.5-157.5 instead of 45-105-165.
+ *
+ * robotaxi:
+ * suggested limits derived from 'simple turn rules' in bugfix/enhancement #1095:
+ * 25-45-110-165.
+ * taken over from here: 25 (straight limit) and 165 (u-turn-limit used for very strong turn) 
  */
 
 /** Minimum absolute delta for a turn of "normal" strength (which is always just announced as "turn left/right" even when strength is required).
@@ -129,7 +134,7 @@ static int turn_2_limit = 45;
 
 /** Minimum absolute delta for a sharp turn.
  * Maneuvers whose absolute delta is equal to or greater than this will be announced as "turn sharply left/right" when strength is required. */
-static int sharp_turn_limit = 105;
+static int sharp_turn_limit = 110;
 
 /** Minimum absolute delta for a U turn.
  * Maneuvers whose absolute delta is less than this (but at least {@code min_turn_limit}) will always be announced as turns.
@@ -2317,16 +2322,20 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	int roundabout_length; /* estimated total length of roundabout */
 	int angle=0;
 	int entry_angle; /* angle at which we enter the roundabout, offset by 90 degrees */
-	int exit_angle; /* angle at which we leave the roundabout, offset by 90 degrees */
+	int exit_angle;  /* angle at which we leave the roundabout, offset by 90 degrees */
 	struct navigation_itm *itm2; /* items before itm to examine, up to first roundabout segment on route */
 	struct navigation_itm *itm3; /* items before itm2 and after itm to examine */
-	struct navigation_way *w; /* continuation of the roundabout after we leave it */
-	struct navigation_way *w2; /* segment of the roundabout leading to the point at which we enter it */
-	int dtsir = 0; /* delta to stay in roundabout */
-	int d, dmax = 0; /* when examining deltas of roundabout approaches, current and maximum encountered */
+	struct navigation_way *w;    /* continuation of the roundabout after we leave it, or the way in which to turn. */
+	struct navigation_way *w2;   /* segment of the roundabout leading to the point at which we enter it */
+	int dtsir = 0;     /* delta to stay in roundabout */
+	int d, dmax = 0;   /* when examining deltas of roundabout approaches, current and maximum encountered */
 	int delta1, delta2, error1 = 0, error2; /* for roundabout delta calculated with different approaches, and error margin */
-	int dist_left; /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
+	int dist_left;     /* when examining ways around the roundabout to a certain threshold, the distance we have left to go */
 	int central_angle; /* approximate central angle for the roundabout arc that is part of the route */
+	int more_ways_for_strength = 0; /* Counts the number of ways of the current node that turn
+					   to the same direction as the route way. Strengthening criterion. */
+	int turn_no_of_route_way = 0;   /* The number of the route way of all ways that turn to the same direction.
+					   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -2603,35 +2612,125 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 			else
 				ret->maneuver->type = r;
 
-			/* if leaving roundabout */
+			/* <-- if leaving roundabout */
 		} else {
+			/* non-roundabout turn --> */
+
 			/* set ret->maneuver->type */
-			if (ret->delta >= min_turn_limit) {
-				/* if the route turns right:
-				 * examine delta to determine strength of turn */
-				if (ret->delta < angle_straight )
-					ret->maneuver->type = type_nav_straight;
-				else if (ret->delta < turn_2_limit)
-					ret->maneuver->type = type_nav_right_1;
-				else if (ret->delta < sharp_turn_limit)
-					ret->maneuver->type = type_nav_right_2;
-				else if (ret->delta < u_turn_limit)
-					ret->maneuver->type = type_nav_right_3;
-				else
-					/* TODO: refine turnaround detection, fall back to type_nav_right_3 */
-					ret->maneuver->type=type_nav_turnaround_right;
-			} else if (ret->delta <= -min_turn_limit) {
-				/* if the route turns left:
-				 * examine delta to determine strength of turn */
-				if (-ret->delta < turn_2_limit)
-					ret->maneuver->type = type_nav_left_1;
-				else if (-ret->delta < sharp_turn_limit)
-					ret->maneuver->type = type_nav_left_2;
-				else if (-ret->delta < u_turn_limit)
-					ret->maneuver->type = type_nav_left_3;
-				else
-					/* TODO: refine turnaround detection, fall back to type_nav_left_3 */
-					ret->maneuver->type=type_nav_turnaround_left;
+			if (abs(ret->delta) >= min_turn_limit) {
+
+				/* Strengthening criterion: If there are more ways in the same direction, in which the vehicle can turn,
+				   the announcement shall be more precise. I.e. the strengthening is dependent on which of the possible ways
+				   the route turn shall be. So, with the selection of one of the possible ways a certain turn angle pattern
+				   becomes active.
+				   Second criterion: the turn angle of the route way defines the strengthening of the announcement according
+				   to the pattern. */
+				w = itm->next->way.next;
+
+				if (angle_delta(itm->next->way.angle2,itm->angle_end) < 0) { /* next turns or bends left */
+					while (w) {
+						if (angle_delta(w->angle2,itm->angle_end) < -min_turn_limit) {
+							more_ways_for_strength++;	/* there is an additional way that also turns left.
+											   Note: the route turn is not contained
+											   Left means more than min_turn_limit, less is straight on */
+							if (angle_delta(w->angle2,itm->angle_end) < ret->delta)
+								turn_no_of_route_way++; /* this way is on the left side of the route way */
+						}
+						w = w->next;
+					}
+				} else {  /* next turns or bends right. Same investigation, but mirrored. */
+					while (w) {
+						if (angle_delta(w->angle2,itm->angle_end) > min_turn_limit) {
+							more_ways_for_strength++;
+							if (angle_delta(w->angle2,itm->angle_end) > ret->delta)
+								turn_no_of_route_way++; /* this way is on the right side of the route way */
+						}
+						w = w->next;
+					}
+				}
+
+
+				// Investigate the strengthening of announcement.
+				switch (more_ways_for_strength) {
+				case 0:
+					// Only one possibility to turn to this direction
+					if (ret->delta < -sharp_turn_limit) {
+						ret->maneuver->type = type_nav_left_3; /* strongly left */
+					} else if (ret->delta <= 0) {
+						ret->maneuver->type = type_nav_left_2; /* normally left */
+					} else if (ret->delta <= sharp_turn_limit) {
+						ret->maneuver->type = type_nav_right_2;/* normally right */
+					} else {
+						ret->maneuver->type = type_nav_right_3;/* strongly right */
+					}
+					break;
+				case 1:
+					/* One additional possibility to turn to the same direction */
+					if (turn_no_of_route_way == 0) {
+						// the route is less strong to turn
+						if (ret->delta < -turn_2_limit) {
+							ret->maneuver->type = type_nav_left_2;  /* normally left */
+						} else if (ret->delta <= 0) {
+							ret->maneuver->type = type_nav_left_1;  /* easily left */
+						} else if (ret->delta <= turn_2_limit) {
+							ret->maneuver->type = type_nav_right_1; /* easily right */
+						} else {
+							ret->maneuver->type = type_nav_right_2; /* normally right */
+						}
+					} else {
+						if (ret->delta < -sharp_turn_limit) {
+							ret->maneuver->type = type_nav_left_3;  /* strongly left */
+						} else if (ret->delta <= 0) {
+							ret->maneuver->type = type_nav_left_2;  /* normally left */
+						} else if (ret->delta <= sharp_turn_limit) {
+							ret->maneuver->type = type_nav_right_2; /* normally right */
+						} else {
+							ret->maneuver->type = type_nav_right_3; /* strongly right */
+						}
+					}
+					break;
+				default:
+					/* Two or more additional possibilities to turn to the same direction. */
+					if (turn_no_of_route_way == 0) {
+						if (ret->delta < -turn_2_limit) {
+							ret->maneuver->type = type_nav_left_2;  /* normally left */
+						} else if (ret->delta <= 0) {
+							ret->maneuver->type = type_nav_left_1;  /* easily left */
+						} else if (ret->delta <= turn_2_limit) {
+							ret->maneuver->type = type_nav_right_1; /* easily right */
+						} else {
+							ret->maneuver->type = type_nav_right_2; /* normally right */
+						}
+					}
+					else if (turn_no_of_route_way == 1) {
+						if (ret->delta < -sharp_turn_limit) {
+							ret->maneuver->type = type_nav_left_3;  /* strongly left */
+						} else if (ret->delta <= 0) {
+							ret->maneuver->type = type_nav_left_2;  /* normally left */
+						} else if (ret->delta <= sharp_turn_limit) {
+							ret->maneuver->type = type_nav_right_2; /* normally right */
+						} else {
+							ret->maneuver->type = type_nav_right_3; /* strongly right */
+						}
+					}
+					else if (turn_no_of_route_way > 1) {
+						// if the route is the strongest of all possible turns here
+						if (ret->delta < -u_turn_limit) {
+							ret->maneuver->type = type_nav_turnaround_left; /* turn around left */
+						} else if (ret->delta < -sharp_turn_limit) {
+							ret->maneuver->type = type_nav_left_3;  /* strongly left */
+						} else if (ret->delta <= 0) {
+							ret->maneuver->type = type_nav_left_2;  /* normally left */
+						} else if (ret->delta <= sharp_turn_limit) {
+							ret->maneuver->type = type_nav_right_2; /* normally right */
+						} else if (ret->delta <= u_turn_limit) {
+							ret->maneuver->type = type_nav_right_3; /* strongly right */
+						} else {
+							ret->maneuver->type = type_nav_turnaround_right; /* turn around right */
+						}
+					}
+					break;
+				}
 			} else {
 				/* if the route goes straight:
 				 * If there's another way on one side of the route within 2 * min_turn_limit (not both - the expression below is a logical XOR),
@@ -2652,7 +2751,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 		}
 	}
 /*temporary solution to recover some motorway
- *exits that get a (slight)turn left/rigth 
+ *exits that get a (slight)turn left/right 
  */
 		if (itm && itm->way.exit_ref)
 		{
