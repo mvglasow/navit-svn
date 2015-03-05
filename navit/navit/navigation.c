@@ -2642,6 +2642,11 @@ static struct navigation_command *
 command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
+	struct navigation_way *w;    /* the way in which to turn. */
+	int more_ways_for_strength = 0; /* Counts the number of ways of the current node that turn
+							   	   	   to the same direction as the route way. Strengthening criterion. */
+	int turn_no_of_route_way = 0;   /* The number of the route way of all ways that turn to the same direction.
+							   	   	   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
