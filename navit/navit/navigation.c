@@ -2483,15 +2483,17 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 					dmax = d;
 				w2 = itm3->way.next;
 				while (w2) {
-					/* TODO: examine all alternatives and decide if a break is justified
-					 * Do not consider alternatives which are not allowed by the vehicle profile (oneway in one direction does not count here)
-					 * or which have a significantly greater delta than the route
-					 */
-					abort = 1;
+					/* Stop examining ways at a turn maneuver (more than one way allowed and route does not follow straightest path) */
+					if (is_way_allowed(this_, w2, 0)
+							&& (abs(angle_delta(angle_opposite(w2->angle2), itm3->way.angle2)) <= abs(angle_delta(itm3->prev->angle_end, itm3->way.angle2)))) {
+						/* FIXME: comparing angles probably does not work well for near-equal angles */
+						abort = 1;
+						break;
+					}
 					w2 = w2->next;
 				}
 				if (abort) {
-					dbg(lvl_debug,"items before roundabout: break because of potential maneuver, %dm left\n", dist_left);
+					dbg(lvl_debug,"items before roundabout: break because of potential turn maneuver, %dm left\n", dist_left);
 					dist_left = itm3->length;
 					break;
 				}
@@ -2533,15 +2535,17 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 					dmax = d;
 				w2 = itm3->next->way.next;
 				while (w2) {
-					/* TODO: examine all alternatives and decide if a break is justified
-					 * Do not consider alternatives which are not allowed by the vehicle profile (oneway in one direction does not count here)
-					 * or which have a significantly greater delta than the route
-					 */
-					abort = 1;
+					/* Stop examining ways at a turn maneuver (more than one way allowed and route does not follow straightest path) */
+					if (is_way_allowed(this_, w2, 0)
+							&& (abs(angle_delta(itm3->angle_end, w2->angle2)) <= abs(angle_delta(itm3->angle_end, itm3->next->way.angle2)))) {
+						/* FIXME: comparing angles probably does not work well for near-equal angles */
+						abort = 1;
+						break;
+					}
 					w2 = w2->next;
 				}
 				if (abort) {
-					dbg(lvl_debug,"items after roundabout: break because of potential maneuver, %dm left\n", dist_left);
+					dbg(lvl_debug,"items after roundabout: break because of potential turn maneuver, %dm left\n", dist_left);
 					dist_left = itm3->length;
 					break;
 				}
