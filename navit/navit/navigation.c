@@ -1893,6 +1893,10 @@ static int maneuver_category(enum item_type type)
  * access and one-way restrictions of the way against the settings in {@code nav->vehicleprofile}.
  * Turn restrictions are not taken into account.
  *
+ * @param nav The navigation object
+ * @param way The way to examine
+ * @param mode Currently not used, existing code seems to use values from 1 to 4
+ *
  * @return True if entry is permitted, false otherwise. If {@code nav->vehicleprofile} is null, true is returned.
  */
 
@@ -2375,6 +2379,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 					   to the same direction as the route way. Strengthening criterion. */
 	int turn_no_of_route_way = 0;   /* The number of the route way of all ways that turn to the same direction.
 					   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
+	int abort;         /* whether a (complex) criterion for aborting a loop has been met */
 
 	/* Find continuation of roundabout after the exit. Don't simply use itm->way.next here, it will break
 	 * if a node in the roundabout is shared by more than one way */
@@ -2388,7 +2393,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 		 * cause a crash. For the same reason we're using dtsir with a default value of 0.
 		 */
 
-		/* approximate error for delta2: central angle (=bearing change) of roundabout segment after exit */
+		/* approximate error for delta2: central angle (=bearing change) of roundabout segment after exit (will be refined later) */
 		error2 = abs(angle_delta(itm->prev->angle_end, navigation_way_get_exit_angle(w)));
 
 		dtsir = angle_delta(itm->prev->angle_end, w->angle2);
@@ -2458,6 +2463,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 
 			/* examine items before roundabout */
 			itm3 = itm2->prev; /* last segment before roundabout */
+			abort = 0;
 			while (itm3->prev) {
 				if ((itm3->next && is_ramp(&(itm3->next->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
 					dbg(lvl_debug,"items before roundabout: break because ramp or oneway ends, %dm left\n", dist_left);
@@ -2471,7 +2477,16 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, dist_left, -1);
 				if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 					dmax = d;
-				if (itm3->way.next) {
+				w2 = itm3->way.next;
+				while (w2) {
+					/* TODO: examine all alternatives and decide if a break is justified
+					 * Do not consider alternatives which are not allowed by the vehicle profile (oneway in one direction does not count here)
+					 * or which have a significantly greater delta than the route
+					 */
+					abort = 1;
+					w2 = w2->next;
+				}
+				if (abort) {
 					dbg(lvl_debug,"items before roundabout: break because of potential maneuver, %dm left\n", dist_left);
 					dist_left = itm3->length;
 					break;
@@ -2498,6 +2513,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			dmax = 0;
 			dist_left = roundabout_length / 2;
 			itm3 = itm; /* first segment after roundabout */
+			abort = 0;
 			while (itm3->next) {
 				if ((itm3->prev && is_ramp(&(itm3->prev->way)) && !is_ramp(&(itm3->way))) || !(itm3->way.flags & AF_ONEWAYMASK)) {
 					dbg(lvl_debug,"items after roundabout: break because ramp or oneway ends, %dm left\n", dist_left);
@@ -2511,7 +2527,16 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm->way.angle2, dist_left, 1);
 				if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 					dmax = d;
-				if (itm3->next->way.next) {
+				w2 = itm3->next->way.next;
+				while (w2) {
+					/* TODO: examine all alternatives and decide if a break is justified
+					 * Do not consider alternatives which are not allowed by the vehicle profile (oneway in one direction does not count here)
+					 * or which have a significantly greater delta than the route
+					 */
+					abort = 1;
+					w2 = w2->next;
+				}
+				if (abort) {
 					dbg(lvl_debug,"items after roundabout: break because of potential maneuver, %dm left\n", dist_left);
 					dist_left = itm3->length;
 					break;
