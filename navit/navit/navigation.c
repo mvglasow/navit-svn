@@ -2604,6 +2604,8 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			else
 				cmd->roundabout_delta = (delta1 * error2 + delta2 * error1) / (error1 + error2);
 			cmd->roundabout_delta = (cmd->roundabout_delta + delta3) / 2;
+			/* TODO experimental */
+			cmd->roundabout_delta = delta3;
 			dbg(lvl_debug,"roundabout_delta %d\n", cmd->roundabout_delta);
 		} else {
 			/* we don't know where we entered the roundabout, so we can't calculate delta1 */
