@@ -1895,7 +1895,8 @@ static int maneuver_category(enum item_type type)
  *
  * @param nav The navigation object
  * @param way The way to examine
- * @param mode Currently not used, existing code seems to use values from 1 to 4
+ * @param mode If nonzero, oneway restrictions will be taken into account. If zero, only the vehicle type
+ * will be taken into account.
  *
  * @return True if entry is permitted, false otherwise. If {@code nav->vehicleprofile} is null, true is returned.
  */
@@ -1911,9 +1912,12 @@ static int maneuver_category(enum item_type type)
 static int
 is_way_allowed(struct navigation *nav, struct navigation_way *way, int mode)
 {
-	if (!nav->vehicleprofile)
+	if (!nav->vehicleprofile || !way->flags)
 		return 1;
-	return !way->flags || ((way->flags & (way->dir >= 0 ? nav->vehicleprofile->flags_forward_mask : nav->vehicleprofile->flags_reverse_mask)) == nav->vehicleprofile->flags);
+	if (mode)
+		return ((way->flags & (way->dir >= 0 ? nav->vehicleprofile->flags_forward_mask : nav->vehicleprofile->flags_reverse_mask)) == nav->vehicleprofile->flags);
+	else
+		return ((way->flags & nav->vehicleprofile->flags) == nav->vehicleprofile->flags);
 }
 
 /**
