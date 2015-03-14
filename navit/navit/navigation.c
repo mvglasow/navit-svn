@@ -2501,18 +2501,18 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 				itm3 = itm3->prev;
 			}
 			if (dist_left == 0) {
-				d = angle_delta(itm3->angle_end, itm2->prev->angle_end);
+				d = angle_delta(itm2->prev->angle_end, itm3->angle_end);
 			} else if (dist_left < itm3->length) {
 				d = navigation_way_get_max_delta(&(itm3->way), map_projection(this_->map), itm2->prev->angle_end, dist_left, -1);
 			} else {
 				/* not enough objects in navigation map, use most distant one
 				 * - or dist_left == itm3->length, this saves a few CPU cycles over the above */
-				d = angle_delta(itm3->way.angle2, itm2->prev->angle_end);
+				d = angle_delta(itm2->prev->angle_end, itm3->way.angle2);
 			}
 			if ((d != invalid_angle) && (abs(d) > abs(dmax)))
 				dmax = d;
 			error1 = abs(dmax);
-			entry_road_angle = itm2->prev->angle_end + dmax;
+			entry_road_angle = (itm2->prev->angle_end + dmax) % 360;
 			dbg(lvl_debug,"entry_road_angle %d (%d + %d)\n", entry_road_angle, itm2->prev->angle_end, dmax);
 
 			/* examine items after roundabout */
@@ -2569,7 +2569,7 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 			 * is negative and the first one takes precedence). */
 			error1 = max((error1 + abs(dmax) + 1) / 2, 2 * (abs(delta1) - 180));
 
-			exit_road_angle = itm->way.angle2 + dmax;
+			exit_road_angle = (itm->way.angle2 + dmax) % 360;
 			dbg(lvl_debug,"exit_road_angle %d (%d + %d)\n", exit_road_angle, itm->way.angle2, dmax);
 
 			dbg(lvl_debug,"delta1 %d error %d\n", delta1, error1);
