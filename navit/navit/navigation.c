@@ -88,20 +88,6 @@ static int roundabout_extra_length=50;
 /* TODO: find out if this is being used elsewhere and, if so, move this definition somewhere more generic */
 static int invalid_angle = 361;
 
-/* FIXME: abandon in favor of min_turn_limit once keep left/right maneuvers are fully implemented */
-static int angle_straight = 2;	/* turns with -angle_straight <= delta <= angle_straight
-								 * will be seen as going straight.
-								 *
-								 * Use a really narrow gap here, fixes already a large number
-								 * of false commands without causing other problems.
-								 *
-								 * During testing it became clear that widening the gap reduces
-								 * even more unwanted 'go right or left' but soon starts to show side-effects.
-								 *
-								 * maybe think of a better name some day.
-								 *
-								 */
-
 /** Minimum absolute delta for a turn.
  * Maneuvers whose absolute delta is less than this will be considered straight */
 static int min_turn_limit = 25;
