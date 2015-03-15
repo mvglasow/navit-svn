@@ -285,18 +285,7 @@ struct navigation_command {
 struct navigation_way {
 	struct navigation_way *next;	/**< Pointer to a linked-list of all navigation_ways from this navigation item */
 	short dir;						/**< The direction -1 or 1 of the way */
-	short angle2;					/**< The angle one has to steer to drive from the old item to this street */
-
-
-
-	/*
-	 * (mvglasow) angle2 might be the bearing at the start of the way (0 = north, 90 = east etc.),
-	 * this needs further examination
-	 *
-	 */
-
-
-
+	short angle2;					/**< The bearing at the start or the way (0 = north, 90 =east etc.) */
 	int flags;						/**< The flags of the way */
 	struct item item;				/**< The item of the way */
 	char *name;						/**< The street name ({@code street_name} attribute) */
@@ -308,7 +297,7 @@ struct navigation_way {
 
 struct navigation_itm {
 	struct navigation_way way;
-	int angle_end;                      /* FIXME: is this the bearing at the end of way? */
+	int angle_end;                      /**< The bearing at the end of {@code way} */
 	struct coord start,end;
 	int time;
 	int length;
@@ -323,16 +312,13 @@ struct navigation_itm {
 };
 
 
-/*@brief A linked list conataining the destination of the road
- *
+/**
+ * @brief A linked list containing the destination of the road
  *
  * Holds the destination info from the road, that is the place
  * you drive to if you keep following the road as found on
  * traffic sign's (ex. Paris, Senlis ...)
- *
- *
  */
-
 struct street_destination {
 	struct street_destination *next;
 	char *destination;
@@ -345,12 +331,18 @@ static void navigation_flush(struct navigation *this_);
 
 /**
  * @brief Calculates the delta between two angles
+ *
+ * The return value is to be interpreted as follows:
+ * <ul>
+ * <li>-179..-1: {@code angle2} is left of {@code angle1}</li>
+ * <li>0: Both angles are identical</li>
+ * <li>1..179: {@code angle2} is right of {@code angle1}</li>
+ * <li>180: {@code angle1} is opposite of {@code angle2}</li>
+ * </ul>
  * @param angle1 The first angle
  * @param angle2 The second angle
- * @return The difference between the angles: -179..-1=angle2 is left of angle1,0=same,1..179=angle2 is right of angle1,180=angle1 is opposite of angle2
+ * @return The difference between the angles, see description
  */ 
-
-
 static int
 angle_delta(int angle1, int angle2)
 {
@@ -380,10 +372,10 @@ angle_opposite(int angle)
 	return ((angle+180)%360);
 }
 
-/*@brief : frees a list as constructed with split_string_to_list()
+/**
+ * @brief Frees a list as constructed with split_string_to_list()
  *
- *
- *@param : the list to be freed
+ * @param list the list to be freed
  */
 static void
 free_list(struct street_destination *list) {
@@ -400,20 +392,17 @@ free_list(struct street_destination *list) {
 	}
 }
 
-/*@brief splits a string into a list, the separator to split on can
- * 	be any character, and sets their initial rank to 0
+/**
+ * @brief Splits a string into a list, and sets their initial rank to 0
  *
- *  splits a string into a list, the separator to split on can
- * 	be any character, removes preceding white-space char's and sets
- * 	the initial rank to 0
+ * The separator to split on can be any character. Preceding whitespace
+ * characters will be removed.
  *
- * @param way, a navigation_way holding the list to be fill up
- * @param raw_string, a string to be splitted
- * @param sep, a char to be used as separator to split the raw_string
- * @return an integer, the number of entries in the list
+ * @param way a navigation_way holding the list to be filled up
+ * @param raw_string a string to split
+ * @param sep a char to be used as separator to split the raw_string
+ * @return the number of entries in the list
  */
-
-
 static int
 split_string_to_list(struct navigation_way *way, char* raw_string, char sep)
 {
@@ -461,11 +450,11 @@ split_string_to_list(struct navigation_way *way, char* raw_string, char sep)
 
 
 
-/*@brief returns the first destination with a rank higher than zero,
- * 		 returns the first one in the list if all have rank zero.
+/**
+ * @brief Returns the first destination with a rank higher than zero.
  *
+ * If all items in the list have a zero rank, the first one will be returned.
  */
-
 static struct street_destination *
 get_bestranked(struct street_destination *street_destination)
 {
@@ -481,12 +470,13 @@ get_bestranked(struct street_destination *street_destination)
 	return street_destination;
 }
 
-/*@brief Assigns a high rank to a matching destination in the next
+/**
+ * @brief Assigns a high rank to a matching destination in the next
  * 		command having destination info, and reset existing ranks to zero
  *
- *@param street destination to be given a high rank
- *@param command
- *@return success=1 if succeeded, zero otherwise
+ * @param street destination to be given a high rank
+ * @param command
+ * @return 1 if successful, zero otherwise
  */
 static int
 set_highrank(struct street_destination *street_destination, struct navigation_command *command)
@@ -1499,17 +1489,16 @@ navigation_itm_update(struct navigation_itm *itm, struct item *ritem)
 	itm->speed=speed.u.num;
 }
 
-/*@ brief creates and adds a new navigation_itm to a linked list of such
+/**
+ * @brief Creates and adds a new navigation_itm to a linked list of such
  *
  * routeitem has an attr. streetitem, but that is only and id and a map,
  * allowing to fetch the actual streetitem, that will live under the same name.
  *
- *@ param : the navigation
- *@ param : the routeitem from which to create a navigation item
- *@ return : the new navigation_itm (used nowhere)
- *
+ * @param this_ the navigation object
+ * @param routeitem the routeitem from which to create a navigation item
+ * @return the new navigation_itm (used nowhere)
  */
- 
 static struct navigation_itm *
 navigation_itm_new(struct navigation *this_, struct item *routeitem)
 {
@@ -2345,7 +2334,7 @@ int adjust_delta(int delta, int reference) {
  * approach roads are connected by more than one roundabout segment, or when additional ways connect to an approach road.
  * These cases break error calculation and thus weight distribution.
  *
- * Project HighFive is introducing a new approach, which compares bearings of ways leading towards and away from the
+ * Project HighFive introduces a new approach, which compares bearings of ways leading towards and away from the
  * roundabout not immediately at entry and exit but at a certain distance from the roundabout, which is roughly proportional
  * to the circumference of the roundabout. Circumference is estimated using the arithmetic mean value of {@code delta1} and
  * {@code delta2}. This approach has produced the best results in tests. In code it is referred to as {@code delta3}.
@@ -2613,7 +2602,8 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
 /**
  * @brief Creates a new {@code struct navigation_command} for a maneuver.
  *
- * This function also parses {@code maneuver} and sets its {@code type} appropriately so that other
+ * This function creates a new command and inserts it into the command list of {@code this_}.
+ * It also parses {@code maneuver} and sets its {@code type} appropriately so that other
  * functions can rely on that.
  *
  * @param this_ The navigation object
@@ -2621,6 +2611,8 @@ void navigation_analyze_roundabout(struct navigation *this_, struct navigation_c
  * @param maneuver The {@code struct navigation_maneuver} returned by {@code maneuver_required2()}. For the destination,
  * initialize a zeroed-out {@code struct navigation_maneuver} and set its {@code type} member to {@code type_nav_destination}
  * prior to calling this function.
+ *
+ * @return The new command
  */
 static struct navigation_command *
 command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
@@ -2815,6 +2807,13 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 	return ret;
 }
 
+
+/**
+ * @brief Creates turn instructions where needed
+ *
+ * @param this_ The navigation object for which to create turn instructions
+ * @param route Not used
+ */
 static void
 make_maneuvers(struct navigation *this_, struct route *route)
 {
@@ -2885,7 +2884,6 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	if (nav->speech && speech_get_attr(nav->speech, attr_vocabulary_name_systematic, &attr, NULL))
 		vocabulary2=attr.u.num; /* shall the systematic name be announced? */
 
-
 	/* On motorway links don't announce the name of the ramp as this is done by name_systematic and the street_destination. */
 	if (vocabulary1 && (itm->way.item.type != type_ramp))
 		name=itm->way.name;
@@ -2893,28 +2891,21 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	if (vocabulary2)
 		name_systematic=itm->way.name_systematic;
 
-
-if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
-			||(cmd->maneuver->merge_or_exit==mex_merge_right) ))
-	{
+	if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
+			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
 		if (name || name_systematic)
-		/* TRANSLATORS: %1$s is the name_systematic of the next road to merge onto, %2$s it's name*/
-		return g_strdup_printf(_("onto the %1$s %2$s"),name_systematic ? name_systematic : "",
-				name ? name : "");
+			/* TRANSLATORS: %1$s is the name_systematic of the next road to merge onto, %2$s it's name*/
+			return g_strdup_printf(_("onto the %1$s %2$s"),name_systematic ? name_systematic : "",
+					name ? name : "");
 		else return g_strdup("");
-
 	}
 
-
 	if(!name && !name_systematic && itm->way.item.type == type_ramp && vocabulary2) {
-			 
 		if(next->way.item.type == type_ramp)
 			return NULL;
 		else
 			return g_strdup_printf("%s%s",prefix,_("into the ramp"));
-
 	}
-
 
 	if (!name && !name_systematic)
 		return NULL;
@@ -2922,8 +2913,6 @@ if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_
 		sex=unknown;
 		name1=NULL;
 		for (i = 0 ; i < sizeof(suffixes)/sizeof(suffixes[0]) ; i++) {
-
-
 			if (contains_suffix(name,suffixes[i].fullname)) {
 				sex=suffixes[i].sex;
 				name1=g_strdup(name);
@@ -2982,8 +2971,8 @@ if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_
 	return ret;
 }
 
-/* @brief creates turn by turn guidance sentences for the speech and for the route description
- *
+/**
+ * @brief Creates turn by turn guidance sentences for the speech and for the route description
  */
 static char *
 show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigation_command *cmd, enum attr_type type, int connect)
@@ -3416,8 +3405,8 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 /**
  * @brief Creates announcements for maneuvers, plus maneuvers immediately following the next maneuver
  *
- * This function does create an announcement for the current maneuver and for maneuvers
- * immediately following that maneuver, if these are too close and we're in speech navigation.
+ * This function creates an announcement for the current maneuver and for maneuvers
+ * immediately following that maneuver, if these are very close and we're in speech navigation.
  *
  * @return An announcement that should be made
  */
@@ -3991,7 +3980,7 @@ navigation_map_rect_destroy(struct map_rect_priv *priv)
  * If {@code maneuver->merge_or_exit} indicates a merge or exit, the result will be of the corresponding
  * merge or exit type.
  *
- * Earlier versions of Navit had the entire logic for setting te maneuver type in this function, but this has
+ * Earlier versions of Navit had the entire logic for setting the maneuver type in this function, but this has
  * been moved to {@code command_new()} so that other functions can use the same results.
  *
  * @param priv The {@code struct map_rect_priv} of the map rect on the navigation map from which an item
@@ -4070,7 +4059,7 @@ navigation_map_get_item(struct map_rect_priv *priv)
  * @param priv The {@code struct map_rect_priv} of the map rect on the navigation map from which an item
  * is to be retrieved.
  * @param id_hi The high part of the ID
- * @param id_lo The low part of the IF
+ * @param id_lo The low part of the ID
  *
  * @return The item, or NULL if an item with the ID specified was not found in the map rectangle
  */
