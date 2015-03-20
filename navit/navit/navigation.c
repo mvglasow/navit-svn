@@ -2100,35 +2100,39 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			} /* if w... */
 			w = w->next;
 		} /* while w */
-		if (m.num_options <= 1) {
-			if ((abs(m.delta) >= min_turn_limit) && (through_segments == 2)) {
-				/* FIXME: maybe there are cases with more than 2 through_segments...? */
-				/* If we have to make a considerable turn (min_turn_limit or more),
-				 * check whether we are approaching a complex T junction from the "stem"
-				 * (which would need an announcement).
-				 * Complex means that the through road is a dual-carriageway road.
-				 * To find this out, we need to analyze the previous maneuvers.
-				 */
-				int hist_through_segments = 0;
-				int hist_dist = old->length; /* distance between previous and current maneuver */
-				ni = old;
-				while (ni && (hist_through_segments == 0) && (hist_dist <= junction_limit)) {
-					struct navigation_way *w = ni->way.next;
-					while (w) {
-						if ((w->flags & AF_ONEWAYMASK) && (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic)))
-							hist_through_segments++;
-						w = w->next;
-					}
-					ni = ni->prev;
-					if (ni)
-						hist_dist += ni->length;
+		dbg(lvl_debug,"%d option(s), checking for T junction, %d through_segments found...\n", m.num_options, through_segments);
+		if ((abs(m.delta) >= min_turn_limit) && (through_segments >= 2)) {
+			/* If we have to make a considerable turn (min_turn_limit or more),
+			 * check whether we are approaching a complex T junction from the "stem"
+			 * (which would need an announcement).
+			 * Complex means that the through road is a dual-carriageway road.
+			 * This is the case only if at least 2 segments (including new) have the same
+			 * name as new and are one-way, regardless of direction. More than 2 such segments
+			 * are possible e.g. where two physically separated lanes join.
+			 * To find out if there is another carriageway, we need to analyze the previous
+			 * maneuvers.
+			 */
+			int hist_through_segments = 0;
+			int hist_dist = old->length; /* distance between previous and current maneuver */
+			ni = old;
+			while (ni && (hist_through_segments == 0) && (hist_dist <= junction_limit)) {
+				struct navigation_way *w = ni->way.next;
+				while (w) {
+					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+						hist_through_segments++;
+					w = w->next;
 				}
-				if (hist_through_segments == 2) {
-					/* FIXME: see above for number of through_segments */
-					ret=1;
-					m.is_complex_t_junction = 1;
-					r="yes: turning into dual-carriageway through-road of T junction";
-				}
+				ni = ni->prev;
+				if (ni)
+					hist_dist += ni->length;
+			}
+			dbg(lvl_debug,"...%d segments of same road found in range\n", hist_through_segments);
+			if (hist_through_segments >= 2) {
+				/* Require at least 2 segments (there may be more than two in cases such as
+				 * local-express lane systems or separate cycleways) */
+				ret=1;
+				m.is_complex_t_junction = 1;
+				r="yes: turning into multi-carriageway through-road of T junction";
 			}
 		}
 	}
