@@ -2100,7 +2100,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			} /* if w... */
 			w = w->next;
 		} /* while w */
-		dbg(lvl_debug,"%d option(s), checking for T junction, %d through_segments found...\n", m.num_options, through_segments);
 		if ((abs(m.delta) >= min_turn_limit) && (through_segments >= 2)) {
 			/* If we have to make a considerable turn (min_turn_limit or more),
 			 * check whether we are approaching a complex T junction from the "stem"
@@ -2126,7 +2125,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (ni)
 					hist_dist += ni->length;
 			}
-			dbg(lvl_debug,"...%d segments of same road found in range\n", hist_through_segments);
 			if (hist_through_segments >= 2) {
 				/* Require at least 2 segments (there may be more than two in cases such as
 				 * local-express lane systems or separate cycleways) */
@@ -2203,10 +2201,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 * dlim is 620/256 (roughly 2.5) times the delta of the maneuver */
 		if ((m.max_cat == m.new_cat && m.max_cat == m.old_cat) || (m.new_cat == 0 && m.old_cat == 0))
 			dlim=abs(m.delta)*620/256;
-		/* if both old, new and highest other category differ by no more than 1,
-		 * dlim is just higher than the delta (so another way with a delta of exactly -d will be treated as ambiguous) */
-		else if (max(max(m.old_cat, m.new_cat), m.max_cat) - min(min(m.old_cat, m.new_cat), m.max_cat) <= 1)
-			dlim = abs(m.delta) + 1;
 		/* if both old and new way are in higher than highest encountered category,
 		 * dlim is 128/256 times (i.e. one half) the delta of the maneuver */
 		else if (m.max_cat < m.new_cat && m.max_cat < m.old_cat)
