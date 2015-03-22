@@ -2991,6 +2991,8 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 
 	int distance=itm->dest_length-cmd->itm->dest_length;
 	char *d=NULL,*ret=NULL;
+	char *exit_announce=NULL;
+	char *exit_side=NULL;
 	char *street_destination_announce=NULL;
 	int level;
 	int skip_roads = 0;
@@ -3135,27 +3137,28 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					* become too long
 					*/
 				case mex_exit_left:
-					g_free(instruction);
-					if (cmd->itm->way.exit_label)
-						folded_exit_label = linguistics_casefold(cmd->itm->way.exit_label);
-					else folded_exit_label = g_strdup("");
-					folded_street_destination_announce = linguistics_casefold(street_destination_announce);
-					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
-					instruction = g_strdup_printf(_("Take the exit on your left %1$s %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
-							(!strstr(folded_street_destination_announce,folded_exit_label)) ? cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
-					g_free(folded_exit_label);
-					g_free(folded_street_destination_announce);
-					break;
 				case mex_exit_right:
 					g_free(instruction);
+					exit_side = (cmd->maneuver->merge_or_exit == mex_exit_left) ?
+							g_strdup(_("on your left")) :
+							g_strdup(_("on your right"));
 					if (cmd->itm->way.exit_label)
 						folded_exit_label = linguistics_casefold(cmd->itm->way.exit_label);
 					else folded_exit_label = g_strdup("");
 					folded_street_destination_announce = linguistics_casefold(street_destination_announce);
-					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
-					instruction = g_strdup_printf(_("Take the exit on your right %1$s %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
-										(!strstr(folded_street_destination_announce,folded_exit_label)) ?
-												cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
+					if ((!strstr(folded_street_destination_announce,folded_exit_label)) && cmd->itm->way.exit_ref)
+						exit_announce = g_strdup_printf(("%1$s %2$s"), cmd->itm->way.exit_ref, cmd->itm->way.exit_label);
+					else if (cmd->itm->way.exit_ref)
+						exit_announce = g_strdup_printf(("%1$s"), cmd->itm->way.exit_ref);
+					else if (cmd->itm->way.exit_label)
+						exit_announce = g_strdup_printf(("%1$s"), cmd->itm->way.exit_label);
+					if (exit_announce)
+						/* TRANSLATORS: the first arg. is exit ref and/or name, the second is the direction of exit and the third is distance */
+						instruction = g_strdup_printf(_("Take exit %1$s %2$s %3$s"), exit_announce, exit_side, d);
+					else
+						/* TRANSLATORS: the first arg. is the direction of exit, the second is distance */
+						instruction = g_strdup_printf(_("Take the exit %1$s %2$s"), exit_side, d);
+					g_free(exit_announce);
 					g_free(folded_exit_label);
 					g_free(folded_street_destination_announce);
 					break;
