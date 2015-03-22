@@ -1617,7 +1617,6 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		 *  specifically handled, but no occurence known so far either.
 		 *  If present, obtain exit_ref, exit_label and exit_to
 		 *  from the map.
-		 *
 		 */
 		if (streetitem->type == type_ramp )
 		{
@@ -2894,7 +2893,7 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
 			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
 		if (name || name_systematic)
-			/* TRANSLATORS: %1$s is the name_systematic of the next road to merge onto, %2$s it's name*/
+			/* TRANSLATORS: %1$s is the name_systematic of the next road to merge onto, %2$s its name*/
 			return g_strdup_printf(_("onto the %1$s %2$s"),name_systematic ? name_systematic : "",
 					name ? name : "");
 		else return g_strdup("");
@@ -3130,7 +3129,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					else folded_exit_label = g_strdup("");
 					folded_street_destination_announce = linguistics_casefold(street_destination_announce);
 					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
-					instruction = g_strdup_printf(_("%1$s left exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+					instruction = g_strdup_printf(_("Take the exit on your left %1$s %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
 							(!strstr(folded_street_destination_announce,folded_exit_label)) ? cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
 					g_free(folded_exit_label);
 					g_free(folded_street_destination_announce);
@@ -3142,7 +3141,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					else folded_exit_label = g_strdup("");
 					folded_street_destination_announce = linguistics_casefold(street_destination_announce);
 					/* TRANSLATORS: the first arg. is distance, the second is exit_ref and the third is exit_label */
-					instruction = g_strdup_printf(_("%1$s right exit %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+					instruction = g_strdup_printf(_("Take the exit on your right %1$s %2$s %3$s"),d,cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
 										(!strstr(folded_street_destination_announce,folded_exit_label)) ?
 												cmd->itm->way.exit_label ? cmd->itm->way.exit_label :"" :"");
 					g_free(folded_exit_label);
