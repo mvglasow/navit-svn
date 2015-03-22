@@ -1983,7 +1983,9 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	m.is_same_street = is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 
 	dbg(lvl_debug,"enter %p %p %p\n",old, new, maneuver);
-/*	dbg(0,"old=%s %s, new=%s %s, angle old=%d, angle new=%d, d=%i\n ",old->way.name,old->way.name_systematic,new->way.name,new->way.name_systematic,old->angle_end, new->way.angle2,d); */
+#if 0
+	dbg(lvl_debug, "old=%s %s, new=%s %s, angle old=%d, angle new=%d, d=%i\n ", old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic, old->angle_end, new->way.angle2, d);
+#endif
 	if (!new->way.next || (new->way.next && (new->way.next->angle2 == new->way.angle2) && !new->way.next->next)) {
 		/* No announcement necessary (with extra magic to eliminate duplicate ways) */
 		r="no: Only one possibility";
@@ -2210,7 +2212,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			m.is_unambiguous = 0;
 		/* if another way is within +/-min_turn_limit and on the same side as new, the maneuver is ambiguous */
 		if (dc != m.delta) {
-			dbg(1,"m.delta %d vs dc %d\n",m.delta,dc);
+			dbg(lvl_debug, "m.delta %d vs dc %d\n", m.delta, dc);
 			m.is_unambiguous=0;
 		}
 		if (!m.is_same_street && m.is_unambiguous < 1) { /* FIXME: why < 1? */
