@@ -2786,7 +2786,7 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 /*temporary solution to recover some motorway
  *exits that get a (slight)turn left/right 
  */
-		if (itm && itm->way.exit_ref)
+		if (itm && itm->way.exit_ref && (ret->maneuver->merge_or_exit == mex_none))
 		{
 			if (ret->maneuver->type == type_nav_keep_left || ret->maneuver->type == type_nav_left_1 || ret->maneuver->type == type_nav_left_2)
 				ret->maneuver->merge_or_exit = mex_exit_left;
