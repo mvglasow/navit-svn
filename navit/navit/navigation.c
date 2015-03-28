@@ -2015,7 +2015,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		w = &(new->way);
 		int through_segments = 0;
 		dc=m.delta;
-		/* Check whether the street keeps its name */
 		while (w) {
 			/* in case of overlapping ways, avoid counting the way on the route twice */
 			if ((w->angle2 != new->way.angle2) || (w == &(new->way))) {
