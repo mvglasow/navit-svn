@@ -2238,14 +2238,26 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (!r)
 					r = "yes: merging onto motorway-like road";
 			}
-		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way), 0)) {
+		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way), 1)) {
 			/* Detect interchanges - if:
 			 * - we're entering a ramp,
+			 * - we're coming from a motorway-like road,
 			 * - the route is taking us onto another motorway-like road and
 			 * - none of the maneuvers in between connects to any non-motorway roads,
 			 * set m.merge_or_exit = mex_interchange.
 			 * The last check is to prevent direction changes (i.e. exit motorway and take access ramp
 			 * for opposite direction) from being misinterpreted as interchanges. */
+			ni = old;
+			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
+				w = &(ni->way);
+				while (!route_leaves_motorway && w) {
+					route_leaves_motorway = !is_motorway_like(w, 1);
+					w = w->next;
+				}
+				ni = ni->prev;
+			}
+			if (ni && !route_leaves_motorway)
+				route_leaves_motorway = !is_motorway_like(&(ni->way), 0);
 			ni = new->next;
 			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
 				w = &(ni->way);
@@ -2257,18 +2269,19 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			}
 			if (ni && !route_leaves_motorway && is_motorway_like(&(ni->way), 0))
 				m.merge_or_exit = mex_interchange;
-			else
+			else if (is_motorway_like(&(old->way), 0))
 				if (motorways_left && (m.left > -90))
 					m.merge_or_exit = mex_exit_right;
 				else if (motorways_right && (m.right < 90))
 					m.merge_or_exit = mex_exit_left;
 				/* if there are no motorways within +/-90 degrees on either side, this is not an exit
 				 * (more likely the end of a motorway) */
+				/* FIXME: check this against temp solution in command_new() */
 
-			if (m.merge_or_exit != mex_none) {
+			if (is_motorway_like(&(old->way), 0) && (m.merge_or_exit != mex_none)) {
 				ret=1;
 				if (!r)
-					r = "yes: exiting motorway-like road";
+					r = "yes: leaving motorway-like road";
 			}
 		}
 	}
