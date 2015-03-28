@@ -3434,6 +3434,18 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
  *
  * This function creates an announcement for the current maneuver and for maneuvers
  * immediately following that maneuver, if these are very close and we're in speech navigation.
+ * The actual announcements are created by calling {@code show_maneuver()}.
+ *
+ * @param nav The navigation object
+ * @param itm The current navigation item, which is used to determine the distance to the next
+ * maneuver. In speech mode this should be set to the navigation item starting at the vehicle's
+ * current position; in route description mode this should be set to the {@code navigation_item}
+ * associated with the previous {@code navigation_command}
+ * @param cmd The {@code navigation_command} for which to generate an announcement
+ * @param type The type of announcements to generate. If set to {@code attr_navigation_speech},
+ * maneuvers will be grouped ("turn left, then turn right") if we are close to the first maneuver
+ * and the second maneuver is within a short distance from the first. This parameter is passed to
+ * {@code show_maneuver()}, where it is evaluated again. See {@code show_maneuver()} for details.
  *
  * @return An announcement that should be made
  */
