@@ -2241,12 +2241,12 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way), 1)) {
 			/* Detect interchanges - if:
 			 * - we're entering a ramp,
-			 * - we're coming from a motorway-like road,
+			 * - we're coming from a motorway-like road (directly or via ramps),
 			 * - the route is taking us onto another motorway-like road and
-			 * - none of the maneuvers in between connects to any non-motorway roads,
+			 * - none of the ways in between connects to any non-motorway roads,
 			 * set m.merge_or_exit = mex_interchange.
-			 * The last check is to prevent direction changes (i.e. exit motorway and take access ramp
-			 * for opposite direction) from being misinterpreted as interchanges. */
+			 * The last condition is to prevent direction changes (i.e. exit motorway and take
+			 * access ramp for opposite direction) from being misinterpreted as interchanges. */
 			ni = old;
 			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
 				w = &(ni->way);
