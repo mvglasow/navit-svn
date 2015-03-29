@@ -1958,6 +1958,8 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	int wcat;
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int motorways_left = 0, motorways_right = 0; /* number of motorway-like roads left or right of new->way */
+	int coming_from_motorway = 0;  /* when the maneuver changes from one ramp to another,
+	                                * whether the last non-ramp road was motorway-like */
 	int route_leaves_motorway = 0; /* when the maneuver changes from a motorway-like road to a ramp,
 	                                * whether a subsequent maneuver leaves the motorway (changing direction
 	                                * is considered leaving the motorway) */
@@ -2237,7 +2239,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (!r)
 					r = "yes: merging onto motorway-like road";
 			}
-		} else if (new->way.item.type == type_ramp && is_motorway_like(&(old->way), 1)) {
+		} else if (is_motorway_like(&(old->way), 1) && (new->way.item.type == type_ramp || new->way.exit_ref)) {
 			/* Detect interchanges - if:
 			 * - we're entering a ramp,
 			 * - we're coming from a motorway-like road (directly or via ramps),
@@ -2247,17 +2249,19 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * The last condition is to prevent direction changes (i.e. exit motorway and take
 			 * access ramp for opposite direction) from being misinterpreted as interchanges. */
 			ni = old;
-			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
+			coming_from_motorway = 1;
+			while (coming_from_motorway && ni && (ni->way.item.type == type_ramp)) {
 				w = &(ni->way);
-				while (!route_leaves_motorway && w) {
-					route_leaves_motorway = !is_motorway_like(w, 1);
+				while (coming_from_motorway && w) {
+					coming_from_motorway = is_motorway_like(w, 1);
 					w = w->next;
 				}
 				ni = ni->prev;
 			}
-			if (ni && !route_leaves_motorway)
-				route_leaves_motorway = !is_motorway_like(&(ni->way), 0);
+			if (ni && coming_from_motorway)
+				coming_from_motorway = is_motorway_like(&(ni->way), 0);
 			ni = new->next;
+			route_leaves_motorway = !coming_from_motorway;
 			while (!route_leaves_motorway && ni && (ni->way.item.type == type_ramp)) {
 				w = &(ni->way);
 				while (!route_leaves_motorway && w) {
@@ -2268,14 +2272,13 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			}
 			if (ni && !route_leaves_motorway && is_motorway_like(&(ni->way), 0))
 				m.merge_or_exit = mex_interchange;
-			else if (is_motorway_like(&(old->way), 0))
+			else if (is_motorway_like(&(old->way), 0) || (coming_from_motorway && new->way.exit_ref))
 				if (motorways_left && (m.left > -90))
 					m.merge_or_exit = mex_exit_right;
 				else if (motorways_right && (m.right < 90))
 					m.merge_or_exit = mex_exit_left;
 				/* if there are no motorways within +/-90 degrees on either side, this is not an exit
 				 * (more likely the end of a motorway) */
-				/* FIXME: check this against temp solution in command_new() */
 
 			if (is_motorway_like(&(old->way), 0) && (m.merge_or_exit != mex_none)) {
 				ret=1;
@@ -2795,17 +2798,6 @@ command_new(struct navigation *this_, struct navigation_itm *itm, struct navigat
 			} /* endif ret->delta */
 		}
 	}
-/*temporary solution to recover some motorway
- *exits that get a (slight)turn left/right 
- */
-		if (itm && itm->way.exit_ref && (ret->maneuver->merge_or_exit == mex_none))
-		{
-			if (ret->maneuver->type == type_nav_keep_left || ret->maneuver->type == type_nav_left_1 || ret->maneuver->type == type_nav_left_2)
-				ret->maneuver->merge_or_exit = mex_exit_left;
-
-			if (ret->maneuver->type == type_nav_keep_right || ret->maneuver->type == type_nav_right_1 || ret->maneuver->type == type_nav_right_2)
-				ret->maneuver->merge_or_exit = mex_exit_right;
-		}
 
 	if (this_->cmd_last) {
 		this_->cmd_last->next=ret;
