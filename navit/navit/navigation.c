@@ -2169,7 +2169,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			/* Another sign that we are at a motorway interchange is if the street name changes
 			 */
 			r="yes: motorway interchange (name changes)";
-			/* TODO: tell motorway interchanges from exits */
+			/* TODO: tell motorway interchanges from exits (is_motorway_like(&(new->way), 0)) */
 			/* m.merge_or_exit = mex_interchange; */
 			ret=1;
 		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(m.delta) >= min_turn_limit)) && ((m.left > -90) || (m.right < 90))) {
