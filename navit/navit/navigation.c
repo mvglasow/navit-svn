@@ -2022,6 +2022,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			if ((w->angle2 != new->way.angle2) || (w == &(new->way))) {
 				dw=angle_delta(old->angle_end, w->angle2);
 				if (is_way_allowed(nav,w,1)) {
+					dbg(lvl_debug, "- Examining allowed way: %s %s %s, delta=%i\n", item_to_name(w->item.type), w->name_systematic, w->name, dw);
 					m.num_options++;
 					/* ways of similar category */
 					if (maneuver_category(w->item.type) == m.old_cat) {
