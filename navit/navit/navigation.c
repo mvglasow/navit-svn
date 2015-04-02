@@ -2913,15 +2913,18 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	if (vocabulary2)
 		name_systematic=itm->way.name_systematic;
 
+	name1 = g_strdup("");
 	if (name) {
 		for (i = 0; i < sizeof(suffixes)/sizeof(suffixes[0]); i++) {
 			if (contains_suffix(name, suffixes[i].fullname)) {
 				gender = suffixes[i].gender;
+				g_free(name1);
 				name1 = g_strdup(name);
 				break;
 			}
 			if (contains_suffix(name, suffixes[i].abbrev)) {
 				gender = suffixes[i].gender;
+				g_free(name1);
 				name1 = replace_suffix(name, suffixes[i].abbrev, suffixes[i].fullname);
 				break;
 			}
@@ -2936,7 +2939,7 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
 		if (name_systematic)
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Systematic Street Name 3: Separator (Space if required), 4: Street Name */
-			ret = g_strdup_printf(_("%1$sonto the %2$s%3$s%4$s"), prefix, name2, sep, name1);
+			ret = g_strdup_printf(_("%1$sonto the %2$s%3$s%4$s"), prefix, name_systematic, sep, name1);
 		else if (name)
 			switch (gender) {
 			case unknown:
@@ -2968,19 +2971,19 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 		switch (gender) {
 		case unknown:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name */
-			ret=g_strdup_printf(_("%sinto the street %s%s%s"), prefix, name1, sep, name2);
+			ret=g_strdup_printf(_("%sinto %s%s%s"), prefix, name, sep, name2);
 			break;
 		case male:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included */
-			ret=g_strdup_printf(_("%sinto %s%s%s|male form"), prefix, name1, sep, name2);
+			ret=g_strdup_printf(_("%sinto %s%s%s|masculine form"), prefix, name1, sep, name2);
 			break;
 		case female:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included */
-			ret=g_strdup_printf(_("%sinto %s%s%s|female form"), prefix, name1, sep, name2);
+			ret=g_strdup_printf(_("%sinto %s%s%s|feminine form"), prefix, name1, sep, name2);
 			break;
 		case neutral:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included */
-			ret=g_strdup_printf(_("%sinto %s%s%s|neutral form"), prefix, name1, sep, name2);
+			ret=g_strdup_printf(_("%sinto %s%s%s|neuter form"), prefix, name1, sep, name2);
 			break;
 		}
 			
