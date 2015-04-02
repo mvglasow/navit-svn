@@ -2913,8 +2913,8 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	if (vocabulary2)
 		name_systematic=itm->way.name_systematic;
 
-	name1 = g_strdup("");
 	if (name) {
+		name1 = g_strdup(name);
 		for (i = 0; i < sizeof(suffixes)/sizeof(suffixes[0]); i++) {
 			if (contains_suffix(name, suffixes[i].fullname)) {
 				gender = suffixes[i].gender;
@@ -2933,7 +2933,8 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 			name2 = name_systematic;
 			sep=" ";
 		}
-	}
+	} else
+		name1 = g_strdup("");
 
 	if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
 			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
@@ -2944,19 +2945,19 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 			switch (gender) {
 			case unknown:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name */
-				ret = g_strdup_printf(_("%1$sonto %2$s"), prefix, name2);
+				ret = g_strdup_printf(_("%1$sonto %2$s"), prefix, name1);
 				break;
 			case male:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Masculine form. The stuff after | doesn't have to be included */
-				ret=g_strdup_printf(_("%1$sonto %2$s|masculine form"), prefix, name2);
+				ret=g_strdup_printf(_("%1$sonto %2$s|masculine form"), prefix, name1);
 				break;
 			case female:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Feminine form. The stuff after | doesn't have to be included */
-				ret=g_strdup_printf(_("%1$sonto %2$s|feminine form"), prefix, name2);
+				ret=g_strdup_printf(_("%1$sonto %2$s|feminine form"), prefix, name1);
 				break;
 			case neutral:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Neuter form. The stuff after | doesn't have to be included */
-				ret=g_strdup_printf(_("%1$sonto %2$s|neuter form"), prefix, name2);
+				ret=g_strdup_printf(_("%1$sonto %2$s|neuter form"), prefix, name1);
 				break;
 			}
 		else ret = g_strdup("");
