@@ -1990,6 +1990,8 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	/* Check whether the street keeps its name */
 	m.is_same_street = is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 
+	dc=m.delta;
+
 	dbg(lvl_debug,"enter %p %p %p\n",old, new, maneuver);
 #if 0
 	dbg(lvl_debug, "old=%s %s, new=%s %s, angle old=%d, angle new=%d, d=%i\n ", old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic, old->angle_end, new->way.angle2, d);
@@ -2023,7 +2025,6 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 		 */
 		w = &(new->way);
 		int through_segments = 0;
-		dc=m.delta;
 		while (w) {
 			/* in case of overlapping ways, avoid counting the way on the route twice */
 			if ((w->angle2 != new->way.angle2) || (w == &(new->way))) {
