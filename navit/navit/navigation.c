@@ -132,7 +132,7 @@ enum gender {unknown, male, female, neutral};
 struct suffix {
 	char *fullname;
 	char *abbrev;
-	int sex;
+	int gender;
 } suffixes[]= {
 	{"weg",NULL,male},
 	{"platz","pl.",male},
@@ -2890,9 +2890,9 @@ replace_suffix(char *name, char *search, char *replace)
 static char *
 navigation_item_destination(struct navigation *nav, struct navigation_command *cmd, struct navigation_itm *next, char *prefix)
 {
-	char *ret=NULL,*name1,*sep,*name2;
+	char *ret = NULL, *name1 = NULL, *sep = "", *name2 = "";
 	char *name=NULL,*name_systematic=NULL;
-	int i,sex;
+	int i, gender = unknown;
 	int vocabulary1=1;
 	int vocabulary2=1;
 	struct attr attr;
@@ -2913,69 +2913,81 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	if (vocabulary2)
 		name_systematic=itm->way.name_systematic;
 
-	if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
-			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
-		if (name || name_systematic)
-			/* TRANSLATORS: %1$s is the name_systematic of the next road to merge onto, %2$s its name*/
-			return g_strdup_printf(_("onto the %1$s %2$s"),name_systematic ? name_systematic : "",
-					name ? name : "");
-		else return g_strdup("");
-	}
-
-	if(!name && !name_systematic && itm->way.item.type == type_ramp && vocabulary2) {
-		if(next->way.item.type == type_ramp)
-			return NULL;
-		else
-			return g_strdup_printf("%s%s",prefix,_("into the ramp"));
-	}
-
-	if (!name && !name_systematic)
-		return NULL;
 	if (name) {
-		sex=unknown;
-		name1=NULL;
-		for (i = 0 ; i < sizeof(suffixes)/sizeof(suffixes[0]) ; i++) {
-			if (contains_suffix(name,suffixes[i].fullname)) {
-				sex=suffixes[i].sex;
-				name1=g_strdup(name);
+		for (i = 0; i < sizeof(suffixes)/sizeof(suffixes[0]); i++) {
+			if (contains_suffix(name, suffixes[i].fullname)) {
+				gender = suffixes[i].gender;
+				name1 = g_strdup(name);
 				break;
 			}
-			if (contains_suffix(name,suffixes[i].abbrev)) {
-				sex=suffixes[i].sex;
-				name1=replace_suffix(name, suffixes[i].abbrev, suffixes[i].fullname);
+			if (contains_suffix(name, suffixes[i].abbrev)) {
+				gender = suffixes[i].gender;
+				name1 = replace_suffix(name, suffixes[i].abbrev, suffixes[i].fullname);
 				break;
 			}
 		}
 		if (name_systematic) {
-			name2=name_systematic;
+			name2 = name_systematic;
 			sep=" ";
-		} else {
-			name2="";
-			sep="";
 		}
-		switch (sex) {
+	}
+
+	if (cmd->maneuver && cmd->maneuver->type && ((cmd->maneuver->merge_or_exit==mex_merge_left)
+			||(cmd->maneuver->merge_or_exit==mex_merge_right) )) {
+		if (name_systematic)
+			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Systematic Street Name 3: Separator (Space if required), 4: Street Name */
+			ret = g_strdup_printf(_("%1$sonto the %2$s%3$s%4$s"), prefix, name2, sep, name1);
+		else if (name)
+			switch (gender) {
+			case unknown:
+				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name */
+				ret = g_strdup_printf(_("%1$sonto %2$s"), prefix, name2);
+				break;
+			case male:
+				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Masculine form. The stuff after | doesn't have to be included */
+				ret=g_strdup_printf(_("%1$sonto %2$s|masculine form"), prefix, name2);
+				break;
+			case female:
+				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Feminine form. The stuff after | doesn't have to be included */
+				ret=g_strdup_printf(_("%1$sonto %2$s|feminine form"), prefix, name2);
+				break;
+			case neutral:
+				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Neuter form. The stuff after | doesn't have to be included */
+				ret=g_strdup_printf(_("%1$sonto %2$s|neuter form"), prefix, name2);
+				break;
+			}
+		else ret = g_strdup("");
+	} else if (!name && !name_systematic && itm->way.item.type == type_ramp && vocabulary2) {
+		if (next->way.item.type == type_ramp)
+			ret = NULL;
+		else
+			ret = g_strdup_printf("%s%s",prefix,_("into the ramp"));
+	} else if (!name && !name_systematic)
+		ret = NULL;
+	else if (name) {
+		switch (gender) {
 		case unknown:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name */
-			ret=g_strdup_printf(_("%sinto the street %s%s%s"),prefix,name, sep, name2);
+			ret=g_strdup_printf(_("%sinto the street %s%s%s"), prefix, name1, sep, name2);
 			break;
 		case male:
-			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Male form. The stuff after | doesn't have to be included */
-			ret=g_strdup_printf(_("%sinto the %s%s%s|male form"),prefix,name1, sep, name2);
+			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included */
+			ret=g_strdup_printf(_("%sinto %s%s%s|male form"), prefix, name1, sep, name2);
 			break;
 		case female:
-			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Female form. The stuff after | doesn't have to be included */
-			ret=g_strdup_printf(_("%sinto the %s%s%s|female form"),prefix,name1, sep, name2);
+			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included */
+			ret=g_strdup_printf(_("%sinto %s%s%s|female form"), prefix, name1, sep, name2);
 			break;
 		case neutral:
-			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neutral form. The stuff after | doesn't have to be included */
-			ret=g_strdup_printf(_("%sinto the %s%s%s|neutral form"),prefix,name1, sep, name2);
+			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included */
+			ret=g_strdup_printf(_("%sinto %s%s%s|neutral form"), prefix, name1, sep, name2);
 			break;
 		}
-		g_free(name1);
 			
 	} else
 		/* TRANSLATORS: gives the name of the next road to turn into (into the E17) */
 		ret=g_strdup_printf(_("%sinto the %s"),prefix,name_systematic);
+	g_free(name1);
 	name1=ret;
 	while (name1 && *name1) {
 		switch (*name1) {
@@ -3142,22 +3154,25 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			switch (cmd->maneuver->merge_or_exit)
 			{
 				case mex_merge_left:
-					if (tellstreetname)
-						destination=navigation_item_destination(nav, cmd, itm, NULL);
-					else destination = g_strdup("");
-					g_free(instruction);
-					/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
-					/* FIXME: proper announcement */
-					instruction = g_strdup_printf(_("%1$s merge left %2$s"),d,destination);
-					break;
 				case mex_merge_right:
 					if (tellstreetname)
-						destination=navigation_item_destination(nav, cmd, itm, NULL);
+						destination=navigation_item_destination(nav, cmd, itm, " ");
 					else destination = g_strdup("");
-					g_free(instruction);
-					/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'  */
-					/* FIXME: proper announcement */
-					instruction = g_strdup_printf(_("%1$s merge right %2$s"),d,destination);
+					if (cmd->maneuver->merge_or_exit == mex_merge_right) {
+						if (level == -2)
+							/* TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included. */
+							instruction = g_strdup_printf(_("then merge%1$s|right"), d);
+						else
+							/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included. */
+							instruction = g_strdup_printf(_("Merge %1$s%2$s|right"), d, destination);
+					} else {
+						if (level == -2)
+							/* TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included. */
+							instruction = g_strdup_printf(_("then merge%1$s|left"), d);
+						else
+							/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included. */
+							instruction = g_strdup_printf(_("Merge %1$s%2$s|left"), d, destination);
+					}
 					break;
 					/* for mex_exit_left/right, exit_label is not announced in case it is
 					* a substring of destination info to avoid redundancy and not let the sentence
@@ -3165,7 +3180,6 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					*/
 				case mex_exit_left:
 				case mex_exit_right:
-					g_free(instruction);
 					direction = (cmd->maneuver->merge_or_exit == mex_exit_left) ?
 							g_strdup(_("on your left")) :
 							g_strdup(_("on your right"));
@@ -3268,7 +3282,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					break;
 				}
 				if (tellstreetname)
-					destination=navigation_item_destination(nav, cmd, itm, NULL);
+					destination=navigation_item_destination(nav, cmd, itm, " ");
 				if (!destination)
 					destination = g_strdup("");
 				if (skip_roads) {
@@ -3283,17 +3297,23 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				}
 				if (!skip_roads)
 					/* TRANSLATORS: the first arg. is strength, the second is direction, the third is distance, the fourth is destination  */
-					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s %4$s"), strength, direction, d, destination);
+					instruction = g_strdup_printf(_("Turn %1$s%2$s %3$s%4$s"), strength, direction, d, destination);
 				break;
 			case type_nav_turnaround_left:
-				/* TRANSLATORS: the arg. is distance  */
-				/* FIXME: proper announcement */
-				instruction = g_strdup_printf(_("%1$s left turnaround"),d);
+				if (level == -2)
+					/* TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included. */
+					instruction = g_strdup(_("then make a U-turn|left"));
+				else
+					/* TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included. */
+					instruction = g_strdup_printf(_("Make a U-turn %1$s|left"), d);
 				break;
 			case type_nav_turnaround_right:
-				/* TRANSLATORS: the arg. is distance  */
-				/* FIXME: proper announcement */
-				instruction = g_strdup_printf(_("%1$s right turnaround"),d);
+				if (level == -2)
+					/* TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included. */
+					instruction = g_strdup(_("then make a U-turn|right"));
+				else
+					/* TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included. */
+					instruction = g_strdup_printf(_("Make a U-turn %1$s|right"), d);
 				break;
 			case type_nav_none:
 				/*An empty placeholder that we can use in the future for
@@ -3308,7 +3328,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				 *  UNTESTED !
 				 *
 				 */
-				instruction = g_strdup("follow ");
+				instruction = g_strdup(_("follow"));
 				break;
 			case type_nav_destination:
 				/* the old code used to clear the route destination when this was the only
