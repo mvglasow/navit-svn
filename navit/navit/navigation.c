@@ -135,7 +135,8 @@ struct suffix {
 	int gender;
 } suffixes[]= {
 	{"weg", NULL, masculine},
-	{"platz", "pl.", masculine},
+/*	{"platz", "pl.", masculine}, collides with Lithuanian "plentas" (which is more frequent) */
+	{"platz", NULL, masculine},
 	{"ring", NULL, masculine},
 	{"bogen", NULL, masculine},
 	{"allee", NULL, feminine},
@@ -152,6 +153,14 @@ struct suffix {
 	/* some for the english lang. */
 	{"street", NULL, masculine},
 	{"drive", NULL, masculine},
+
+	/* some for Lithuanian, as per http://wiki.openstreetmap.org/wiki/WikiProject_Lithuania */
+	{"gatvė", "g.", feminine},
+	{"plentas", "pl.", masculine},
+	{"prospektas", "pr.", masculine},
+	{"alėja", "al.", feminine},
+	{"skersgatvis", "skg.", masculine},
+	{"aikštė", "a.", feminine},
 
 };
 
