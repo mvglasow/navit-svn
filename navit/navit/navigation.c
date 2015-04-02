@@ -127,8 +127,9 @@ static int sharp_turn_limit = 110;
  * Note that, depending on other conditions, even maneuvers whose delta exceeds the threshold may still be announced as (sharp) turns. */
 static int u_turn_limit = 165;
 
+enum gender {unknown, male, female, neutral};
+
 struct suffix {
-	enum gender {unknown, male, female, neutral};
 	char *fullname;
 	char *abbrev;
 	int sex;
@@ -1028,6 +1029,8 @@ navigation_way_init(struct navigation_way *w)
 }
 
 
+#if 0
+// /home/michael/src/navit/navit/navit/navigation.c:1039:1: warning: ‘navigation_way_get_exit_angle’ defined but not used [-Wunused-function]
 /**
  * @brief Returns the bearing at the end of a way
  *
@@ -1088,8 +1091,11 @@ navigation_way_get_exit_angle(struct navigation_way *w) {
 
 	return ret;
 }
+#endif
 
 
+#if 0
+// /home/michael/src/navit/navit/navit/navigation.c:1110:1: warning: ‘navigation_way_get_angle_at’ defined but not used [-Wunused-function]
 /**
  * @brief Returns the bearing of a way at a given distance from its start
  *
@@ -1172,6 +1178,7 @@ navigation_way_get_angle_at(struct navigation_way *w, enum projection pro, doubl
 	map_rect_destroy(mr);
 	return ret;
 }
+#endif
 
 
 /**
@@ -2273,13 +2280,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			}
 			if (ni && !route_leaves_motorway && is_motorway_like(&(ni->way), 0))
 				m.merge_or_exit = mex_interchange;
-			else if (is_motorway_like(&(old->way), 0) || (coming_from_motorway && new->way.exit_ref))
+			else if (is_motorway_like(&(old->way), 0) || (coming_from_motorway && new->way.exit_ref)) {
 				if (motorways_left && (m.left > -90))
 					m.merge_or_exit = mex_exit_right;
 				else if (motorways_right && (m.right < 90))
 					m.merge_or_exit = mex_exit_left;
 				/* if there are no motorways within +/-90 degrees on either side, this is not an exit
 				 * (more likely the end of a motorway) */
+			}
 
 			if (is_motorway_like(&(old->way), 0) && (m.merge_or_exit != mex_none)) {
 				ret=1;
@@ -3276,6 +3284,9 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					if (level==-2 || level == 0)
 						skip_roads = count_possible_turns(nav,cmd->prev ? cmd->prev->itm : nav->first,cmd->itm,-90);
 					break;
+				default:
+					direction = g_strdup("");
+					break;
 				}
 				switch (cmd->maneuver->type) {
 				case type_nav_right_1 :
@@ -3283,14 +3294,13 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					/* TRANSLATORS: as in "turn easily right" */
 					strength = g_strdup(_("easily "));
 					break;
-				case type_nav_right_2 :
-				case type_nav_left_2 :
-					strength = g_strdup("");
-					break;
 				case type_nav_right_3 :
 				case type_nav_left_3 :
 					/* TRANSLATORS: as in "turn strongly right" */
 					strength = g_strdup(_("strongly "));
+					break;
+				default:
+					strength = g_strdup("");
 					break;
 				}
 				if (tellstreetname)
@@ -3896,9 +3906,24 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 		case 8:
 			this_->debug_idx++;
 			if (prev) {
-				char *reason=NULL;
-				maneuver_required2(this_->nav, prev, itm, &reason);
-				this_->str=attr->u.str=g_strdup_printf("reason:%s",reason); //FIXME: we now have a struct
+				struct navigation_maneuver *maneuver = NULL;
+				maneuver_required2(this_->nav, prev, itm, &maneuver);
+				this_->str=attr->u.str=g_strdup_printf("type: %s, is_complex_t_junction: %d, is_same_street: %d, is_unambiguous: %d, merge_or_exit: %d, old_cat: %d, new_cat: %d, max_cat: %d, num_options: %d, num_similar_ways: %d, num_new_motorways: %d, num_other_ways: %d, left: %d, right: %d, delta: %d",
+						item_to_name(maneuver->type),
+						maneuver->is_complex_t_junction,
+						maneuver->is_same_street,
+						maneuver->is_unambiguous,
+						maneuver->merge_or_exit,
+						maneuver->old_cat,
+						maneuver->new_cat,
+						maneuver->max_cat,
+						maneuver->num_options,
+						maneuver->num_similar_ways,
+						maneuver->num_new_motorways,
+						maneuver->num_other_ways,
+						maneuver->left,
+						maneuver->right,
+						maneuver->delta);
 				return 1;
 			}
 			
