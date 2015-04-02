@@ -3191,74 +3191,38 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					break;
 			}
 
-			if (!instruction) {
-				/* FIXME: merge with following code and de-duplicate announcement strings */
-				if (cmd->itm->way.exit_ref || cmd->itm->way.exit_label)
-					at = g_strdup_printf("%1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
-										cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "", cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
-				else at = g_strdup("");
-				switch (cmd->maneuver->type)
-				{
-					case type_nav_straight :
-						if (level == -2)
-							/* TRANSLATORS: the arg. is where to do the maneuver */
-							instruction = g_strdup_printf(_("then continue straight %1$s"), at);
-						else
-							/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
-							instruction = g_strdup_printf(_("Continue straight %1$s %2$s"), d, at);
-						break;
-					case type_nav_keep_right :
-						if (level == -2)
-							/* TRANSLATORS: the arg. is where to do the maneuver */
-							instruction = g_strdup_printf(_("then keep right %1$s"), at);
-						else
-							/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
-							instruction = g_strdup_printf(_("Keep right %1$s %2$s"), d, at);
-						break;
-					case type_nav_keep_left :
-						if (level == -2)
-							/* TRANSLATORS: the arg. is where to do the maneuver */
-							instruction = g_strdup_printf(_("then keep left %1$s"), at);
-						else
-							/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
-							instruction = g_strdup_printf(_("Keep left %1$s %2$s"), d, at);
-						break;
-					default :
-						/* in case we end up here in the merge_or_exit situation, it can be either
-						* a classic turn instruction or an unsuitable instruction for
-						* motorways. For street_n_lanes this criterion could be relaxed.
-						*/
-						dbg(lvl_error,"unhandled instruction %s\n",attr_to_name(cmd->maneuver->type));
-						break;
-				}
-			}
+			if (!instruction && (cmd->itm->way.exit_ref || cmd->itm->way.exit_label))
+				at = g_strdup_printf(" %1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
+						cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "", cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
 		}
 	}
 	if (!instruction && cmd->maneuver) {
+		if (!at)
+			at = g_strdup("");
 		switch (cmd->maneuver->type) {
 			case type_nav_straight :
 				if (level == -2)
-					/* TRANSLATORS: the arg. is distance  */
-					instruction = g_strdup_printf(_("then continue straight %1$s"), d);
+					/* TRANSLATORS: the arg. is where to do the maneuver */
+					instruction = g_strdup_printf(_("then continue straight%1$s"), at);
 				else
-					/* TRANSLATORS: the arg. is distance  */
-					instruction = g_strdup_printf(_("Continue straight %1$s"), d);
+					/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
+					instruction = g_strdup_printf(_("Continue straight %1$s%2$s"), d, at);
 				break;
 			case type_nav_keep_right :
 				if (level == -2)
-					/* TRANSLATORS: the arg. is distance  */
-					instruction = g_strdup_printf(_("then keep right %1$s"), d);
+					/* TRANSLATORS: the arg. is where to do the maneuver */
+					instruction = g_strdup_printf(_("then keep right%1$s"), at);
 				else
-					/* TRANSLATORS: the arg. is distance  */
-					instruction = g_strdup_printf(_("Keep right %1$s"), d);
+					/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
+					instruction = g_strdup_printf(_("Keep right %1$s%2$s"), d, at);
 				break;
 			case type_nav_keep_left :
 				if (level == -2)
-					/* TRANSLATORS: the arg. is distance  */
-					instruction = g_strdup_printf(_("then keep left %1$s"), d);
+					/* TRANSLATORS: the arg. is where to do the maneuver */
+					instruction = g_strdup_printf(_("then keep left%1$s"), at);
 				else
-					/* TRANSLATORS: the arg. is distance  */
-					instruction = g_strdup_printf(_("Keep left %1$s"), d);
+					/* TRANSLATORS: the first arg. is distance, the second is where to do the maneuver */
+					instruction = g_strdup_printf(_("Keep left %1$s%2$s"), d, at);
 				break;
 			case type_nav_right_1 :
 			case type_nav_right_2 :
