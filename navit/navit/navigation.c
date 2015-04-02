@@ -127,31 +127,31 @@ static int sharp_turn_limit = 110;
  * Note that, depending on other conditions, even maneuvers whose delta exceeds the threshold may still be announced as (sharp) turns. */
 static int u_turn_limit = 165;
 
-enum gender {unknown, male, female, neutral};
+enum gender {unknown, masculine, feminine, neuter};
 
 struct suffix {
 	char *fullname;
 	char *abbrev;
 	int gender;
 } suffixes[]= {
-	{"weg",NULL,male},
-	{"platz","pl.",male},
-	{"ring",NULL,male},
-	{"bogen",NULL,male},
-	{"allee",NULL,female},
-	{"gasse",NULL,female},
-	{"straße","str.",female},
+	{"weg", NULL, masculine},
+	{"platz", "pl.", masculine},
+	{"ring", NULL, masculine},
+	{"bogen", NULL, masculine},
+	{"allee", NULL, feminine},
+	{"gasse", NULL, feminine},
+	{"straße", "str.", feminine},
 
 	/* some for the dutch lang. */
-	{"straat",NULL,neutral},
-/*	{"weg",NULL,neutral}, doubles-up with German */
-	{"baan",NULL,neutral},
-	{"laan",NULL,neutral},
-	{"wegel",NULL,neutral},
+	{"straat", NULL, neuter},
+/*	{"weg", NULL, neuter}, doubles-up with German */
+	{"baan", NULL, neuter},
+	{"laan", NULL, neuter},
+	{"wegel", NULL, neuter},
 
 	/* some for the english lang. */
-	{"street",NULL,male},
-	{"drive",NULL,male},
+	{"street", NULL, masculine},
+	{"drive", NULL, masculine},
 
 };
 
@@ -1990,7 +1990,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	/* Check whether the street keeps its name */
 	m.is_same_street = is_same_street2(old->way.name, old->way.name_systematic, new->way.name, new->way.name_systematic);
 
-	dc=m.delta;
+	dc = m.delta;
 
 	dbg(lvl_debug,"enter %p %p %p\n",old, new, maneuver);
 #if 0
@@ -2948,15 +2948,15 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name */
 				ret = g_strdup_printf(_("%1$sonto %2$s"), prefix, name1);
 				break;
-			case male:
+			case masculine:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Masculine form. The stuff after | doesn't have to be included */
 				ret=g_strdup_printf(_("%1$sonto %2$s|masculine form"), prefix, name1);
 				break;
-			case female:
+			case feminine:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Feminine form. The stuff after | doesn't have to be included */
 				ret=g_strdup_printf(_("%1$sonto %2$s|feminine form"), prefix, name1);
 				break;
-			case neutral:
+			case neuter:
 				/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Neuter form. The stuff after | doesn't have to be included */
 				ret=g_strdup_printf(_("%1$sonto %2$s|neuter form"), prefix, name1);
 				break;
@@ -2975,15 +2975,15 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name */
 			ret=g_strdup_printf(_("%sinto %s%s%s"), prefix, name, sep, name2);
 			break;
-		case male:
+		case masculine:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included */
 			ret=g_strdup_printf(_("%sinto %s%s%s|masculine form"), prefix, name1, sep, name2);
 			break;
-		case female:
+		case feminine:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included */
 			ret=g_strdup_printf(_("%sinto %s%s%s|feminine form"), prefix, name1, sep, name2);
 			break;
-		case neutral:
+		case neuter:
 			/* TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included */
 			ret=g_strdup_printf(_("%sinto %s%s%s|neuter form"), prefix, name1, sep, name2);
 			break;
