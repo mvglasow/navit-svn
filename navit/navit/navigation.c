@@ -2230,12 +2230,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			r="yes: motorway interchange (multiple motorways)";
 			m.merge_or_exit = mex_interchange;
 			ret=1;
-		} else if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (!m.is_same_street)) {
+		} else if (is_motorway_like(&(old->way), 0) && is_motorway_like(&(new->way), 0) && (m.num_other_ways == 0) && (!m.is_same_street)) {
 			/* Another sign that we are at a motorway interchange is if the street name changes
 			 */
 			r="yes: motorway interchange (name changes)";
-			/* TODO: tell motorway interchanges from exits (is_motorway_like(&(new->way), 0)) */
-			/* m.merge_or_exit = mex_interchange; */
+			m.merge_or_exit = mex_interchange;
 			ret=1;
 		} else if ((new->way.item.type == type_ramp) && ((m.num_other_ways == 0) || (abs(m.delta) >= min_turn_limit)) && ((m.left > -90) || (m.right < 90))) {
 			/* Motorway ramps can be confusing, therefore we need to lower the bar for announcing a maneuver.
