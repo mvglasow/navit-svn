@@ -382,6 +382,64 @@ angle_opposite(int angle)
 	return ((angle+180)%360);
 }
 
+
+/**
+ * @brief Checks if two navigation items are on the same street
+ *
+ * This function checks if two navigation items are on the same street. It returns
+ * true if either their name or their "systematic name" (e.g. "A6" or "B256") are the
+ * same.
+ *
+ * @param old_name The name of the first item to be checked
+ * @param old_name_systematic The systematic name of the first item to be checked
+ * @param new_name The name of the second item to be checked
+ * @param new_name_systematic The systematic name of the second item to be checked
+ * @return True if both old and new are on the same street
+ */
+static int
+is_same_street2(char *old_name, char *old_name_systematic, char *new_name, char *new_name_systematic)
+{
+	if (old_name && new_name && !strcmp(old_name, new_name)) {
+		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (1.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
+		return 1;
+	}
+	if (old_name_systematic && new_name_systematic && !strcmp(old_name_systematic, new_name_systematic)) {
+		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (2.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
+		return 1;
+	}
+	dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' no\n", old_name_systematic, new_name_systematic, old_name, new_name);
+	return 0;
+}
+
+
+/**
+ * @brief Checks if two ways are identical
+ *
+ * This function checks if two {@code navigation_way}s are likely to represent the same way on the ground.
+ * It does this by comparing the {@code name}, {@code name_systematic}, {@code angle2} and {@code item.type}
+ * members of both ways and returning {@code true} if all of them match.
+ *
+ * Names are compared by calling {@code is_same_street()}.
+ *
+ * ID attributes (such as OSM IDs) are not used for comparison, which allows the function to handle even
+ * overlapping maps for the same area created from different versions of OSM data, in which IDs may have
+ * changed as a result of ways being merged or split. As long as the above attributes match, the ways will
+ * still be considered equal.
+ *
+ * Note that way geometry (other than {@code angle2}) is not compared. If necessary, the caller needs to
+ * make geometry-related comparisons separately.
+ */
+static int
+is_same_way(struct navigation_way * w1, struct navigation_way * w2) {
+	if (!is_same_street2(w1->name, w1->name_systematic, w2->name, w2->name_systematic))
+		return 0;
+	if ((w1->angle2 == w2->angle2) && (w1->item.type == w2->item.type))
+		return 1;
+	else
+		return 0;
+}
+
+
 /**
  * @brief Frees a list as constructed with split_string_to_list()
  *
@@ -1368,7 +1426,9 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 	struct map_rect *g_rect; /* Contains a map rectangle from the route graph's map */
 	struct item *i,*sitem;
 	struct attr sitem_attr,direction_attr;
-	struct navigation_way *w,*l;
+	struct navigation_way *w, *l, *h;
+
+	dbg(lvl_debug, "entering for item: %s %s %s\n", item_to_name(itm->way.item.type), itm->way.name_systematic, itm->way.name);
 
 	navigation_itm_ways_clear(itm);
 
@@ -1421,7 +1481,20 @@ navigation_itm_ways_update(struct navigation_itm *itm, struct map *graph_map)
 		w->dir = direction_attr.u.num;
 		w->item = *sitem;
 		w->next = l;
-		navigation_way_init(w);	/* calculte and set w->angle2 */
+		navigation_way_init(w);	/* calculate and set w->angle2 */
+
+		dbg(lvl_debug, "- retrieved way: %s %s %s\n", item_to_name(w->item.type), w->name_systematic, w->name);
+
+		/* check if w is already in the list */
+		h = l;
+		while (h) {
+			if (is_same_way(w, h)) {
+				g_free(w);
+				w = l;
+				dbg(lvl_debug, "  - way is already in list, discarding\n");
+			}
+			h = h->next;
+		}
 	}
 
 	map_rect_destroy(g_rect);
@@ -1807,32 +1880,6 @@ calculate_dest_distance(struct navigation *this_, int incr)
 		itm=itm->prev;
 	}
 	dbg(lvl_debug,"len %d time %d\n", len, time);
-}
-
-/**
- * @brief Checks if two navigation items are on the same street
- *
- * This function checks if two navigation items are on the same street. It returns
- * true if either their name or their "systematic name" (e.g. "A6" or "B256") are the
- * same.
- *
- * @param old The first item to be checked
- * @param new The second item to be checked
- * @return True if both old and new are on the same street
- */
-static int
-is_same_street2(char *old_name, char *old_name_systematic, char *new_name, char *new_name_systematic)
-{
-	if (old_name && new_name && !strcmp(old_name, new_name)) {
-		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (1.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
-		return 1;
-	}
-	if (old_name_systematic && new_name_systematic && !strcmp(old_name_systematic, new_name_systematic)) {
-		dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' yes (2.)\n", old_name_systematic, new_name_systematic, old_name, new_name);
-		return 1;
-	}
-	dbg(lvl_debug,"is_same_street: '%s' '%s' vs '%s' '%s' no\n", old_name_systematic, new_name_systematic, old_name, new_name);
-	return 0;
 }
 
 
