@@ -2219,10 +2219,14 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	if ((!r) && (m.num_options <= 1))
 		r="no: only one option permitted";
 	if (!r) {
-		if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (m.num_new_motorways > 1)) {
+		if (is_motorway_like(&(old->way), 0) && (m.num_other_ways == 0) && (m.num_new_motorways > 1) && ((m.left > -90) || (m.right < 90))) {
 			/* If we are at a motorway interchange, ANNOUNCE
 			 * We are assuming a motorway interchange when old way and at least
 			 * two possible ways are motorway-like and allowed.
+			 * Additionally we require one way (other than the new way) within +/-90°.
+			 * This prevents the rule from essentially announcing "don't do the U turn"
+			 * at the beginning of a single-carriageway section, which is occasionally
+			 * found on motorways.
 			 * If any of the possible ways is neither motorway-like nor a ramp,
 			 * we are probably on a trunk road with level crossings and not
 			 * at a motorway interchange.
