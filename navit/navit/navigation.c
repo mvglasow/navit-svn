@@ -2095,7 +2095,18 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					}
 					/* motorway-like ways */
 					if (is_motorway_like(w, 0)) {
-						m.num_new_motorways++;
+						/* Count all motorway-like segments:
+						 * - always count new
+						 * - if old, new and w have the same name_systematic, do not count w
+						 * - if one of old, new and w has no name_systematic, count w
+						 * This will count temporary splits (e.g. at toll booths) as one motorway. */
+						if ((w == &(new->way))
+								|| !old->way.name_systematic
+								|| !new->way.name_systematic
+								|| !w->name_systematic
+								|| strcmp(old->way.name_systematic, new->way.name_systematic)
+								|| strcmp(old->way.name_systematic, w->name_systematic))
+							m.num_new_motorways++;
 					} else if (!is_motorway_like(w, 1)) {
 						m.num_other_ways++;
 					}
