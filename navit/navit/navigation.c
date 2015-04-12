@@ -1752,7 +1752,7 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 							 */
 							if (attr.u.str
 									&& !ret->way.destination
-									&& (ret->way.type == type_ramp)
+									&& (ret->way.item.type == type_ramp)
 									&& (this_->last)
 									&& (!(this_->last->way.item.type == type_ramp))) {
 								char *destination_raw;
