@@ -1750,8 +1750,11 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 							 * - there is no regular destination info
 							 * - we are not coming from a ramp already
 							 */
-							if (attr.u.str && !ret->way.destination && (this_->last) && (!(this_->last->way.item.type == type_ramp)))
-							{
+							if (attr.u.str
+									&& !ret->way.destination
+									&& (ret->way.type == type_ramp)
+									&& (this_->last)
+									&& (!(this_->last->way.item.type == type_ramp))) {
 								char *destination_raw;
 								destination_raw=map_convert_string(streetitem->map,attr.u.str);
 								dbg(lvl_debug,"destination_raw from exit_to =%s\n",destination_raw);
