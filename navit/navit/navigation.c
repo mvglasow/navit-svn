@@ -256,7 +256,8 @@ struct navigation_maneuver {
 	                                would expect an announcement in such cases. */
 	int num_options;           /**< Number of permitted candidate ways, i.e. ways which we may enter (based on access flags of the
 	                                way but without considering turn restrictions). Permitted candidate ways include the route. */
-	int num_new_motorways;     /**< Number of permitted candidate ways that are motorway-like */
+	int num_new_motorways;     /**< Number of permitted candidate ways that are motorway-like.
+	                                Numbers greater then one should be interpreted as "more than one", not as a precise number. */
 	int num_other_ways;        /**< Number of permitted candidate ways that are neither ramps nor motorway-like */
 	int old_cat;               /**< Maneuver category of the way leading to the maneuver */
 	int new_cat;               /**< Maneuver category of the selected way after the maneuver */
@@ -1700,15 +1701,20 @@ navigation_itm_new(struct navigation *this_, struct item *routeitem)
 		ret->start=c[0];
 		ret->end=c[i];
 
-		/*	If we have a ramp check the map for higway_exit info,
-		 *  but only on the first node of the ramp.
-		 *  Ramps with nodes in reverse order and oneway=-1 are not
-		 *  specifically handled, but no occurence known so far either.
-		 *  If present, obtain exit_ref, exit_label and exit_to
-		 *  from the map.
+		/* If we have a ramp, check the map for higway_exit info,
+		 * but only on the first node of the ramp.
+		 * We are doing the same for motorway-like roads because some
+		 * interchanges use motorway types for the links between two
+		 * motorways.
+		 * Ramps with nodes in reverse order and oneway=-1 are not
+		 * specifically handled, but no occurence known so far either.
+		 * If present, obtain exit_ref, exit_label and exit_to
+		 * from the map.
 		 */
-		if (streetitem->type == type_ramp )
-		{
+		if ((streetitem->type == type_ramp)
+				|| (streetitem->type == type_highway_land)
+				|| (streetitem->type == type_highway_city)
+				|| (streetitem->type = type_street_n_lanes)) {
 			struct map_selection mselexit;
 			struct item *rampitem;
 			dbg(lvl_debug,"test ramp\n");
@@ -2094,13 +2100,21 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 						m.num_similar_ways++;
 					}
 					/* motorway-like ways */
-					if (is_motorway_like(w, 0)) {
+					if ((m.num_new_motorways < 2) && is_motorway_like(w, 0)) {
 						/* Count all motorway-like segments:
 						 * - always count new
+						 * - if new or w have an exit_ref or exit_label, count w
 						 * - if old, new and w have the same name_systematic, do not count w
 						 * - if one of old, new and w has no name_systematic, count w
-						 * This will count temporary splits (e.g. at toll booths) as one motorway. */
+						 * This is for handling temporary splits (e.g. at toll booths), which should
+						 * be counted as one motorway for the purpose of navigation. On the other hand,
+						 * occasionally a motorway may split at an interchange with both segments
+						 * retaining the name, in which case we want to count both motorways. */
 						if ((w == &(new->way))
+								|| new->way.exit_ref
+								|| new->way.exit_label
+								|| w->exit_ref
+								|| w->exit_label
 								|| !old->way.name_systematic
 								|| !new->way.name_systematic
 								|| !w->name_systematic
@@ -2318,7 +2332,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if (!r)
 					r = "yes: merging onto motorway-like road";
 			}
-		} else if (is_motorway_like(&(old->way), 1) && (new->way.item.type == type_ramp || new->way.exit_ref)) {
+		} else if (is_motorway_like(&(old->way), 1) && (new->way.item.type == type_ramp)) {
 			/* Detect interchanges - if:
 			 * - we're entering a ramp,
 			 * - we're coming from a motorway-like road (directly or via ramps),
