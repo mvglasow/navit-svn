@@ -3297,9 +3297,12 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					break;
 			}
 
-			if (!instruction && (cmd->itm->way.exit_ref || cmd->itm->way.exit_label))
-				at = g_strdup_printf(" %1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
-						cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "", cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
+			if (!instruction && (cmd->itm->way.exit_ref || cmd->itm->way.exit_label)) {
+				if (level == 2) /* interchange or exit announcement shall be a long distance information only */
+					at = g_strdup_printf(" %1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
+										cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+										cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
+			}
 		}
 	}
 	if (!instruction && cmd->maneuver) {
@@ -3448,7 +3451,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			ret=g_strdup_printf(_("Follow the road for the next %s"), d);
 			break;
 		case 2:
-			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			if (at) /* 'at' contains interchange or exit information that shall not be combined with the street_destination_announce */
+				ret= g_strdup_printf(("%1$s %2$s"),instruction,"");
+			else
+				ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
 			break;
 		case 1:
 			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
