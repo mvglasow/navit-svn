@@ -294,29 +294,29 @@ struct navigation_command {
  *
  */
 struct navigation_way {
-	struct navigation_way *next;	/**< Pointer to a linked-list of all navigation_ways from this navigation item */
-	short dir;						/**< The direction -1 or 1 of the way */
-	short angle2;					/**< The bearing at the start or the way (0 = north, 90 =east etc.) */
-	int flags;						/**< The flags of the way */
-	struct item item;				/**< The item of the way */
-	char *name;						/**< The street name ({@code street_name} attribute) */
+	struct navigation_way *next;		/**< Pointer to a linked-list of all navigation_ways from this navigation item */
+	short dir;				/**< The direction -1 or 1 of the way */
+	short angle2;				/**< The bearing at the start or the way (0 = north, 90 =east etc.) */
+	int flags;				/**< The flags of the way */
+	struct item item;			/**< The item of the way */
+	char *name;				/**< The street name ({@code street_name} attribute) */
 	char *name_systematic;			/**< The road number ({@code street_name_systematic} attribute, OSM: {@code ref}) */
-	char *exit_ref;					/**< Exit_ref if found on the first node of the way*/
-	char *exit_label;				/**< Exit_label if found on the first node of the way*/
-	struct street_destination *destination;				/**< The destination this way leads to (OSM: {@code destination}) */
+	char *exit_ref;				/**< Exit_ref if found on the first node of the way*/
+	char *exit_label;			/**< Exit_label if found on the first node of the way*/
+	struct street_destination *destination;	/**< The destination this way leads to (OSM: {@code destination}) */
 };
 
 struct navigation_itm {
 	struct navigation_way way;
-	int angle_end;                      /**< The bearing at the end of {@code way} */
+	int angle_end;                      	/**< The bearing at the end of {@code way} */
 	struct coord start,end;
 	int time;
 	int length;
 	int speed;
 	int dest_time;
 	int dest_length;
-	int told;							/**< Indicates if this item's announcement has been told earlier and should not be told again*/
-	int streetname_told;				/**< Indicates if this item's streetname has been told in speech navigation*/
+	int told;				/**< Indicates if this item's announcement has been told earlier and should not be told again*/
+	int streetname_told;			/**< Indicates if this item's streetname has been told in speech navigation*/
 	int dest_count;
 	struct navigation_itm *next;
 	struct navigation_itm *prev;
@@ -1949,8 +1949,8 @@ static int maneuver_category(enum item_type type)
 
  /* (jandegr) this gets called from within show_maneuver with mode=3 for roundabouts
  * and with mode=4 from within count_possible_turns() for the use with
- * 'take the manieTH road to the left/right'
- * However over here mode is ignored, so the 'manieTH' road excludes unallowed oneway's,
+ * 'take the manieth road to the left/right'
+ * However over here mode is ignored, so the 'manieth' road excludes unallowed oneway's,
  * but IMHO it should count all drivable roads. For roundabouts it seems to be ok.
  *
  */
@@ -2733,11 +2733,11 @@ static struct navigation_command *
 command_new(struct navigation *this_, struct navigation_itm *itm, struct navigation_maneuver *maneuver)
 {
 	struct navigation_command *ret=g_new0(struct navigation_command, 1);
-	struct navigation_way *w;    /* the way in which to turn. */
+	struct navigation_way *w	/* the way in which to turn. */
 	int more_ways_for_strength = 0; /* Counts the number of ways of the current node that turn
-							   	   	   to the same direction as the route way. Strengthening criterion. */
+					   to the same direction as the route way. Strengthening criterion. */
 	int turn_no_of_route_way = 0;   /* The number of the route way of all ways that turn to the same direction.
-							   	   	   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
+					   Count direction from abs(0 degree) up to abs(180 degree). Strengthening criterion. */
 
 	dbg(lvl_debug,"enter this_=%p itm=%p maneuver=%p delta=%d\n", this_, itm, maneuver, maneuver->delta);
 	ret->maneuver = maneuver;
@@ -3207,8 +3207,8 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			/* In Voice Mode only tell the street name in level 1 or in level 0 if level 1	was skipped */
 				if (level == 1)
 				{ /* we are close to the intersection */
-					cmd->itm->streetname_told = 1; // remeber to be checked when we turn
-					tellstreetname = 1; // Ok so we tell the name of the street
+					cmd->itm->streetname_told = 1; /* remember to be checked when we turn */
+					tellstreetname = 1	       /* Ok, so we tell the name of the street */
 				}
 				if (level == 0)
 				{
@@ -3256,7 +3256,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					else destination = g_strdup("");
 					if (cmd->maneuver->merge_or_exit == mex_merge_right) {
 						if (level == -2)
-							/* TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included. */
+							/* TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included. */
 							instruction = g_strdup_printf(_("then merge%1$s|right"), d);
 						else
 							/* TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included. */
@@ -3301,9 +3301,12 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 					break;
 			}
 
-			if (!instruction && (cmd->itm->way.exit_ref || cmd->itm->way.exit_label))
-				at = g_strdup_printf(" %1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
-						cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "", cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
+			if (!instruction && (cmd->itm->way.exit_ref || cmd->itm->way.exit_label)) {
+				if (level == 2) /* interchange or exit announcement shall be a long distance information only */
+					at = g_strdup_printf(" %1$s %2$s %3$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
+										cmd->itm->way.exit_ref ? cmd->itm->way.exit_ref : "",
+										cmd->itm->way.exit_label ? cmd->itm->way.exit_label : "");
+			}
 		}
 	}
 	if (!instruction && cmd->maneuver) {
@@ -3452,7 +3455,10 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			ret=g_strdup_printf(_("Follow the road for the next %s"), d);
 			break;
 		case 2:
-			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
+			if (at) /* 'at' contains interchange or exit information that shall not be combined with the street_destination_announce */
+				ret= g_strdup_printf(("%1$s %2$s"),instruction,"");
+			else
+				ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
 			break;
 		case 1:
 			ret= g_strdup_printf(("%1$s %2$s"),instruction,street_destination_announce);
@@ -3925,12 +3931,12 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 		this_->attr_next=attr_debug;
 		attr->u.str=NULL;
 		if (itm->way.exit_ref)
-			this_->str=attr->u.str=g_strdup_printf(("%s %s %s"),_("exit"),itm->way.exit_ref,
+			this_->str=attr->u.str=g_strdup_printf("%s %s %s",_("exit"),itm->way.exit_ref,
 					itm->way.exit_label ? itm->way.exit_label :"");
 		if (!attr->u.str && itm->way.exit_label)
-			this_->str=attr->u.str=g_strdup_printf(("%s %s"),_("interchange"),itm->way.exit_label);
+			this_->str=attr->u.str=g_strdup_printf("%s %s",_("interchange"),itm->way.exit_label);
 		else if (!attr->u.str && (itm->way.name || itm->way.name_systematic))
-			this_->str=attr->u.str=g_strdup_printf(("%s %s"),
+			this_->str=attr->u.str=g_strdup_printf("%s %s",
 					itm->way.name ? itm->way.name : "",itm->way.name_systematic ? itm->way.name_systematic : "");
 		if (attr->u.str){
 			return 1;}
