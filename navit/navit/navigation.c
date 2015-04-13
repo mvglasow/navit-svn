@@ -2099,7 +2099,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					m.num_options++;
 					/* ways of similar category */
 					if (maneuver_category(w->item.type) == m.old_cat) {
-						/* TODO: decide if a maneuver_category difference of 1 is still similar */
+						/* TODO: considering a maneuver_category difference of 1 to be similar, e.g.
+						 * if (abs(maneuver_category(w->item.type) - m.old_cat) <= 1)
+						 * will improve things in some cases but also introduce some junk maneuvers,
+						 * e.g. at complex junctions. If we relax the maneuver_category requirement,
+						 * we may need some extra requirements. */
 						m.num_similar_ways++;
 					}
 					/* motorway-like ways */
@@ -2192,7 +2196,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 				if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
 					/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
 					through_segments++;
-			} /* if w... */
+			} /* if w is not a duplicate of way->next */
 			w = w->next;
 		} /* while w */
 		if ((abs(m.delta) >= min_turn_limit) && (through_segments >= 2)) {
