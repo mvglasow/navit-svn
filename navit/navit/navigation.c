@@ -3208,7 +3208,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 				if (level == 1)
 				{ /* we are close to the intersection */
 					cmd->itm->streetname_told = 1; /* remember to be checked when we turn */
-					tellstreetname = 1	       /* Ok, so we tell the name of the street */
+					tellstreetname = 1;	       /* Ok, so we tell the name of the street */
 				}
 				if (level == 0)
 				{
