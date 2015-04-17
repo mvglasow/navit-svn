@@ -2027,6 +2027,7 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 	int dc; /* if new and another way are within +/-min_turn_limit and on the same side, bearing difference for the other way; else d */
 	char *r=NULL; /* human-legible reason for announcing or not announcing the maneuver */
 	struct navigation_way *w; /* temporary way to examine */
+	struct navigation_way *through_segment2 = NULL; /* off-route segment of through road at complex T junction */
 	int wcat;
 	int junction_limit = 100; /* maximum distance between two carriageways at a junction */
 	int motorways_left = 0, motorways_right = 0; /* number of motorway-like roads left or right of new->way */
@@ -2193,9 +2194,19 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 					}
 					/* if !is_way_allowed */
 				} /* if is_way_allowed || !is_way_allowed */
-				if ((w->flags & AF_ONEWAYMASK) && is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+				if (w->flags & AF_ONEWAYMASK) {
 					/* count through_segments (even if they are not allowed) to check if we are at a complex T junction */
-					through_segments++;
+					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+						/* count segments belonging to the same street */
+						through_segments++;
+					else if ((!through_segment2 && (abs(angle_delta(angle_opposite(w->angle2), new->way.angle2)) < min_turn_limit))
+							|| (through_segment2 && (abs(angle_delta(angle_opposite(w->angle2), new->way.angle2)) < abs(angle_delta(angle_opposite(through_segment2->angle2), new->way.angle2))))) {
+						/* also count near-straight continuations of new (the through road may change names at the junction) */
+						if (!through_segment2)
+							through_segments++;
+						through_segment2 = w;
+					}
+				}
 			} /* if w is not a duplicate of way->next */
 			w = w->next;
 		} /* while w */
@@ -2204,9 +2215,10 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			 * check whether we are approaching a complex T junction from the "stem"
 			 * (which would need an announcement).
 			 * Complex means that the through road is a dual-carriageway road.
-			 * This is the case only if at least 2 segments (including new) have the same
-			 * name as new and are one-way, regardless of direction. More than 2 such segments
-			 * are possible e.g. where two physically separated lanes join.
+			 * This is the case only if at least 2 segments (including new) are one-way
+			 * (regardless of direction) and have the same name as new or through_segment2.
+			 * More than 2 such segments are possible e.g. where two physically separated
+			 * lanes join.
 			 * To find out if there is another carriageway, we need to analyze the previous
 			 * maneuvers.
 			 */
@@ -2214,9 +2226,11 @@ maneuver_required2 (struct navigation *nav, struct navigation_itm *old, struct n
 			int hist_dist = old->length; /* distance between previous and current maneuver */
 			ni = old;
 			while (ni && (hist_through_segments == 0) && (hist_dist <= junction_limit)) {
+				// TODO: shouldn't the condition be (hist_through_segments < 2) to catch through segments that are slightly offset??
 				struct navigation_way *w = ni->way.next;
 				while (w) {
-					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic))
+					if (is_same_street2(new->way.name, new->way.name_systematic, w->name, w->name_systematic)
+							|| (through_segment2 && is_same_street2(through_segment2->name, through_segment2->name_systematic, w->name, w->name_systematic)))
 						hist_through_segments++;
 					w = w->next;
 				}
