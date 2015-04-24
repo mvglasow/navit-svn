@@ -25,20 +25,20 @@
 # kisaa https://launchpad.net/~kisaa-mail
 # zcc https://launchpad.net/~zcc
 # Павел https://launchpad.net/~pavel-sgn
-
 msgid ""
 msgstr ""
 "Project-Id-Version: navit 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-04-24 16:14+0200\n"
 "PO-Revision-Date: 2014-11-09 21:33+0000\n"
 "Last-Translator: Nkolay Parukhin <parukhin@gmail.com>\n"
 "Language-Team: Rustam T. Usmanov\n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"Language: ru\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Report-Errors: https://translations.launchpad.net/navit/trunk/+pots/navit\n"
 
 msgid "Running from source directory\n"
@@ -160,63 +160,70 @@ msgstr[0] "через %d километр"
 msgstr[1] "%d километра"
 msgstr[2] "%d километров"
 
-msgid "exit"
-msgstr "съезд"
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Systematic Street Name 3: Separator (Space if required), 4: Street Name
+#, c-format
+msgid "%1$sonto the %2$s%3$s%4$s"
+msgstr ""
+
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name
+#, c-format
+msgid "%1$sonto %2$s"
+msgstr ""
+
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Masculine form. The stuff after | doesn't have to be included
+#, c-format
+msgid "%1$sonto %2$s|masculine form"
+msgstr ""
+
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Feminine form. The stuff after | doesn't have to be included
+#, c-format
+msgid "%1$sonto %2$s|feminine form"
+msgstr ""
+
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Neuter form. The stuff after | doesn't have to be included
+#, c-format
+msgid "%1$sonto %2$s|neuter form"
+msgstr ""
 
 msgid "into the ramp"
 msgstr "съезд на"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
-msgid "%sinto the street %s%s%s"
-msgstr "%s на улицу %s%s%s"
+msgid "%sinto %s%s%s"
+msgstr ""
 
-#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Male form. The stuff after | doesn't have to be included
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
-msgid "%sinto the %s%s%s|male form"
-msgstr "%s на %s%s%s"
+msgid "%sinto %s%s%s|masculine form"
+msgstr ""
 
-#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Female form. The stuff after | doesn't have to be included
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
-msgid "%sinto the %s%s%s|female form"
-msgstr "%s на %s%s%s"
+msgid "%sinto %s%s%s|feminine form"
+msgstr ""
 
-#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neutral form. The stuff after | doesn't have to be included
+#. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
-msgid "%sinto the %s%s%s|neutral form"
-msgstr "%s на %s%s%s"
+msgid "%sinto %s%s%s|neuter form"
+msgstr ""
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
 msgid "%sinto the %s"
 msgstr "%s на %s"
 
-#. TRANSLATORS: right, as in 'Turn right'
-msgid "right"
-msgstr "направо"
-
-#. TRANSLATORS: left, as in 'Turn left'
-msgid "left"
-msgstr "налево"
-
-#. TRANSLATORS: Don't forget the ending space
-msgid "easily "
-msgstr "немного "
-
-#. TRANSLATORS: Don't forget the ending space
-msgid "strongly "
-msgstr "круто "
-
-#. TRANSLATORS: Don't forget the ending space
-msgid "really strongly "
-msgstr "очень круто "
-
-#. TRANSLATORS: Don't forget the ending space
-msgid "unknown "
-msgstr "неизвестно "
-
 msgid "When possible, please turn around"
 msgstr "Развернитесь, пожалуйста, если это возможно"
+
+#. TRANSLATORS: the argument is the destination to follow
+#, c-format
+msgid "towards %s"
+msgstr ""
+
+#, c-format
+msgid "Follow the road for the next %s"
+msgstr "Двигайтесь по дороге следующие %s"
 
 msgid "Enter the roundabout soon"
 msgstr "Скоро круговое движение"
@@ -226,22 +233,113 @@ msgstr "Скоро круговое движение"
 msgid "Enter the roundabout %s"
 msgstr "Через %s круговое движение"
 
+#. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
-msgid "then leave the roundabout at the %s"
-msgstr "потом съезжайте с кругового движения на %s"
+msgid "then leave the roundabout at the %1$s %2$s"
+msgstr ""
 
+#. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
-msgid "Leave the roundabout at the %s"
-msgstr "Съезжайте с кругового движения на %s"
-
-#, c-format
-msgid "Follow the road for the next %s"
-msgstr "Двигайтесь по дороге следующие %s"
+msgid "Leave the roundabout at the %1$s %2$s"
+msgstr ""
 
 msgid "soon"
 msgstr "скоро"
 
-#. TRANSLATORS: First argument is the how manieth street to take, second the direction
+msgid "now"
+msgstr "сейчас"
+
+msgid "then"
+msgstr ""
+
+#. TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
+#, c-format
+msgid "then merge%1$s|right"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
+#, c-format
+msgid "Merge %1$s%2$s|right"
+msgstr ""
+
+#. TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included.
+#, c-format
+msgid "then merge%1$s|left"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included.
+#, c-format
+msgid "Merge %1$s%2$s|left"
+msgstr ""
+
+msgid "on your left"
+msgstr ""
+
+msgid "on your right"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is exit ref and/or name, the second is the direction of exit and the third is distance
+#, c-format
+msgid "Take exit %1$s %2$s %3$s"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is the direction of exit, the second is distance, the third is destination
+#, c-format
+msgid "Take the exit %1$s %2$s%3$s"
+msgstr ""
+
+msgid "at interchange"
+msgstr ""
+
+msgid "at exit"
+msgstr ""
+
+#. TRANSLATORS: the arg. is where to do the maneuver
+#, c-format
+msgid "then continue straight%1$s"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
+#, c-format
+msgid "Continue straight %1$s%2$s%3$s"
+msgstr ""
+
+#. TRANSLATORS: the arg. is where to do the maneuver
+#, c-format
+msgid "then keep right%1$s"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
+#, c-format
+msgid "Keep right %1$s%2$s%3$s"
+msgstr ""
+
+#. TRANSLATORS: the arg. is where to do the maneuver
+#, c-format
+msgid "then keep left%1$s"
+msgstr ""
+
+#. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
+#, c-format
+msgid "Keep left %1$s%2$s%3$s"
+msgstr ""
+
+#. TRANSLATORS: "right" as in "turn right"
+msgid "right"
+msgstr "направо"
+
+#. TRANSLATORS: "left" as in "turn left"
+msgid "left"
+msgstr "налево"
+
+#. TRANSLATORS: as in "turn easily right"
+msgid "easily "
+msgstr "немного "
+
+#. TRANSLATORS: as in "turn strongly right"
+msgid "strongly "
+msgstr "круто "
+
 #, c-format
 msgid "Take the %1$s road to the %2$s"
 msgstr "Выезжайте на %1$s дорогу в направлении %2$s"
@@ -250,32 +348,58 @@ msgstr "Выезжайте на %1$s дорогу в направлении %2$s
 msgid "after %i roads"
 msgstr "после %i дорог"
 
-msgid "now"
-msgstr "сейчас"
-
-#, c-format
-msgid "then take the %1$s road to the %2$s"
-msgstr "затем выезжайте на дорогу %1$s в направлении %2$s"
-
-msgid "error"
-msgstr "ошибка"
-
-#. TRANSLATORS: The first argument is strength, the second direction, the third distance and the fourth destination Example: 'Turn 'slightly' 'left' in '100 m' 'onto baker street'
+#. cave: no else - may come from 'if (skip_roads)' above !
+#. TRANSLATORS: the first arg. is strength, the second is direction, the third is distance, the fourth is destination
 #, c-format
 msgid "Turn %1$s%2$s %3$s%4$s"
 msgstr "Сверните %1$s%2$s %3$s%4$s"
 
-#. TRANSLATORS: First argument is strength, second direction, third how many roads to skip, fourth destination
-#, c-format
-msgid "then turn %1$s%2$s %3$s%4$s"
-msgstr "после чего поверните %1$s%2$s на %3$s%4$s"
+#. TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included.
+msgid "then make a U-turn|left"
+msgstr ""
 
+#. TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included.
+#, c-format
+msgid "Make a U-turn %1$s|left"
+msgstr ""
+
+#. TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included.
+msgid "then make a U-turn|right"
+msgstr ""
+
+#. TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included.
+#, c-format
+msgid "Make a U-turn %1$s|right"
+msgstr ""
+
+#. An empty placeholder that we can use in the future for
+#. * some motorway commands that are now suppressed but we
+#. * can in some cases make it say here :
+#. * 'follow destination blabla' without any further driving instructions,
+#. * in cases where relevant destination info is available.
+#. * Even if there is no driving command to be announced, in some cases
+#. * there is an overhead roadsign in preparation of an upcoming road-split,
+#. * and then we can give usefull info to the driver.
+#. *
+#. *  UNTESTED !
+#. *
+#.
+msgid "follow"
+msgstr ""
+
+msgid "then you have reached your destination."
+msgstr "после чего вы прибудете в пункт назначения"
+
+#. TRANSLATORS: the arg. is distance
 #, c-format
 msgid "You have reached your destination %s"
 msgstr "Вы прибыли в пункт назначения %s"
 
-msgid "then you have reached your destination."
-msgstr "после чего вы прибудете в пункт назначения"
+msgid "exit"
+msgstr "съезд"
+
+msgid "interchange"
+msgstr ""
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -1335,19 +1459,14 @@ msgstr "* Неизвестный, для выбора городов добав�
 msgid ""
 "navit usage:\n"
 "navit [options] [configfile]\n"
-"\t-c <file>: use <file> as config file\n"
-"\t-d <n>: set the global debug output level to <n> (0-3). Overrides setting "
-"from config file.\n"
+"\t-c <file>: use <file> as config file, instead of using the default file.\n"
+"\t-d <n>: set the global debug output level to <n> (0=error, 1=warning, "
+"2=info, 3=debug).\n"
+"\tSettings from config file will still take effect where they set a higher "
+"level.\n"
 "\t-h: print this usage info and exit.\n"
-"\t-v: Print the version and exit.\n"
+"\t-v: print the version and exit.\n"
 msgstr ""
-"Использование navit:\n"
-"navit [параметры] [файл_настроек]\n"
-"\t-c <файл>: использовать <файл> с настройками\n"
-"\t-d <n>: установить уровень отладочных сообщений <n> (0-3). Имеет приоритет "
-"над параметром в файле настроек.\n"
-"\t-h: показать эту подсказку и выйти.\n"
-"\t-v: показать информацию о версии и выйти.\n"
 
 #. We have not found an existing config file from all possibilities
 msgid "No config file navit.xml, navit.xml.local found\n"
@@ -1837,10 +1956,10 @@ msgstr "Маршрутные точки"
 msgid "Enter Coordinates"
 msgstr "Введите координаты"
 
-#. 
+#.
 #. w=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill)
 #. gui_internal_widget_append(wb, w)
-#. 
+#.
 #. we=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill)
 #. gui_internal_widget_append(w, we)
 msgid "Latitude Longitude"
@@ -2627,3 +2746,53 @@ msgstr "Резервное копирование"
 #. Android resource: @strings/restore
 msgid "Restore"
 msgstr "Восстановление из копии"
+
+#~ msgid "%sinto the street %s%s%s"
+#~ msgstr "%s на улицу %s%s%s"
+
+#~ msgid "%sinto the %s%s%s|male form"
+#~ msgstr "%s на %s%s%s"
+
+#~ msgid "%sinto the %s%s%s|female form"
+#~ msgstr "%s на %s%s%s"
+
+#~ msgid "%sinto the %s%s%s|neutral form"
+#~ msgstr "%s на %s%s%s"
+
+#~ msgid "really strongly "
+#~ msgstr "очень круто "
+
+#~ msgid "unknown "
+#~ msgstr "неизвестно "
+
+#~ msgid "then leave the roundabout at the %s"
+#~ msgstr "потом съезжайте с кругового движения на %s"
+
+#~ msgid "Leave the roundabout at the %s"
+#~ msgstr "Съезжайте с кругового движения на %s"
+
+#~ msgid "then take the %1$s road to the %2$s"
+#~ msgstr "затем выезжайте на дорогу %1$s в направлении %2$s"
+
+#~ msgid "error"
+#~ msgstr "ошибка"
+
+#~ msgid "then turn %1$s%2$s %3$s%4$s"
+#~ msgstr "после чего поверните %1$s%2$s на %3$s%4$s"
+
+#~ msgid ""
+#~ "navit usage:\n"
+#~ "navit [options] [configfile]\n"
+#~ "\t-c <file>: use <file> as config file\n"
+#~ "\t-d <n>: set the global debug output level to <n> (0-3). Overrides "
+#~ "setting from config file.\n"
+#~ "\t-h: print this usage info and exit.\n"
+#~ "\t-v: Print the version and exit.\n"
+#~ msgstr ""
+#~ "Использование navit:\n"
+#~ "navit [параметры] [файл_настроек]\n"
+#~ "\t-c <файл>: использовать <файл> с настройками\n"
+#~ "\t-d <n>: установить уровень отладочных сообщений <n> (0-3). Имеет "
+#~ "приоритет над параметром в файле настроек.\n"
+#~ "\t-h: показать эту подсказку и выйти.\n"
+#~ "\t-v: показать информацию о версии и выйти.\n"
