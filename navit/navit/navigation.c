@@ -3325,6 +3325,7 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 			}
 
 			if (!instruction && exit_announce) {
+				/* TRANSLATORS: as in "Keep right at interchange 42 Greenmond-West" */
 				at = g_strdup_printf(" %1$s %2$s", cmd->maneuver->merge_or_exit == mex_interchange ? (_("at interchange")) : (_( "at exit")),
 								   exit_announce ? exit_announce : "");
 			}
@@ -3945,12 +3946,15 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 		 * otherwise returns street name and name_systematic if available
 		 *
 		 * FIXME should a new attr. be defined for this and if yes, which ?
+		 * FIXME criteria need to be worked on, there are many places in which
+		 * interchanges do have refs, or where refs are not used at all
 		 *
 		 */
 	case attr_name:
 		this_->attr_next=attr_debug;
 		attr->u.str=NULL;
 		if (itm->way.exit_ref)
+			/* TRANSLATORS: exit as a noun, as in "Exit 43 Greenmound-East" */
 			this_->str=attr->u.str=g_strdup_printf("%s %s %s",_("exit"),itm->way.exit_ref,
 					itm->way.exit_label ? itm->way.exit_label :"");
 		if (!attr->u.str && itm->way.exit_label)
