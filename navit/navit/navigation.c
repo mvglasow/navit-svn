@@ -201,19 +201,20 @@ int distances[]={1,2,3,4,5,10,25,50,75,100,150,200,250,300,400,500,750,-1};
  * 1=merge, 2=exit, 4=interchange, 8=right, 16=left
  * Identifiers were chosen over flags to enforce certain rules
  * (merge/exit/interchange and left/right are mutually exclusive, left/right requires merge or exit). */
-//FIXME: should we make this an enum?
 
 /** Not merging into or exiting from a motorway_like road */
 #define mex_none 0
 
-/** Merging into a motorway-like road, direction undefined */
-//FIXME: do we need this constant?
+/** Merging into a motorway-like road, direction undefined.
+ * This value is not intended to be set directly but can be used for
+ * comparisons, e.g. {@code merge_or_exit & mex_merge}. */
 #define mex_merge 1
 
 /** Exiting from a motorway-like road, direction undefined.
  * This should only be used for ramps leading to a non-motorway road.
- * For interchanges, use {@code mex_interchange} instead. */
-//FIXME: do we need this constant?
+ * For interchanges, use {@code mex_interchange} instead.
+ * This value is not intended to be set directly but can be used for
+ * comparisons, e.g. {@code merge_or_exit & mex_exit}. */
 #define mex_exit 2
 
 /** Motorway-like road splits in two.
