@@ -385,11 +385,11 @@ msgstr "daarna heeft u uw bestemming bereikt."
 msgid "You have reached your destination %s"
 msgstr "Bestemming %s bereikt"
 
-msgid "exit"
-msgstr "afslag"
+msgid "Exit"
+msgstr "Afslag"
 
-msgid "interchange"
-msgstr "knooppunt"
+msgid "Interchange"
+msgstr "Knooppunt"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

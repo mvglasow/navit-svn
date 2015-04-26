@@ -379,11 +379,11 @@ msgstr "depois chegou ao seu destino."
 msgid "You have reached your destination %s"
 msgstr "Chega ao seu destino em %s"
 
-msgid "exit"
-msgstr "saída"
+msgid "Exit"
+msgstr "Saída"
 
-msgid "interchange"
-msgstr "trevo"
+msgid "Interchange"
+msgstr "Trevo"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

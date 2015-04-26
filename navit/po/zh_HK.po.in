@@ -368,10 +368,10 @@ msgstr "然後會到達目的地"
 msgid "You have reached your destination %s"
 msgstr "已到達目的地 %s"
 
-msgid "exit"
+msgid "Exit"
 msgstr "退出"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

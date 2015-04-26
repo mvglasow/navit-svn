@@ -372,10 +372,10 @@ msgstr "siis oled jõudnud sihtpunkti."
 msgid "You have reached your destination %s"
 msgstr "Sa oled jõudnud sihtpunkti %s"
 
-msgid "exit"
-msgstr "mahasõit"
+msgid "Exit"
+msgstr "Mahasõit"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

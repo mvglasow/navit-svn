@@ -369,10 +369,10 @@ msgstr "tá hevur tú nátt tínum ferðamáli"
 msgid "You have reached your destination %s"
 msgstr "Tú hevur nátt tínum ferðamáli %s"
 
-msgid "exit"
-msgstr "avkoyring"
+msgid "Exit"
+msgstr "Avkoyring"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

@@ -387,11 +387,11 @@ msgstr "tada jūs pasiekėte kelionės tikslą."
 msgid "You have reached your destination %s"
 msgstr "Jūs pasiekėte tikslą %s"
 
-msgid "exit"
-msgstr "išvažiavimas"
+msgid "Exit"
+msgstr "Išvažiavimas"
 
-msgid "interchange"
-msgstr "sankryža"
+msgid "Interchange"
+msgstr "Sankryža"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

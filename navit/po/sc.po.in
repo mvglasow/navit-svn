@@ -367,10 +367,10 @@ msgstr "tando ses arribbau"
 msgid "You have reached your destination %s"
 msgstr "Ses arribbau a %s"
 
-msgid "exit"
-msgstr "essi"
+msgid "Exit"
+msgstr "Essi"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

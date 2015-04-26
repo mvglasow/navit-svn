@@ -375,10 +375,10 @@ msgstr "Dann haben Sie Ihr Ziel erreicht"
 msgid "You have reached your destination %s"
 msgstr "Sie haben Ihr Ziel erreicht %s"
 
-msgid "exit"
+msgid "Exit"
 msgstr "Ausfahrt"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

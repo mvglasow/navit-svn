@@ -374,10 +374,10 @@ msgstr "sitten olet perillä."
 msgid "You have reached your destination %s"
 msgstr "Olet saavuttanut kohteesi %s"
 
-msgid "exit"
-msgstr "poistumistie"
+msgid "Exit"
+msgstr "Poistumistie"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

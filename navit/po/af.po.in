@@ -373,10 +373,10 @@ msgstr "dan het jy jou bestemming bereik."
 msgid "You have reached your destination %s"
 msgstr "Jy het jou bestemming bereik %s"
 
-msgid "exit"
-msgstr "afrit"
+msgid "Exit"
+msgstr "Afrit"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

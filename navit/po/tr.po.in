@@ -378,10 +378,10 @@ msgstr "ardından hedefinize ulaşacaksınız"
 msgid "You have reached your destination %s"
 msgstr "Hedefinize ulaştınız, %s"
 
-msgid "exit"
-msgstr "çıkış"
+msgid "Exit"
+msgstr "Çıkış"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

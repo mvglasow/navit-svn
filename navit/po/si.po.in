@@ -367,10 +367,10 @@ msgstr "එවිට ඔබ ඔබේ ගමනාන්තයට ළඟා ව�
 msgid "You have reached your destination %s"
 msgstr "ඔබ ඔබේ ගමනාන්තය වන %s ට ළඟා වී ඇත."
 
-msgid "exit"
+msgid "Exit"
 msgstr "පිටවුම"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

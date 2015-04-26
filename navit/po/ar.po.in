@@ -388,10 +388,10 @@ msgstr "و بعدها تكون قد وصلت إلى هدفك"
 msgid "You have reached your destination %s"
 msgstr "لقد وصلت إلى هدفك %s"
 
-msgid "exit"
+msgid "Exit"
 msgstr "خروج"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

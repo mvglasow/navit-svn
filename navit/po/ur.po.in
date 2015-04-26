@@ -369,10 +369,10 @@ msgstr "پھر آپ اپنی منزل پہ پہنچ جایئں گے"
 msgid "You have reached your destination %s"
 msgstr "آپ اپنی منزل %s پے پہنچ کئے ہیں"
 
-msgid "exit"
+msgid "Exit"
 msgstr "اخراج"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

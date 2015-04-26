@@ -385,11 +385,11 @@ msgstr "następnie dojechałeś do celu."
 msgid "You have reached your destination %s"
 msgstr "Dotarłeś do celu %s"
 
-msgid "exit"
-msgstr "zjazd"
+msgid "Exit"
+msgstr "Zjazd"
 
-msgid "interchange"
-msgstr "węzeł"
+msgid "Interchange"
+msgstr "Węzeł"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

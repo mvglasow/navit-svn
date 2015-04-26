@@ -368,10 +368,10 @@ msgstr "sau đó bạn tới điểm đích"
 msgid "You have reached your destination %s"
 msgstr "Bạn vừa tới điểm đích: %s"
 
-msgid "exit"
-msgstr "thoát"
+msgid "Exit"
+msgstr "Thoát"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

@@ -370,10 +370,10 @@ msgstr "kini anda telah sampai pada tujuan"
 msgid "You have reached your destination %s"
 msgstr "anda telah sampai pada tujuan %s"
 
-msgid "exit"
-msgstr "keluar"
+msgid "Exit"
+msgstr "Keluar"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

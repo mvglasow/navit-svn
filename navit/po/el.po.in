@@ -373,10 +373,10 @@ msgstr "τότε έχετε φτάσει στον προορισμό σας."
 msgid "You have reached your destination %s"
 msgstr "Φτάσατε στον προορισμό σας %s"
 
-msgid "exit"
-msgstr "έξοδος"
+msgid "Exit"
+msgstr "Εξοδος"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

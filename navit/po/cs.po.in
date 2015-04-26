@@ -383,10 +383,10 @@ msgstr "pak budete v cíli."
 msgid "You have reached your destination %s"
 msgstr "%s dorazíte do cíle"
 
-msgid "exit"
-msgstr "ukončit"
+msgid "Exit"
+msgstr "Ukončit"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

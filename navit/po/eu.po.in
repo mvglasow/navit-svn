@@ -369,10 +369,10 @@ msgstr "dagoeneko helburura iritsi zara"
 msgid "You have reached your destination %s"
 msgstr "%s helburura iritsi zara"
 
-msgid "exit"
-msgstr "irteera"
+msgid "Exit"
+msgstr "Irteera"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

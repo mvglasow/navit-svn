@@ -371,10 +371,10 @@ msgstr "do vi atingis la celon"
 msgid "You have reached your destination %s"
 msgstr "Vi atingis la celon %s"
 
-msgid "exit"
-msgstr "eliro"
+msgid "Exit"
+msgstr "Eliro"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

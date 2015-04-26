@@ -379,11 +379,11 @@ msgstr "apoi ajungeți la destinație."
 msgid "You have reached your destination %s"
 msgstr "Ați ajuns la destinație %s"
 
-msgid "exit"
-msgstr "ieșire"
+msgid "Exit"
+msgstr "Ieșire"
 
-msgid "interchange"
-msgstr "nod"
+msgid "Interchange"
+msgstr "Nod"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

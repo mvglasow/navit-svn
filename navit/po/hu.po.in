@@ -374,10 +374,10 @@ msgstr "majd eléri az úticélját."
 msgid "You have reached your destination %s"
 msgstr "Elérte az úticélját: %s"
 
-msgid "exit"
-msgstr "kijárat"
+msgid "Exit"
+msgstr "Kijárat"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

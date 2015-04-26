@@ -375,11 +375,11 @@ msgstr "in ste na cilju."
 msgid "You have reached your destination %s"
 msgstr "%s ste na cilju"
 
-msgid "exit"
-msgstr "odcep"
+msgid "Exit"
+msgstr "Odcep"
 
-msgid "interchange"
-msgstr "razcep"
+msgid "Interchange"
+msgstr "Razcep"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

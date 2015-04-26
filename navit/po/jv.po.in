@@ -368,10 +368,10 @@ msgstr "terus panjenengan tekan tujuan"
 msgid "You have reached your destination %s"
 msgstr ""
 
-msgid "exit"
-msgstr "metu"
+msgid "Exit"
+msgstr "Metu"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

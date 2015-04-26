@@ -401,10 +401,10 @@ msgstr "dann haben Sie Ihr Ziel erreicht."
 msgid "You have reached your destination %s"
 msgstr "Sie haben Ihr Ziel %s erreicht"
 
-msgid "exit"
+msgid "Exit"
 msgstr "Ausfahrt"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr "Autobahnknoten"
 
 #. Android resource: @strings/position_popup_title

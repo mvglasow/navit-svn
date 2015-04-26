@@ -380,11 +380,11 @@ msgstr "potom dosiahnete svoj cieľ cesty"
 msgid "You have reached your destination %s"
 msgstr "Dorazili ste do svojho cieľa %s"
 
-msgid "exit"
-msgstr "výjazd"
+msgid "Exit"
+msgstr "Výjazd"
 
-msgid "interchange"
-msgstr "križovatka"
+msgid "Interchange"
+msgstr "Križovatka"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

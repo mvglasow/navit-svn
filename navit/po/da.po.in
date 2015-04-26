@@ -376,11 +376,11 @@ msgstr "og så ankommer du til din destination"
 msgid "You have reached your destination %s"
 msgstr "Du er fremme ved destinationen %s"
 
-msgid "exit"
-msgstr "afkørsel"
+msgid "Exit"
+msgstr "Afkørsel"
 
-msgid "interchange"
-msgstr "motorvejskryds"
+msgid "Interchange"
+msgstr "Motorvejskryds"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

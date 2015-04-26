@@ -372,10 +372,10 @@ msgstr "след това пристигате на местоназначени
 msgid "You have reached your destination %s"
 msgstr "Достигнахте до целта %s"
 
-msgid "exit"
-msgstr "изход"
+msgid "Exit"
+msgstr "Изход"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

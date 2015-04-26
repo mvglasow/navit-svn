@@ -371,10 +371,10 @@ msgstr "然后你就到达您的目的地"
 msgid "You have reached your destination %s"
 msgstr "您已经抵达您的目的地 %s"
 
-msgid "exit"
+msgid "Exit"
 msgstr "退出"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr "交流道"
 
 #. Android resource: @strings/position_popup_title

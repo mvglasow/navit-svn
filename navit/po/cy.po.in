@@ -370,10 +370,10 @@ msgstr ""
 msgid "You have reached your destination %s"
 msgstr ""
 
-msgid "exit"
-msgstr "allanfa"
+msgid "Exit"
+msgstr "Allanfa"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

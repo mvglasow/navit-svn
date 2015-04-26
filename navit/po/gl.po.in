@@ -371,10 +371,10 @@ msgstr "despois xa chega ao seu destino"
 msgid "You have reached your destination %s"
 msgstr "Chegou ao seu destino %s"
 
-msgid "exit"
-msgstr "saída"
+msgid "Exit"
+msgstr "Saída"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

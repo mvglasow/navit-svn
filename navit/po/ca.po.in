@@ -378,11 +378,11 @@ msgstr "aleshores heu arribat a destí"
 msgid "You have reached your destination %s"
 msgstr "Heu arribat a la destinació %s"
 
-msgid "exit"
-msgstr "sortida"
+msgid "Exit"
+msgstr "Sortida"
 
-msgid "interchange"
-msgstr "intersecció"
+msgid "Interchange"
+msgstr "Intersecció"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

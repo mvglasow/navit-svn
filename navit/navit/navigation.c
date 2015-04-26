@@ -3115,6 +3115,60 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	return ret;
 }
 
+
+/**
+ * @brief Formats the exit ref and name for display and speech output
+ *
+ * This function takes the navigation command for a motorway maneuver (exit or interchange) and
+ * returns a string describing the exit.
+ *
+ * If the exit has a name and ref and the name is different from {@code street_destination_announce},
+ * a string of the form "ref name" is returned. If only one of the two is different from NULL, it
+ * is returned unchanged.
+ *
+ * If the name matches {@code street_destination_announce}, it is always treated as if it were NULL.
+ * This prevents redundancy in announcements.
+ *
+ * No checks are done that the maneuver actually has the appropriate merge_or_exit flags set. The
+ * caller is responsible for performing such checks prior to calling this function.
+ *
+ * @param this_ The navigation command
+ * @param street_destination_announce The name of the street following the maneuver. This argument
+ * may be NULL, in which case the exit name will not be suppressed.
+ */
+static char *
+navigation_cmd_get_exit_announce(struct navigation_command *this_, char *street_destination_announce) {
+	char * ret = NULL;
+	char *folded_exit_label=NULL;
+	char *folded_street_destination_announce=NULL;
+
+	if (this_->itm->way.exit_label) {
+		folded_exit_label = linguistics_casefold(this_->itm->way.exit_label);
+		if (street_destination_announce)
+			folded_street_destination_announce = linguistics_casefold(street_destination_announce);
+		else
+			folded_street_destination_announce = g_strdup("");
+
+		if (!strstr(folded_street_destination_announce, folded_exit_label)) { /* No redundancy? */
+			if (this_->itm->way.exit_ref)
+				ret = g_strdup_printf("%1$s %2$s", this_->itm->way.exit_ref, this_->itm->way.exit_label);
+			else
+				ret = g_strdup_printf("%1$s", this_->itm->way.exit_label);
+		} else if (this_->itm->way.exit_ref)
+			ret = g_strdup_printf("%1$s", this_->itm->way.exit_ref);
+
+	} else {
+		if (this_->itm->way.exit_ref)
+			ret = g_strdup_printf("%1$s", this_->itm->way.exit_ref);
+	}
+
+	g_free(folded_exit_label);
+	g_free(folded_street_destination_announce);
+
+	return ret;
+}
+
+
 /**
  * @brief Creates turn by turn guidance sentences for the speech and for the route description
  *
@@ -3263,30 +3317,13 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 		if (!(cmd->maneuver->merge_or_exit == mex_none ))
 		{
 			char *exit_announce=NULL;
-			char *folded_exit_label=NULL;
-			char *folded_street_destination_announce=NULL;
 
 			 /* interchange or exit announcement shall be a long distance information only.
 			    But if so, exit_label shall not be announced in case it is a substring 
 			    of destination info to avoid redundancy and not let the sentence become too long.
 			    Otherwise, if there is no additional destination info, just say it at level 1. */
 			if ((level == 2) || ((level == 1) && (!street_destination_announce && !destination)) || (type != attr_navigation_speech)) {
-				if (cmd->itm->way.exit_label) {
-					folded_exit_label = linguistics_casefold(cmd->itm->way.exit_label);
-					folded_street_destination_announce = linguistics_casefold(street_destination_announce);
-
-					if (!strstr(folded_street_destination_announce,folded_exit_label)) {/* No redundancy? */
-						if (cmd->itm->way.exit_ref)
-							exit_announce = g_strdup_printf("%1$s %2$s", cmd->itm->way.exit_ref, cmd->itm->way.exit_label);
-						else
-							exit_announce = g_strdup_printf("%1$s", cmd->itm->way.exit_label);
-					} else if (cmd->itm->way.exit_ref)
-						exit_announce = g_strdup_printf("%1$s", cmd->itm->way.exit_ref);
-
-				} else {
-					if (cmd->itm->way.exit_ref)
-						exit_announce = g_strdup_printf("%1$s", cmd->itm->way.exit_ref);
-				}
+				exit_announce = navigation_cmd_get_exit_announce(cmd, street_destination_announce);
 			}
 
 			switch (cmd->maneuver->merge_or_exit)
@@ -3330,8 +3367,6 @@ show_maneuver(struct navigation *nav, struct navigation_itm *itm, struct navigat
 								   exit_announce ? exit_announce : "");
 			}
 			g_free(exit_announce);
-			g_free(folded_exit_label);
-			g_free(folded_street_destination_announce);
 		}
 		if (!instruction) {
 			if (!at)
@@ -3844,8 +3879,10 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 {
 	struct map_rect_priv *this_=priv_data;
 	struct navigation_command *cmd=this_->cmd;
+	struct navigation_maneuver *maneuver = NULL;
 	struct navigation_itm *itm=this_->itm;
 	struct navigation_itm *prev=itm->prev;
+	char *exit_announce=NULL;
 	attr->type=attr_type;
 
 	if (this_->str) {
@@ -3855,8 +3892,10 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 
 	if (cmd) {
 		if (cmd->itm != itm)
-			cmd=NULL;	
+			cmd=NULL;
 	}
+	if (cmd && cmd->maneuver)
+		maneuver = cmd->maneuver;
 	switch(attr_type) {
 	case attr_level:
 		if (cmd) {
@@ -3937,29 +3976,22 @@ navigation_map_item_attr_get(void *priv_data, enum attr_type attr_type, struct a
 			return 1;}
 		return 0;
 
-		/* attr_name returns exit_ref and exit_label if available
-		 * preceeded by the word 'exit'
-		 *
-		 * if exit_label alone is available, it returns the word
-		 * 'interchange' followed by exit_label
-		 *
-		 * otherwise returns street name and name_systematic if available
-		 *
-		 * FIXME should a new attr. be defined for this and if yes, which ?
-		 * FIXME criteria need to be worked on, there are many places in which
-		 * interchanges do have refs, or where refs are not used at all
-		 *
-		 */
 	case attr_name:
+		/* attr_name returns exit_ref and exit_label if available,
+		 * preceded by the word 'exit' or 'interchange'.
+		 *
+		 * Otherwise it returns street name and name_systematic, if available
+		 *
+		 * FIXME should a new attr. be defined for this, and if yes, which ?
+		 */
 		this_->attr_next=attr_debug;
 		attr->u.str=NULL;
-		if (itm->way.exit_ref)
-			/* TRANSLATORS: exit as a noun, as in "Exit 43 Greenmound-East" */
-			this_->str=attr->u.str=g_strdup_printf("%s %s %s",_("exit"),itm->way.exit_ref,
-					itm->way.exit_label ? itm->way.exit_label :"");
-		if (!attr->u.str && itm->way.exit_label)
-			this_->str=attr->u.str=g_strdup_printf("%s %s",_("interchange"),itm->way.exit_label);
-		else if (!attr->u.str && (itm->way.name || itm->way.name_systematic))
+		exit_announce = navigation_cmd_get_exit_announce(cmd, NULL);
+		if (exit_announce && maneuver)
+			/* TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East" */
+			this_->str=attr->u.str=g_strdup_printf("%s %s", maneuver->merge_or_exit & mex_interchange ? (_("Interchange")) : (_("Exit")),
+					   exit_announce ? exit_announce : "");
+		else if (itm->way.name || itm->way.name_systematic)
 			this_->str=attr->u.str=g_strdup_printf("%s %s",
 					itm->way.name ? itm->way.name : "",itm->way.name_systematic ? itm->way.name_systematic : "");
 		if (attr->u.str){

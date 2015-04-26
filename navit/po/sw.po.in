@@ -368,10 +368,10 @@ msgstr "halafu utakuwa umefika"
 msgid "You have reached your destination %s"
 msgstr "umelifikia lengo lako %s"
 
-msgid "exit"
-msgstr "ondoka"
+msgid "Exit"
+msgstr "Ondoka"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

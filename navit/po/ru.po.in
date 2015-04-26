@@ -395,11 +395,11 @@ msgstr "после чего вы прибудете в пункт назначе
 msgid "You have reached your destination %s"
 msgstr "Вы прибыли в пункт назначения %s"
 
-msgid "exit"
-msgstr "съезд"
+msgid "Exit"
+msgstr "Съезд"
 
-msgid "interchange"
-msgstr "развязка"
+msgid "Interchange"
+msgstr "Развязка"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

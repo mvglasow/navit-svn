@@ -366,10 +366,10 @@ msgstr ""
 msgid "You have reached your destination %s"
 msgstr "คุณได้ถึงที่หมายแล้ว %s"
 
-msgid "exit"
+msgid "Exit"
 msgstr "ทางออก"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title

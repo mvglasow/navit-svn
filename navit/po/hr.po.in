@@ -373,10 +373,10 @@ msgstr "nakon toga ste stigli do cilja"
 msgid "You have reached your destination %s"
 msgstr "Stigli ste na cilj %s"
 
-msgid "exit"
-msgstr "izlaz"
+msgid "Exit"
+msgstr "Izlaz"
 
-msgid "interchange"
+msgid "Interchange"
 msgstr ""
 
 #. Android resource: @strings/position_popup_title
