@@ -81,32 +81,44 @@ msgid "in %d m"
 msgstr "už %d m"
 
 #, c-format
-msgid "%d feet"
-msgstr ""
+msgid "%d foot"
+msgid_plural "%d feet"
+msgstr[0] "%d pėda"
+msgstr[1] "%d pėdos"
+msgstr[2] "%d pėdų"
 
 #, c-format
-msgid "in %d feet"
-msgstr ""
+msgid "in %d foot"
+msgid_plural "in %d feet"
+msgstr[0] "už %d pėdos"
+msgstr[1] "už %d pėdų"
+msgstr[2] "už %d pėdų"
 
 #, c-format
-msgid "%d meters"
-msgstr "%d metrai"
+msgid "%d meter"
+msgid_plural "%d meters"
+msgstr[0] "%d metras"
+msgstr[1] "%d metrai"
+msgstr[2] "%d metrų"
 
 #, c-format
-msgid "in %d meters"
-msgstr "už %d metrų"
+msgid "in %d meter"
+msgid_plural "in %d meters"
+msgstr[0] "už %d metro"
+msgstr[1] "už %d metrų"
+msgstr[2] "už %d metrų"
 
 #, c-format
 msgid "%d.%d miles"
-msgstr ""
+msgstr "%d.%d mylios"
 
 #, c-format
 msgid "in %d.%d miles"
-msgstr ""
+msgstr "už %d.%d mylių"
 
 #, c-format
 msgid "%d.%d kilometers"
-msgstr ""
+msgstr "%d.%d kilometrai"
 
 #, c-format
 msgid "in %d.%d kilometers"
@@ -115,14 +127,16 @@ msgstr "už %d.%d kilometrų"
 #, c-format
 msgid "one mile"
 msgid_plural "%d miles"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%d mylia"
+msgstr[1] "%d mylios"
+msgstr[2] "%d mylių"
 
 #, c-format
 msgid "in one mile"
 msgid_plural "in %d miles"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "už %d mylios"
+msgstr[1] "už %d mylių"
+msgstr[2] "už %d mylių"
 
 #, c-format
 msgid "one kilometer"
@@ -141,27 +155,27 @@ msgstr[2] "už %d kilometrų"
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Systematic Street Name 3: Separator (Space if required), 4: Street Name
 #, c-format
 msgid "%1$sonto the %2$s%3$s%4$s"
-msgstr ""
+msgstr "%1$sį %2$s%3$s%4$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name
 #, c-format
 msgid "%1$sonto %2$s"
-msgstr ""
+msgstr "%1$sį %2$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%1$sonto %2$s|masculine form"
-msgstr ""
+msgstr "%1$sį %2$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%1$sonto %2$s|feminine form"
-msgstr ""
+msgstr "%1$sį %2$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%1$sonto %2$s|neuter form"
-msgstr ""
+msgstr "%1$sį %2$s"
 
 msgid "into the ramp"
 msgstr "į rampą"
@@ -169,35 +183,35 @@ msgstr "į rampą"
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
 msgid "%sinto %s%s%s"
-msgstr ""
+msgstr "%sį %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|masculine form"
-msgstr ""
+msgstr "%sį %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|feminine form"
-msgstr ""
+msgstr "%sį %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|neuter form"
-msgstr ""
+msgstr "%sį %s%s%s"
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
 msgid "%sinto the %s"
-msgstr "%s į %s"
+msgstr "%sį %s"
 
 msgid "When possible, please turn around"
-msgstr "kai įmanoma, apsisukite"
+msgstr "Kai įmanoma, apsisukite"
 
 #. TRANSLATORS: the argument is the destination to follow
 #, c-format
 msgid "towards %s"
-msgstr ""
+msgstr "link %s"
 
 #, c-format
 msgid "Follow the road for the next %s"
@@ -209,17 +223,17 @@ msgstr "Netrukus įsukite į žiedą"
 #. TRANSLATORS: %s is the distance to the roundabout
 #, c-format
 msgid "Enter the roundabout %s"
-msgstr ""
+msgstr "Įsukite į žiedą %s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "then leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "tada išsukite iš žiedo %1$s išvažiavime %2$s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "Leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "Išsukite iš žiedo %1$s išvažiavime %2$s"
 
 msgid "soon"
 msgstr "netrukus"
@@ -228,49 +242,49 @@ msgid "now"
 msgstr "dabar"
 
 msgid "then"
-msgstr ""
+msgstr "tada"
 
 #. TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "then merge%1$s|right"
-msgstr ""
+msgstr "tada užvažiuokite už%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Merge %1$s%2$s|right"
-msgstr ""
+msgstr "Užvažiuokite už%1$s%2$s"
 
 #. TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "then merge%1$s|left"
-msgstr ""
+msgstr "tada užvažiuokite už%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Merge %1$s%2$s|left"
-msgstr ""
+msgstr "Užvažiuokite už%1$s%2$s"
 
 msgid "on your left"
-msgstr ""
+msgstr "kairėje"
 
 msgid "on your right"
-msgstr ""
+msgstr "dešinėje"
 
 #. TRANSLATORS: the first arg. is exit ref and/or name, the second is the direction of exit and the third is distance
 #, c-format
 msgid "Take exit %1$s %2$s %3$s"
-msgstr ""
+msgstr "Išvažiuokite per išvažiavimą %1$s %2$s %3$s"
 
 #. TRANSLATORS: the first arg. is the direction of exit, the second is distance, the third is destination
 #, c-format
 msgid "Take the exit %1$s %2$s%3$s"
-msgstr ""
+msgstr "Išvažiuokite per išvažiavimą %1$s %2$s%3$s"
 
 msgid "at interchange"
-msgstr ""
+msgstr "sankryžoje"
 
 msgid "at exit"
-msgstr ""
+msgstr "išvažiavime"
 
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
@@ -285,22 +299,22 @@ msgstr ""
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
 msgid "then keep right%1$s"
-msgstr ""
+msgstr "tada laikykitės dešinės%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
 #, c-format
 msgid "Keep right %1$s%2$s%3$s"
-msgstr ""
+msgstr "Laikykitės dešinės %1$s%2$s%3$s"
 
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
 msgid "then keep left%1$s"
-msgstr ""
+msgstr "tada laikykitės kairės%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
 #, c-format
 msgid "Keep left %1$s%2$s%3$s"
-msgstr ""
+msgstr "Laikykitės kairės %1$s%2$s%3$s"
 
 #. TRANSLATORS: "right" as in "turn right"
 msgid "right"
@@ -334,21 +348,21 @@ msgstr "Pasukite %1$s%2$s %3$s%4$s"
 
 #. TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included.
 msgid "then make a U-turn|left"
-msgstr ""
+msgstr "tada apsisukite"
 
 #. TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Make a U-turn %1$s|left"
-msgstr ""
+msgstr "Apsisukite %1$s"
 
 #. TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included.
 msgid "then make a U-turn|right"
-msgstr ""
+msgstr "tada apsisukite"
 
 #. TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Make a U-turn %1$s|right"
-msgstr ""
+msgstr "Apsisukite %1$s"
 
 #. An empty placeholder that we can use in the future for
 #. * some motorway commands that are now suppressed but we
@@ -363,7 +377,7 @@ msgstr ""
 #. *
 #.
 msgid "follow"
-msgstr ""
+msgstr "laikykitės kelio"
 
 msgid "then you have reached your destination."
 msgstr "tada jūs pasiekėte kelionės tikslą."
@@ -377,7 +391,7 @@ msgid "exit"
 msgstr "išvažiavimas"
 
 msgid "interchange"
-msgstr ""
+msgstr "sankryža"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -412,16 +426,16 @@ msgid "Waypoint %d"
 msgstr ""
 
 msgid "Visit before..."
-msgstr ""
+msgstr "Lankyti prieš..."
 
 msgid "Set as position"
-msgstr "Nustatykite poziciją"
+msgstr "Nustatyti poziciją"
 
 msgid "Set as destination"
-msgstr "Nustatykite tikslą"
+msgstr "Nustatyti tikslą"
 
 msgid "Add as bookmark"
-msgstr "Pridėkite žymę"
+msgstr "Pridėti žymę"
 
 #, c-format
 msgid "Point 0x%x 0x%x"
@@ -429,7 +443,7 @@ msgstr "Taškas 0x%x 0x%x"
 
 #, c-format
 msgid "Screen coord : %d %d"
-msgstr "Ekrano koordinatės  : %d %d"
+msgstr "Ekrano koordinatės : %d %d"
 
 #. 020
 msgid "Andorra"
@@ -1467,11 +1481,11 @@ msgid ""
 msgstr ""
 
 msgid "unknown street"
-msgstr ""
+msgstr "nežinoma gatvė"
 
 #. Safe cast: attr_generic_set_attr does not modify its parameter.
 msgid "Unnamed vehicle"
-msgstr ""
+msgstr "Bevardė transporto priemonė"
 
 msgid "Failed to write bookmarks file"
 msgstr ""
@@ -1536,7 +1550,7 @@ msgid "_Route"
 msgstr "Parinkti kelią"
 
 msgid "_Former Destinations"
-msgstr "Ankstesnės vietos"
+msgstr "Ankstesni tikslai"
 
 msgid "_Bookmarks"
 msgstr "Adresynas"
@@ -1575,16 +1589,16 @@ msgid "_Info"
 msgstr "Informacija"
 
 msgid "Set _destination"
-msgstr ""
+msgstr "Nustatyti tikslą"
 
 msgid "Opens address search dialog"
 msgstr "Atidaro adreso paieškos dialogą"
 
 msgid "_POI search"
-msgstr ""
+msgstr "Lankytinų vietų paieška"
 
 msgid "Opens POI search dialog"
-msgstr ""
+msgstr "Atidaro lankytinų vietų paieškos dialogą"
 
 msgid "_Stop Navigation"
 msgstr "Stabdyti navigaciją"
@@ -1629,98 +1643,98 @@ msgid "Data"
 msgstr "Duomenys"
 
 msgid "Pharmacy"
-msgstr ""
+msgstr "Vaistinė"
 
 msgid "Restaurant"
-msgstr ""
+msgstr "Restoranas"
 
 msgid "Restaurant. Fast food"
 msgstr ""
 
 msgid "Hotel"
-msgstr ""
+msgstr "Viešbutis"
 
 msgid "Car parking"
 msgstr ""
 
 msgid "Fuel station"
-msgstr ""
+msgstr "Degalinė"
 
 msgid "Bank"
-msgstr ""
+msgstr "Bankas"
 
 msgid "Hospital"
-msgstr ""
+msgstr "Ligoninė"
 
 msgid "Cinema"
-msgstr ""
+msgstr "Kinas"
 
 msgid "Train station"
-msgstr ""
+msgstr "Stotis"
 
 msgid "School"
-msgstr ""
+msgstr "Mokykla"
 
 msgid "Police"
-msgstr ""
+msgstr "Policija"
 
 msgid "Justice"
-msgstr ""
+msgstr "Teismas"
 
 msgid "Taxi"
-msgstr ""
+msgstr "Taksi"
 
 msgid "Shopping"
-msgstr ""
+msgstr "Parduotuvė"
 
 msgid "Distance from screen center (km)"
-msgstr ""
+msgstr "Atstumas nuo ekrano vidaus (km)"
 
 #, c-format
 msgid "POI %s. %s"
-msgstr ""
+msgstr "Lankytina vieta %s. %s"
 
 #, c-format
 msgid "Set destination to %ld, %ld \n"
-msgstr ""
+msgstr "Nustatyti tikslą %ld, %ld \n"
 
 #, c-format
 msgid "Set map to %ld, %ld \n"
-msgstr ""
+msgstr "Nustatyti žemėlapį %ld, %ld \n"
 
 #, c-format
 msgid "Set next visit to %ld, %ld \n"
 msgstr ""
 
 msgid "POI search"
-msgstr ""
+msgstr "Lankytinų vietų paieška"
 
 msgid "Select a category"
-msgstr ""
+msgstr "Išrinkte kategoriją"
 
 msgid "Select a distance to look for (km)"
-msgstr ""
+msgstr "Išrinkite atstumą, kuriame ieškoti (km)"
 
 msgid "Select a POI"
-msgstr ""
+msgstr "Išrinkite lankytiną vietą"
 
 msgid " "
 msgstr ""
 
 msgid "Category"
-msgstr ""
+msgstr "Kategorija"
 
 msgid "Direction"
-msgstr ""
+msgstr "Kryptis"
 
 msgid "Distance(m)"
-msgstr ""
+msgstr "Atstumas (m)"
 
 msgid "Name"
-msgstr ""
+msgstr "Vardas"
 
 msgid "Visit Before"
-msgstr ""
+msgstr "Aplankyi prieš"
 
 msgid "N"
 msgstr "Š"
@@ -1793,7 +1807,7 @@ msgid "View Attributes"
 msgstr "Rodyti savybes"
 
 msgid "Set as position (and deactivate vehicle)"
-msgstr ""
+msgstr "Nustatyti poziciją (išjungdamas transporto priemonę)"
 
 msgid "POIs"
 msgstr "Lankytinos vietos"
@@ -1802,10 +1816,10 @@ msgid "View on map"
 msgstr "Rodyti žemėlapyje"
 
 msgid "Remove search results from the map"
-msgstr ""
+msgstr "Pašalinti paieškos rezultatas nuo žemėlapio"
 
 msgid "Show results on the map"
-msgstr ""
+msgstr "Rodyti rezultatus žemelapyje"
 
 msgid "Cut Bookmark"
 msgstr "Iškirpti žymą"
@@ -1838,7 +1852,7 @@ msgid "Replace with waypoints"
 msgstr ""
 
 msgid "Delete Folder"
-msgstr ""
+msgstr "Pašalinti katalogą"
 
 #. Adds the Bookmark folders
 msgid "Add Bookmark folder"
@@ -1854,13 +1868,13 @@ msgstr "Pasižymėti %s"
 
 #, c-format
 msgid "Download %s"
-msgstr ""
+msgstr "Atsisiųsti %s"
 
 msgid "Map Download"
 msgstr ""
 
 msgid "Active"
-msgstr ""
+msgstr "Aktyvus"
 
 msgid "Download Enabled"
 msgstr ""
@@ -1917,7 +1931,7 @@ msgstr "Apie Navit"
 
 #. Authors
 msgid "By"
-msgstr ""
+msgstr "Sukūrė"
 
 #. Contributors
 msgid "And all the Navit Team"
@@ -1930,7 +1944,7 @@ msgid "Waypoints"
 msgstr ""
 
 msgid "Enter Coordinates"
-msgstr ""
+msgstr "Įvėskite koordinates"
 
 #.
 #. w=gui_internal_box_new(this, gravity_left_top|orientation_vertical|flags_expand|flags_fill)
@@ -1939,10 +1953,10 @@ msgstr ""
 #. we=gui_internal_box_new(this, gravity_left_center|orientation_horizontal|flags_fill)
 #. gui_internal_widget_append(w, we)
 msgid "Latitude Longitude"
-msgstr ""
+msgstr "Platuma Ilguma"
 
 msgid "Enter coordinates, for example:"
-msgstr ""
+msgstr "Įvėskitė koordinates, pvz.:"
 
 msgid "Vehicle"
 msgstr "Transporto priemonė"
@@ -1978,10 +1992,10 @@ msgid "Show Locale"
 msgstr ""
 
 msgid "Former Destinations"
-msgstr "Ankstesnės vietos"
+msgstr "Ankstesni tikslai"
 
 msgid "- No former destinations available -"
-msgstr ""
+msgstr "- Nėra ankstesnių tikslų -"
 
 msgid "Message"
 msgstr "Žinutė"
@@ -1990,7 +2004,7 @@ msgid "Back"
 msgstr "Grįžti"
 
 msgid "Back to map"
-msgstr "Grižti į žemėlapį"
+msgstr "Grįžti į žemėlapį"
 
 msgid "Main Menu"
 msgstr "Pagrindinis meniu"
@@ -2005,7 +2019,7 @@ msgid "Prev"
 msgstr ""
 
 msgid "Return to route!"
-msgstr ""
+msgstr "Grįžti į maršrutą!"
 
 #. warning told
 msgid "Look out! Camera!"
@@ -2013,28 +2027,28 @@ msgstr ""
 
 #. warning told
 msgid "Please decrease your speed"
-msgstr ""
+msgstr "Prašom sumažinti greitį"
 
 msgid "partial match"
 msgstr ""
 
 #. Android resource: @strings/address_search_button
 msgid "Search"
-msgstr ""
+msgstr "Paieška"
 
 #. Android resource: @strings/address_search_towns
 msgid "Towns"
-msgstr ""
+msgstr "Miestai"
 
 #. Android resource: @strings/position_popup_drive_here
 msgid "Route to here"
-msgstr ""
+msgstr "Maršrutas iki čia"
 
 msgid "Map data (c) OpenStreetMap contributors, ODBL"
 msgstr ""
 
 msgid "Downloaded maps"
-msgstr ""
+msgstr "Atsisiųsti žemėlapiai"
 
 msgid "Cancel"
 msgstr ""
@@ -2154,7 +2168,7 @@ msgid "Baden-Wuerttemberg"
 msgstr ""
 
 msgid "Bayern"
-msgstr ""
+msgstr "Bavarija"
 
 msgid "Mittelfranken"
 msgstr ""
@@ -2465,9 +2479,11 @@ msgid ""
 "Former\n"
 "Destinations"
 msgstr ""
+"Ankstesni\n"
+"tikslai"
 
 msgid "Coordinates"
-msgstr ""
+msgstr "Koordinatės"
 
 msgid ""
 "Stop\n"
@@ -2499,13 +2515,13 @@ msgid ""
 msgstr ""
 
 msgid "Satellite Status"
-msgstr ""
+msgstr "Palydovų būsena"
 
 msgid "NMEA Data"
 msgstr ""
 
 msgid "car_shortest"
-msgstr ""
+msgstr "Automobilis (trumpiausias maršrutas)"
 
 msgid "car_avoid_tolls"
 msgstr ""
@@ -2517,12 +2533,12 @@ msgid "horse"
 msgstr "arklys"
 
 msgid "Truck"
-msgstr ""
+msgstr "Sunkvežimis"
 
 #. Strings from android/res/values/strings.xml
 #. Android resource: @strings/yes
 msgid "Yes"
-msgstr ""
+msgstr "Taip"
 
 #. Android resource: @strings/notification_ticker
 msgid "Navit started"
@@ -2554,27 +2570,27 @@ msgstr ""
 
 #. Android resource: @strings/initial_info_box_more_info
 msgid "More info"
-msgstr ""
+msgstr "Daugiau informacija"
 
 #. Android resource: @strings/optionsmenu_zoom_in
 msgid "Zoom in"
-msgstr ""
+msgstr "Padidinti"
 
 #. Android resource: @strings/optionsmenu_zoom_out
 msgid "Zoom out"
-msgstr ""
+msgstr "Sumažinti"
 
 #. Android resource: @strings/optionsmenu_download_maps
 msgid "Download maps"
-msgstr ""
+msgstr "Atsisiųsti žemėlapis"
 
 #. Android resource: @strings/optionsmenu_toggle_poi
 msgid "Toggle POIs"
-msgstr ""
+msgstr "Rodyti/slėpti lankytinas vietas"
 
 #. Android resource: @strings/optionsmenu_exit_navit
 msgid "Exit Navit"
-msgstr ""
+msgstr "Uždaryti Navit"
 
 #. Android resource: @strings/optionsmenu_backup_restore
 msgid "Backup / Restore"
@@ -2582,7 +2598,7 @@ msgstr ""
 
 #. Android resource: @strings/map_delete
 msgid "Delete this map?"
-msgstr ""
+msgstr "Pašalinti šį žemėlapį?"
 
 #. Android resource: @strings/map_download_downloading
 msgid "Downloading:"
@@ -2606,11 +2622,11 @@ msgstr ""
 
 #. Android resource: @strings/address_search_title
 msgid "Address search"
-msgstr ""
+msgstr "Adresų paieška"
 
 #. Android resource: @strings/address_enter_destination
 msgid "Enter destination"
-msgstr ""
+msgstr "Įvėskite tikslą"
 
 #. Android resource: @strings/address_partial_match
 msgid "Match partial address"
@@ -2618,11 +2634,11 @@ msgstr ""
 
 #. Android resource: @strings/address_search_searching
 msgid "Searching..."
-msgstr ""
+msgstr "Ieškoma..."
 
 #. Android resource: @strings/address_search_not_found
 msgid "Address not found"
-msgstr ""
+msgstr "Adresas nerastas"
 
 #. Android resource: @strings/address_search_getting_results
 msgid "Getting search results"
@@ -2630,7 +2646,7 @@ msgstr ""
 
 #. Android resource: @strings/address_search_loading_results
 msgid "Loading search results"
-msgstr ""
+msgstr "Kraunami paieškos rezultatai"
 
 #. Android resource: @strings/address_search_no_results
 msgid "No results found"

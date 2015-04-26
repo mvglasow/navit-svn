@@ -174,27 +174,27 @@ msgstr "a la sortida"
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
 msgid "%sinto %s%s%s"
-msgstr ""
+msgstr "%sal carrer %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|masculine form"
-msgstr ""
+msgstr "%sal %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|feminine form"
-msgstr ""
+msgstr "%sa la %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|neuter form"
-msgstr ""
+msgstr "%sa %s%s%s"
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
 msgid "%sinto the %s"
-msgstr "%s cap a la %s"
+msgstr "%scap a la %s"
 
 msgid "When possible, please turn around"
 msgstr "Quan sigui possible, doneu mitja volta"
@@ -202,7 +202,7 @@ msgstr "Quan sigui possible, doneu mitja volta"
 #. TRANSLATORS: the argument is the destination to follow
 #, c-format
 msgid "towards %s"
-msgstr ""
+msgstr "cap a %s"
 
 #, c-format
 msgid "Follow the road for the next %s"
@@ -214,17 +214,17 @@ msgstr "Entreu a la rotonda vinent"
 #. TRANSLATORS: %s is the distance to the roundabout
 #, c-format
 msgid "Enter the roundabout %s"
-msgstr ""
+msgstr "Entreu a la rotonda %s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "then leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "aleshores deixeu la rotonda a la %1$s %2$s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "Leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "Deixeu la rotonda a la %1$s %2$s"
 
 msgid "soon"
 msgstr "aviat"
@@ -233,7 +233,7 @@ msgid "now"
 msgstr "ara"
 
 msgid "then"
-msgstr ""
+msgstr "aleshores"
 
 #. TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
 #, c-format
@@ -256,26 +256,26 @@ msgid "Merge %1$s%2$s|left"
 msgstr ""
 
 msgid "on your left"
-msgstr ""
+msgstr "a l'esquerra"
 
 msgid "on your right"
-msgstr ""
+msgstr "a la dreta"
 
 #. TRANSLATORS: the first arg. is exit ref and/or name, the second is the direction of exit and the third is distance
 #, c-format
 msgid "Take exit %1$s %2$s %3$s"
-msgstr ""
+msgstr "Preneu la sortida %1$s %2$s %3$s"
 
 #. TRANSLATORS: the first arg. is the direction of exit, the second is distance, the third is destination
 #, c-format
 msgid "Take the exit %1$s %2$s%3$s"
-msgstr ""
+msgstr "Preneu la sortida %1$s %2$s%3$s"
 
 msgid "at interchange"
-msgstr ""
+msgstr "a l'intersecció"
 
 msgid "at exit"
-msgstr ""
+msgstr "a la sortida"
 
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
@@ -339,21 +339,21 @@ msgstr "Gireu %1$s%2$s %3$s%4$s"
 
 #. TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included.
 msgid "then make a U-turn|left"
-msgstr ""
+msgstr "després, doneu mitja volta"
 
 #. TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Make a U-turn %1$s|left"
-msgstr ""
+msgstr "Doneu mitja volta %1$s"
 
 #. TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included.
 msgid "then make a U-turn|right"
-msgstr ""
+msgstr "després, doneu mitja volta"
 
 #. TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Make a U-turn %1$s|right"
-msgstr ""
+msgstr "Doneu mitja volta %1$s"
 
 #. An empty placeholder that we can use in the future for
 #. * some motorway commands that are now suppressed but we
@@ -368,7 +368,7 @@ msgstr ""
 #. *
 #.
 msgid "follow"
-msgstr ""
+msgstr "seguiu"
 
 msgid "then you have reached your destination."
 msgstr "aleshores heu arribat a destí"
@@ -379,10 +379,10 @@ msgid "You have reached your destination %s"
 msgstr "Heu arribat a la destinació %s"
 
 msgid "exit"
-msgstr "surt"
+msgstr "sortida"
 
 msgid "interchange"
-msgstr ""
+msgstr "intersecció"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -1670,7 +1670,7 @@ msgid "Police"
 msgstr ""
 
 msgid "Justice"
-msgstr ""
+msgstr "Jutjats"
 
 msgid "Taxi"
 msgstr ""

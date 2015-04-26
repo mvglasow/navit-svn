@@ -164,30 +164,30 @@ msgstr ""
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
 msgid "%sinto %s%s%s"
-msgstr ""
+msgstr "%skufuata %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|masculine form"
-msgstr ""
+msgstr "%skufuata %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|feminine form"
-msgstr ""
+msgstr "%skufuata %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|neuter form"
-msgstr ""
+msgstr "%skufuata %s%s%s"
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
 msgid "%sinto the %s"
-msgstr "%s kufuata %s"
+msgstr "%skufuata %s"
 
 msgid "When possible, please turn around"
-msgstr "geuka na kurudi nyuma inapowezekana"
+msgstr "Geuka na kurudi nyuma inapowezekana"
 
 #. TRANSLATORS: the argument is the destination to follow
 #, c-format
@@ -196,7 +196,7 @@ msgstr ""
 
 #, c-format
 msgid "Follow the road for the next %s"
-msgstr "buata barabara kwa %s"
+msgstr "Buata barabara kwa %s"
 
 msgid "Enter the roundabout soon"
 msgstr ""
@@ -209,12 +209,12 @@ msgstr ""
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "then leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "halafu toka kutoka kwenye kipilefti kwenye %1$s %2$s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "Leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "Toka kutoka kwenye kipilefti kwenye %1$s %2$s"
 
 msgid "soon"
 msgstr "karibuni"
@@ -223,7 +223,7 @@ msgid "now"
 msgstr "sasa"
 
 msgid "then"
-msgstr ""
+msgstr "halafu"
 
 #. TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
 #, c-format

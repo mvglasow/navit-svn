@@ -27,7 +27,7 @@ msgstr ""
 "PO-Revision-Date: 2013-12-18 16:54+0000\n"
 "Last-Translator: iceman75 <Unknown>\n"
 "Language-Team: Chris Eubank <cteubank@gmail.com>\n"
-"Language: \n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -151,27 +151,27 @@ msgstr[1] "en %d kilómetros"
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Systematic Street Name 3: Separator (Space if required), 4: Street Name
 #, c-format
 msgid "%1$sonto the %2$s%3$s%4$s"
-msgstr ""
+msgstr "%1$sen la %2$s%3$s%4$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name
 #, c-format
 msgid "%1$sonto %2$s"
-msgstr ""
+msgstr "%1$sen la carretera %2$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%1$sonto %2$s|masculine form"
-msgstr ""
+msgstr "%1$sen el %2$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%1$sonto %2$s|feminine form"
-msgstr ""
+msgstr "%1$sen la %2$s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%1$sonto %2$s|neuter form"
-msgstr ""
+msgstr "%1$sen la carretera %2$s"
 
 msgid "into the ramp"
 msgstr "en la salida"
@@ -179,27 +179,27 @@ msgstr "en la salida"
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
 msgid "%sinto %s%s%s"
-msgstr ""
+msgstr "%sen la calle %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|masculine form"
-msgstr ""
+msgstr "%sen el %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|feminine form"
-msgstr ""
+msgstr "%sen la %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|neuter form"
-msgstr ""
+msgstr "%sen la calle %s%s%s"
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
 msgid "%sinto the %s"
-msgstr "%s en la %s"
+msgstr "%sen la %s"
 
 msgid "When possible, please turn around"
 msgstr "Dé la vuelta cuando sea posible"
@@ -207,7 +207,7 @@ msgstr "Dé la vuelta cuando sea posible"
 #. TRANSLATORS: the argument is the destination to follow
 #, c-format
 msgid "towards %s"
-msgstr ""
+msgstr "hacia %s"
 
 #, c-format
 msgid "Follow the road for the next %s"
@@ -224,12 +224,12 @@ msgstr "Entre en la rotonda %s"
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "then leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "después salga de la rotonda por la %1$s %2$s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "Leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "Salga de la rotonda por la %1$s %2$s"
 
 msgid "soon"
 msgstr "próximamente"
@@ -238,79 +238,79 @@ msgid "now"
 msgstr "ahora"
 
 msgid "then"
-msgstr ""
+msgstr "luego"
 
 #. TRANSLATORS: the arg. is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "then merge%1$s|right"
-msgstr ""
+msgstr "luego entre%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Right merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Merge %1$s%2$s|right"
-msgstr ""
+msgstr "Entre%2$s %1$s"
 
 #. TRANSLATORS: the arg. is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "then merge%1$s|left"
-msgstr ""
+msgstr "luego entre%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is the phrase 'onto ...'. Left merge, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Merge %1$s%2$s|left"
-msgstr ""
+msgstr "Entre%2$s %1$s"
 
 msgid "on your left"
-msgstr ""
+msgstr "a la izquierda"
 
 msgid "on your right"
-msgstr ""
+msgstr "a la derecha"
 
 #. TRANSLATORS: the first arg. is exit ref and/or name, the second is the direction of exit and the third is distance
 #, c-format
 msgid "Take exit %1$s %2$s %3$s"
-msgstr ""
+msgstr "Tome la salida %1$s %2$s %3$s"
 
 #. TRANSLATORS: the first arg. is the direction of exit, the second is distance, the third is destination
 #, c-format
 msgid "Take the exit %1$s %2$s%3$s"
-msgstr ""
+msgstr "Tome la salida %1$s %2$s%3$s"
 
 msgid "at interchange"
-msgstr ""
+msgstr "al enlace"
 
 msgid "at exit"
-msgstr ""
+msgstr "a la salida"
 
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
 msgid "then continue straight%1$s"
-msgstr ""
+msgstr "luego continúe todo recto%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
 #, c-format
 msgid "Continue straight %1$s%2$s%3$s"
-msgstr ""
+msgstr "Continúe todo recto %1$s%2$s%3$s"
 
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
 msgid "then keep right%1$s"
-msgstr ""
+msgstr "luego manténgase por la derecha%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
 #, c-format
 msgid "Keep right %1$s%2$s%3$s"
-msgstr ""
+msgstr "Manténgase por la derecha %1$s%2$s%3$s"
 
 #. TRANSLATORS: the arg. is where to do the maneuver
 #, c-format
 msgid "then keep left%1$s"
-msgstr ""
+msgstr "luego manténgase por la izquierda%1$s"
 
 #. TRANSLATORS: the first arg. is distance, the second is where to do the maneuver, the third is destination
 #, c-format
 msgid "Keep left %1$s%2$s%3$s"
-msgstr ""
+msgstr "Manténgase por la izquierda %1$s%2$s%3$s"
 
 #. TRANSLATORS: "right" as in "turn right"
 msgid "right"
@@ -344,21 +344,21 @@ msgstr "Gire %1$s%2$s %3$s%4$s"
 
 #. TRANSLATORS: Left U-turn, the stuff after | doesn't have to be included.
 msgid "then make a U-turn|left"
-msgstr ""
+msgstr "luego dé la vuelta"
 
 #. TRANSLATORS: the arg. is distance. Left U-turn, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Make a U-turn %1$s|left"
-msgstr ""
+msgstr "Dé la vuelta %1$s"
 
 #. TRANSLATORS: Right U-turn, the stuff after | doesn't have to be included.
 msgid "then make a U-turn|right"
-msgstr ""
+msgstr "luego dé la vuelta"
 
 #. TRANSLATORS: the arg. is distance. Right U-turn, the stuff after | doesn't have to be included.
 #, c-format
 msgid "Make a U-turn %1$s|right"
-msgstr ""
+msgstr "Dé la vuelta %1$s"
 
 #. An empty placeholder that we can use in the future for
 #. * some motorway commands that are now suppressed but we
@@ -373,7 +373,7 @@ msgstr ""
 #. *
 #.
 msgid "follow"
-msgstr ""
+msgstr "continúe"
 
 msgid "then you have reached your destination."
 msgstr "entonces ha llegado a su destino."
@@ -384,10 +384,10 @@ msgid "You have reached your destination %s"
 msgstr "Ha llegado a su destino %s"
 
 msgid "exit"
-msgstr "salir"
+msgstr "salida"
 
 msgid "interchange"
-msgstr ""
+msgstr "enlace"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -1642,19 +1642,19 @@ msgid "Data"
 msgstr "Datos"
 
 msgid "Pharmacy"
-msgstr ""
+msgstr "Farmacia"
 
 msgid "Restaurant"
-msgstr ""
+msgstr "Restaurante"
 
 msgid "Restaurant. Fast food"
 msgstr ""
 
 msgid "Hotel"
-msgstr ""
+msgstr "Hotel"
 
 msgid "Car parking"
-msgstr ""
+msgstr "Estacionamiento"
 
 msgid "Fuel station"
 msgstr ""
@@ -1666,19 +1666,19 @@ msgid "Hospital"
 msgstr ""
 
 msgid "Cinema"
-msgstr ""
+msgstr "Cine"
 
 msgid "Train station"
 msgstr ""
 
 msgid "School"
-msgstr ""
+msgstr "Escuela"
 
 msgid "Police"
-msgstr ""
+msgstr "Policía"
 
 msgid "Justice"
-msgstr ""
+msgstr "Juzgado"
 
 msgid "Taxi"
 msgstr ""
@@ -2022,7 +2022,7 @@ msgstr "Vuelva a la ruta"
 
 #. warning told
 msgid "Look out! Camera!"
-msgstr "!Atención! Radar"
+msgstr "¡Atención! Radar"
 
 #. warning told
 msgid "Please decrease your speed"
@@ -2167,16 +2167,16 @@ msgid "Baden-Wuerttemberg"
 msgstr "Baden-Wuerttemberg"
 
 msgid "Bayern"
-msgstr "Bayern"
+msgstr "Baviera"
 
 msgid "Mittelfranken"
 msgstr "Franconia Media"
 
 msgid "Niederbayern"
-msgstr "Bajo Bayern"
+msgstr "Baja Baviera"
 
 msgid "Oberbayern"
-msgstr "Alto Bayern"
+msgstr "Alta Baviera"
 
 msgid "Oberfranken"
 msgstr "Alta Franconia"
