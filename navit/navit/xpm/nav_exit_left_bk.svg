@@ -12,7 +12,7 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.5 r10040"
-   sodipodi:docname="nav_exit_right_wh.svg">
+   sodipodi:docname="nav_exit_right_bk.svg">
   <metadata
      id="metadata14">
     <rdf:RDF>
@@ -41,8 +41,8 @@
      id="namedview10"
      showgrid="false"
      inkscape:zoom="11.859375"
-     inkscape:cx="33.349144"
-     inkscape:cy="29.976285"
+     inkscape:cx="32"
+     inkscape:cy="32"
      inkscape:window-x="0"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
@@ -81,20 +81,20 @@
   <g
      transform="matrix(-0.00399274,0,0,0.00286166,72.012396,-4.1975012)"
      id="g3848"
-     style="fill:#ffffff">
+     style="fill:#000000">
     <path
        transform="matrix(28.222223,0,0,28.222223,-3.2693192e-4,0)"
        inkscape:connector-curvature="0"
        id="path3076"
        d="m 304.15565,64.35416 17.04892,767.6852 75.15314,0 75.15315,0 -139.64771,-767.6852 z"
-       style="fill:#ffffff;stroke:none"
+       style="fill:#000000;stroke:none"
        sodipodi:nodetypes="cccccc" />
     <path
        transform="matrix(28.222223,0,0,28.222223,-3.2693192e-4,0)"
        inkscape:connector-curvature="0"
        id="path3078"
        d="m 256.04066,64.354161 -134.7887,767.685199 150.30709,0 12.18912,-767.685199 z"
-       style="fill:#ffffff;stroke:none" />
+       style="fill:#000000;stroke:none" />
   </g>
   <g
      id="g4"
@@ -102,13 +102,13 @@
     <path
        inkscape:connector-curvature="0"
        d="M 32,63 32,42 C 32,31 32,31 42,20"
-       style="fill:none;stroke:#ffffff;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:none;stroke:#000000;stroke-width:10;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="path6" />
     <path
        inkscape:connector-curvature="0"
        transform="matrix(2.1213203,2.1213203,-2.1213203,2.1213203,42,20)"
        d="M -4,1 0,-7 4,1 C 2,-1 -2,-1 -4,1"
-       style="fill:#ffffff;stroke:#ffffff;stroke-linejoin:round"
+       style="fill:#000000;stroke:#000000;stroke-linejoin:round"
        id="path8" />
   </g>
 </svg>
