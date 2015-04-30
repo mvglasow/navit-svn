@@ -3070,7 +3070,7 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 				break;
 			}
 		else ret = g_strdup("");
-	} else if (!name && !name_systematic && itm->way.item.type == type_ramp) {
+	} else if (!name && !name_systematic && itm->way.item.type == type_ramp && (!cmd->maneuver || (cmd->maneuver->merge_or_exit != mex_interchange))) {
 		itm_pre = itm->prev;
 		while (itm_pre && (itm_pre->way.item.type == type_ramp))
 			itm_pre = itm_pre->prev;
