@@ -3068,11 +3068,13 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 				break;
 			}
 		else ret = g_strdup("");
-	} else if (!name && !name_systematic && itm->way.item.type == type_ramp && vocabulary2) {
-		if (next->way.item.type == type_ramp)
-			ret = g_strdup("");
+	} else if (!name && !name_systematic && itm->way.item.type == type_ramp) {
+		if (   ((itm->next) && (itm->next->way.item.type == type_highway_land))
+		    && ((itm->prev) && (itm->prev->way.item.type != type_highway_land)))
+			/*  TRANSLATORS: the argument is the slip road for entering a motorway. */
+			ret = g_strdup_printf("%s%s",prefix,_("onto the motorway ramp")); /* This is only announced, when there is no additional info about the ramp and the ramp leads to a motorway. */
 		else
-			ret = g_strdup_printf("%s%s",prefix,_("into the ramp"));
+			ret = g_strdup("");
 	} else if (!name && !name_systematic)
 		ret = g_strdup("");
 	else if (name) {
