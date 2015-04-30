@@ -3069,10 +3069,10 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 			}
 		else ret = g_strdup("");
 	} else if (!name && !name_systematic && itm->way.item.type == type_ramp) {
-		if (   ((itm->next) && (itm->next->way.item.type == type_highway_land))
-		    && ((itm->prev) && (itm->prev->way.item.type != type_highway_land)))
-			/*  TRANSLATORS: the argument is the slip road for entering a motorway. */
-			ret = g_strdup_printf("%s%s",prefix,_("onto the motorway ramp")); /* This is only announced, when there is no additional info about the ramp and the ramp leads to a motorway. */
+		if (((itm->next) && is_motorway_like(&(itm->next->way), 0))
+				&& ((itm->prev) && !is_motorway_like(&(itm->prev->way), 0)))
+			/* TRANSLATORS: motorway ramp refers to the slip road for entering a motorway. */
+			ret = g_strdup_printf("%s%s",prefix,_("onto the motorway ramp")); /* This is only announced when there is no additional info about the ramp and the ramp leads to a motorway. */
 		else
 			ret = g_strdup("");
 	} else if (!name && !name_systematic)
