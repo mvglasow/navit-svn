@@ -173,8 +173,8 @@ msgstr "%1$sen la %2$s"
 msgid "%1$sonto %2$s|neuter form"
 msgstr "%1$sen la carretera %2$s"
 
-msgid "into the ramp"
-msgstr "en la salida"
+msgid "onto the motorway ramp"
+msgstr "en el carril de entrada"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
