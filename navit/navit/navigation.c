@@ -3005,6 +3005,8 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 	int vocabulary2=1;
 	struct attr attr;
 	struct navigation_itm *itm = cmd->itm;
+	struct navigation_itm *itm_pre = NULL;
+	struct navigation_itm *itm_post = NULL;
 
 	if (! prefix)
 		prefix="";
@@ -3069,8 +3071,14 @@ navigation_item_destination(struct navigation *nav, struct navigation_command *c
 			}
 		else ret = g_strdup("");
 	} else if (!name && !name_systematic && itm->way.item.type == type_ramp) {
-		if (((itm->next) && is_motorway_like(&(itm->next->way), 0))
-				&& ((itm->prev) && !is_motorway_like(&(itm->prev->way), 0)))
+		itm_pre = itm->prev;
+		while (itm_pre && (itm_pre->way.item.type == type_ramp))
+			itm_pre = itm_pre->prev;
+		itm_post = itm->next;
+		while (itm_post && (itm_post->way.item.type == type_ramp) && (!cmd->next || (itm_post != cmd->next->itm)))
+			itm_post = itm_post->next;
+		if (((itm_post) && is_motorway_like(&(itm_post->way), 0))
+				&& ((itm_pre) && !is_motorway_like(&(itm_pre->way), 0)))
 			/* TRANSLATORS: motorway ramp refers to the slip road for entering a motorway. */
 			ret = g_strdup_printf("%s%s",prefix,_("onto the motorway ramp")); /* This is only announced when there is no additional info about the ramp and the ramp leads to a motorway. */
 		else
