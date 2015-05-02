@@ -84,13 +84,14 @@ public class Navit extends Activity
 	public static final int          NavitDownloaderSelectMap_id    = 967;
 	public static final int          MAP_NUM_PRIMARY                = 11;
 	public static final int          NavitAddressSearch_id          = 70;
+	public static final int          NavitSelectStorage_id          = 43;
 	public static String             NavitLanguage;
 	public static Resources          NavitResources                 = null;
 
 	public static final int          MAP_NUM_SECONDARY              = 12;
 	static final String              NAVIT_PACKAGE_NAME             = "org.navitproject.navit";
 	static final String              TAG                            = "Navit";
-	static final String              MAP_FILENAME_PATH              = Environment.getExternalStorageDirectory().getPath() + "/navit/";
+	static String                    map_filename_path              = null;
 	static final String              NAVIT_DATA_DIR                 = "/data/data/" + NAVIT_PACKAGE_NAME;
 	static final String              NAVIT_DATA_SHARE_DIR           = NAVIT_DATA_DIR + "/share";
 	static final String              FIRST_STARTUP_FILE             = NAVIT_DATA_SHARE_DIR + "/has_run_once.txt";
@@ -181,6 +182,7 @@ public class Navit extends Activity
 				while ((i = resourcestream.read(buf)) != -1) {
 					resultfilestream.write(buf, 0, i);
 				}
+				 resultfilestream.close();
 			} catch (Exception e) {
 				Log.e(TAG, "Exception " + e.getMessage());
 				return false;
@@ -294,8 +296,11 @@ public class Navit extends Activity
 		}
 		Log.e("Navit", "Language " + lang);
 
+		SharedPreferences prefs = getSharedPreferences(NAVIT_PREFS,MODE_PRIVATE);
+		map_filename_path  = prefs.getString("filenamePath", Environment.getExternalStorageDirectory().getPath() + "/navit/");
+
 		// make sure the new path for the navitmap.bin file(s) exist!!
-		File navit_maps_dir = new File(MAP_FILENAME_PATH);
+		File navit_maps_dir = new File(map_filename_path);
 		navit_maps_dir.mkdirs();
 
 		// make sure the share dir exists
@@ -307,7 +312,7 @@ public class Navit extends Activity
 		int height_ = display_.getHeight();
 		metrics = new DisplayMetrics();
 		display_.getMetrics(Navit.metrics);
-		int densityDpi = (int)(( Navit.metrics.density*160)+.5f);
+		int densityDpi = (int)(( Navit.metrics.density*160)-.5f);
 		Log.e("Navit", "Navit -> pixels x=" + width_ + " pixels y=" + height_);
 		Log.e("Navit", "Navit -> dpi=" + densityDpi);
 		Log.e("Navit", "Navit -> density=" + Navit.metrics.density);
@@ -331,15 +336,27 @@ public class Navit extends Activity
 		{
 			my_display_density = "mdpi";
 		}
-		else if (densityDpi < 320)
+		else if (densityDpi < 240)
 		{
 			my_display_density = "hdpi";
 		}
+		else if (densityDpi < 320)
+		{
+			my_display_density = "xhdpi";
+		}
+		else if (densityDpi < 480)
+		{
+			my_display_density = "xxhdpi";
+		}
+		else if (densityDpi < 640)
+		{
+			my_display_density = "xxxhdpi";
+		}
 		else
 		{
-			Log.e("Navit", "found xhdpi device, this is not fully supported!!");
-			Log.e("Navit", "using hdpi values");
-			my_display_density = "hdpi";
+			Log.e("Navit", "found device of very high density ("+densityDpi+")");
+			Log.e("Navit", "using xxxhdpi values");
+			my_display_density = "xxxhdpi";
 		}
 
 		if (!extractRes("navit" + my_display_density, NAVIT_DATA_DIR + "/share/navit.xml"))
@@ -349,7 +366,7 @@ public class Navit extends Activity
 
 		// --> dont use android.os.Build.VERSION.SDK_INT, needs API >= 4
 		Log.e("Navit", "android.os.Build.VERSION.SDK_INT=" + Integer.valueOf(android.os.Build.VERSION.SDK));
-		NavitMain(this, NavitLanguage, Integer.valueOf(android.os.Build.VERSION.SDK), my_display_density, NAVIT_DATA_DIR+"/bin/navit");
+		NavitMain(this, NavitLanguage, Integer.valueOf(android.os.Build.VERSION.SDK), my_display_density, NAVIT_DATA_DIR+"/bin/navit",map_filename_path);
 
 		showInfos();
 
@@ -453,13 +470,14 @@ public class Navit extends Activity
 		menu.clear();
 
 		// group-id,item-id,sort order number
-		menu.add(1, 1, 100, getString(R.string.optionsmenu_zoom_in)); //TRANS
-		menu.add(1, 2, 200, getString(R.string.optionsmenu_zoom_out)); //TRANS
+		//menu.add(1, 1, 100, getString(R.string.optionsmenu_zoom_in)); //TRANS
+		//menu.add(1, 2, 200, getString(R.string.optionsmenu_zoom_out)); //TRANS
 
 		menu.add(1, 3, 300, getString(R.string.optionsmenu_download_maps)); //TRANS
 		menu.add(1, 5, 400, getString(R.string.optionsmenu_toggle_poi)); //TRANS
 
 		menu.add(1, 6, 500, getString(R.string.optionsmenu_address_search)); //TRANS
+		menu.add(1, 10, 600, getString(R.string.optionsmenu_set_map_location));
 
 		menu.add(1, 99, 900, getString(R.string.optionsmenu_exit_navit)); //TRANS
 		
@@ -508,8 +526,14 @@ public class Navit extends Activity
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
 	{
+		runOptionsItem(item.getItemId());
+		return true;
+	}
+	
+	public void runOptionsItem(int id)
+	{
 		// Handle item selection
-		switch (item.getItemId())
+		switch (id)
 		{
 			case 1 :
 				// zoom in
@@ -553,13 +577,15 @@ public class Navit extends Activity
 			    /* Backup / Restore */
 			    showDialog(NavitDialogs.DIALOG_BACKUP_RESTORE);
 			    break;
+			case 10:
+				setMapLocation();
+				break;
 			case 99 :
 				// exit
 				this.onStop();
 				this.exit();
 				break;
 		}
-		return true;
 	}
 
 	void setDestination(float latitude, float longitude, String address) {
@@ -596,6 +622,22 @@ public class Navit extends Activity
 				msg.sendToTarget();
 			}
 			break;
+		case NavitSelectStorage_id : 
+			if(resultCode == RESULT_OK) {                        
+				String newDir = data.getStringExtra(FileBrowserActivity.returnDirectoryParameter); 
+				Log.d(TAG, "selected path= "+newDir);  
+				if(!newDir.contains("/navit")) 
+					newDir = newDir+"/navit/";
+				else
+					newDir = newDir+"/";
+				SharedPreferences prefs = this.getSharedPreferences(NAVIT_PREFS,MODE_PRIVATE); 
+				SharedPreferences.Editor  prefs_editor = prefs.edit(); 
+				prefs_editor.putString("filenamePath", newDir); 
+				prefs_editor.commit();
+				Toast.makeText(this, String.format(Navit._("New location set to %s\nRestart Navit to apply the changes."),newDir),Toast.LENGTH_LONG).show();                 
+			} 
+				else Log.w(TAG, "select path failed"); 
+			break; 			
 		default :
 			//Log.e("Navit", "onActivityResult " + requestCode + " " + resultCode);
 			ActivityResults[requestCode].onActivityResult(requestCode, resultCode, data);
@@ -622,6 +664,17 @@ public class Navit extends Activity
         
 		return true;
 	}
+
+	public boolean setMapLocation() 
+	{ 
+		Intent fileExploreIntent = new Intent(this,FileBrowserActivity.class); 
+		fileExploreIntent
+			.putExtra(FileBrowserActivity.startDirectoryParameter, "/mnt")
+			.setAction(FileBrowserActivity.INTENT_ACTION_SELECT_DIR);
+		startActivityForResult(fileExploreIntent,NavitSelectStorage_id); 
+		                 
+		return true; 
+	} 
 
 	@Override
 	public void onDestroy()
@@ -656,10 +709,10 @@ public class Navit extends Activity
 		NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		nm.cancel(R.string.app_name);
 		NavitVehicle.removeListener();
-		finish();
+		NavitDestroy();
 	}
 
-	public native void NavitMain(Navit x, String lang, int version, String display_density_string, String path);
+	public native void NavitMain(Navit x, String lang, int version, String display_density_string, String path, String path2);
 	public native void NavitDestroy();
 
 	/*

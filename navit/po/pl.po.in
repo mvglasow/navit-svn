@@ -8,7 +8,7 @@
 # KaZeR https://launchpad.net/~kazer
 # Marcin Ostajewski (panszpik) https://launchpad.net/~panszpik
 # Mineque https://launchpad.net/~mineque
-# Patryk Benderz &quot;LeadMan&quot; https://launchpad.net/~leadman
+# Patryk &quot;LeadMan&quot; Benderz https://launchpad.net/~leadman
 # S0Cool https://launchpad.net/~mareksok
 # TSr https://launchpad.net/~tsr
 # Wojtek https://launchpad.net/~wojtek-pol
@@ -2047,11 +2047,30 @@ msgstr "Prowadź z tąd"
 msgid "Map data (c) OpenStreetMap contributors, ODBL"
 msgstr "Dane Mapy (c) OpenStreetMap contributors, ODBL"
 
+msgid ""
+"Current map location %s is not available\n"
+"Please restart Navit after you attach an SD card or select a different map "
+"location."
+msgstr ""
+
 msgid "Downloaded maps"
 msgstr "Pobrane Mapy"
 
+msgid ""
+"Sorry, we currently do not support maps above 3.8G on Android, please select "
+"a smaller one."
+msgstr ""
+
 msgid "Cancel"
 msgstr "Anuluj"
+
+msgid "filenamePath"
+msgstr ""
+
+msgid ""
+"New location set to %s\n"
+"Restart Navit to apply the changes."
+msgstr ""
 
 msgid "Whole Planet"
 msgstr "Cały Ś"
@@ -2423,12 +2442,15 @@ msgstr "Pobieranie"
 msgid "ready"
 msgstr "gotowe"
 
-msgid "Error downloading map!"
-msgstr "Błąd przy pobieraniu map"
+msgid "Media selected for map storage is not available"
+msgstr ""
 
 #. Android resource: @strings/map_download_not_enough_free_space
 msgid "Not enough free space"
 msgstr "Za mało wolnego miejsca"
+
+msgid "Error downloading map!"
+msgstr "Błąd przy pobieraniu map"
 
 msgid "Error writing map!"
 msgstr "Bład przy zapisywaniu mapy!"
@@ -2608,6 +2630,10 @@ msgstr "Wyjdź z Navit"
 msgid "Backup / Restore"
 msgstr "Zarchiwizuj / Przywróć"
 
+#. Android resource: @strings/optionsmenu_set_map_location
+msgid "Set map location"
+msgstr ""
+
 #. Android resource: @strings/map_delete
 msgid "Delete this map?"
 msgstr "Skasować tą mape?"
@@ -2736,52 +2762,13 @@ msgstr "Kopia zapasowa"
 msgid "Restore"
 msgstr "Przywróć"
 
-#~ msgid "%sinto the street %s%s%s"
-#~ msgstr "%s w ulicę %s%s%s"
+#. Android resource: @strings/TTS_title_data_missing
+msgid "System text to speech engine data is missing"
+msgstr ""
 
-#~ msgid "%sinto the %s%s%s|male form"
-#~ msgstr "%sw %s%s%s|męski rodzaj"
-
-#~ msgid "%sinto the %s%s%s|female form"
-#~ msgstr "%sw %s%s%s|żeński rodzaj"
-
-#~ msgid "%sinto the %s%s%s|neutral form"
-#~ msgstr "%sw %s%s%s|neutralny rodzaj"
-
-#~ msgid "really strongly "
-#~ msgstr "bardzo silnie "
-
-#~ msgid "unknown "
-#~ msgstr "nieznane "
-
-#~ msgid "then leave the roundabout at the %s"
-#~ msgstr "następnie zjedź z ronda na %s"
-
-#~ msgid "Leave the roundabout at the %s"
-#~ msgstr "Zjedź z ronda na %s"
-
-#~ msgid "then take the %1$s road to the %2$s"
-#~ msgstr "następnie jedź %1$s drogą do %2$s"
-
-#~ msgid "error"
-#~ msgstr "błąd"
-
-#~ msgid "then turn %1$s%2$s %3$s%4$s"
-#~ msgstr "następnie skręć %1$s%2$s %3$s%4$s"
-
-#~ msgid ""
-#~ "navit usage:\n"
-#~ "navit [options] [configfile]\n"
-#~ "\t-c <file>: use <file> as config file\n"
-#~ "\t-d <n>: set the global debug output level to <n> (0-3). Overrides "
-#~ "setting from config file.\n"
-#~ "\t-h: print this usage info and exit.\n"
-#~ "\t-v: Print the version and exit.\n"
-#~ msgstr ""
-#~ "navit użycie:\n"
-#~ "navit [opcje] [plik config]\n"
-#~ "\t-c <plik>: użyje <plik> jako plik config\n"
-#~ "\t-d <n>: ustawi wyjściowy poziom globalnego debugowania na <n> (0-3). "
-#~ "Nadpisze ustawienia z pliku config.\n"
-#~ "\t-h: wydrukuje to info użycia i wyjdzie.\n"
-#~ "\t-v: Wydrukuje wersję i wyjdzie.\n"
+#. Android resource: @strings/TTS_qery_install_data
+msgid ""
+"Navit can use any text to speech engine installed on your device. The "
+"currently selected engine reports it is unable to speak in your language. "
+"Should we ask the system to show voice download dialog?"
+msgstr ""

@@ -105,9 +105,10 @@ osd_set_attr(struct osd *osd, struct attr* attr)
 static void
 osd_destroy(struct osd *osd)
 {
-	if (osd && osd->meth.destroy) {
+	if (!osd)
+		return;
+	if (osd->meth.destroy)
 		osd->meth.destroy(osd->priv);
-	}
 	attr_list_free(osd->attrs);
 	g_free(osd);
 }
@@ -135,11 +136,13 @@ osd_evaluate_command(struct osd_item *this, struct navit *nav)
 void
 osd_std_click(struct osd_item *this, struct navit *nav, int pressed, int button, struct point *p)
 {
+	int click_is_outside_item;
 	struct point bp = this->p;
 	if (!this->command || !this->command[0])
 		return;
 	osd_wrap_point(&bp, nav);
-	if ((p->x < bp.x || p->y < bp.y || p->x > bp.x + this->w || p->y > bp.y + this->h || !this->configured) && !this->pressed)
+	click_is_outside_item = p->x < bp.x || p->y < bp.y || p->x > bp.x + this->w || p->y > bp.y + this->h;
+	if ((click_is_outside_item || !this->configured) && !this->pressed)
 		return;
 	if (button != 1)
 		return;
@@ -162,7 +165,10 @@ osd_std_resize(struct osd_item *item)
  * @brief Calculates the size and position of an OSD item.
  *
  * If the geometry of the OSD item is specified relative to screen dimensions,
- * this function will set its absolute dimensions accordingly.
+ * this function will set its absolute dimensions accordingly. If relative width
+ * or relative height is set to 0% (int value is equal to ATTR_REL_RELSHIFT), 
+ * object width (height) is not changed here, for button and image osds it means
+ * to derive values from the underlying image.
  * @param item
  * @param w Available screen width in pixels (the width that corresponds to
  * 100%)
@@ -172,21 +178,16 @@ osd_std_resize(struct osd_item *item)
 void
 osd_std_calculate_sizes(struct osd_item *item, int w, int h)
 {
- 	if (item->rel_w) {
-		item->w = (item->rel_w * w) / 100;
- 	}
-
- 	if (item->rel_h) {
-		item->h = (item->rel_h * h) / 100;
- 	}
-
- 	if (item->rel_x) {
-		item->p.x = (item->rel_x * w) / 100;
- 	}
-
- 	if (item->rel_y) {
-		item->p.y = (item->rel_y * h) / 100;
- 	}
+	if(item->rel_w!=ATTR_REL_RELSHIFT)
+		item->w=attr_rel2real(item->rel_w, w, 1);
+	if(item->w<0)
+		item->w=0;
+	if(item->rel_h!=ATTR_REL_RELSHIFT)
+		item->h=attr_rel2real(item->rel_h, h, 1);
+	if(item->h<0)
+		item->h=0;
+	item->p.x=attr_rel2real(item->rel_x, w, 1);
+	item->p.y=attr_rel2real(item->rel_y, h, 1);
 }
 
 /**
@@ -284,42 +285,22 @@ osd_set_std_attr(struct attr **attrs, struct osd_item *item, int flags)
 
 	attr = attr_search(attrs, NULL, attr_w);
 	if (attr) {
-		if (attr->u.num > ATTR_REL_MAXABS) {
-			item->rel_w = attr->u.num - ATTR_REL_RELSHIFT;
-		} else {
-			item->rel_w = 0;
-			item->w = attr->u.num;
-		}
+		item->rel_w = attr->u.num;
 	}
 
 	attr = attr_search(attrs, NULL, attr_h);
 	if (attr) {
-		if (attr->u.num > ATTR_REL_MAXABS) {
-			item->rel_h = attr->u.num - ATTR_REL_RELSHIFT;
-		} else {
-			item->rel_h = 0;
-			item->h = attr->u.num;
-		}
+		item->rel_h = attr->u.num;
 	}
 
 	attr = attr_search(attrs, NULL, attr_x);
 	if (attr) {
-		if (attr->u.num > ATTR_REL_MAXABS) {
-			item->rel_x = attr->u.num - ATTR_REL_RELSHIFT;
-		} else {
-			item->rel_x = 0;
-			item->p.x = attr->u.num;
-		}
+		item->rel_x = attr->u.num;
 	}
 
 	attr = attr_search(attrs, NULL, attr_y);
 	if (attr) {
-		if (attr->u.num > ATTR_REL_MAXABS) {
-			item->rel_y = attr->u.num - ATTR_REL_RELSHIFT;
-		} else {
-			item->rel_y = 0;
-			item->p.y = attr->u.num;
-		}
+		item->rel_y = attr->u.num;
 	}
 
 	attr = attr_search(attrs, NULL, attr_font_size);
@@ -335,9 +316,6 @@ osd_set_std_attr(struct attr **attrs, struct osd_item *item, int flags)
 	attr=attr_search(attrs, NULL, attr_text_color);
 	if (attr)
 		item->text_color=*attr->u.color;
-	attr=attr_search(attrs, NULL, attr_flags);
-	if (attr)
-		item->attr_flags=attr->u.num;
 	attr=attr_search(attrs, NULL, attr_accesskey);
 	if (attr)
 		item->accesskey = g_strdup(attr->u.str);
@@ -418,31 +396,13 @@ osd_set_std_graphic(struct navit *nav, struct osd_item *item, struct osd_priv *p
 }
 
 void
-osd_std_draw(struct osd_item *item)
+osd_fill_with_bgcolor(struct osd_item *item)
 {
-	struct point p[2];
-	int flags=item->attr_flags;
-
+	struct point p[1];
 	graphics_draw_mode(item->gr, draw_mode_begin);
 	p[0].x=0;
 	p[0].y=0;
 	graphics_draw_rectangle(item->gr, item->graphic_bg, p, item->w, item->h);
-	p[1].x=item->w-1;
-	p[1].y=0;
-	if (flags & 1) 
-		graphics_draw_lines(item->gr, item->graphic_fg_text, p, 2);
-	p[0].x=item->w-1;
-	p[0].y=item->h-1;
-	if (flags & 2) 
-		graphics_draw_lines(item->gr, item->graphic_fg_text, p, 2);
-	p[1].x=0;
-	p[1].y=item->h-1;
-	if (flags & 4) 
-		graphics_draw_lines(item->gr, item->graphic_fg_text, p, 2);
-	p[0].x=0;
-	p[0].y=0;
-	if (flags & 8) 
-		graphics_draw_lines(item->gr, item->graphic_fg_text, p, 2);
 }
 
 struct object_func osd_func = {

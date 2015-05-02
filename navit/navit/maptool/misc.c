@@ -201,6 +201,10 @@ item_order_by_type(enum item_type type)
 		case type_district_label_1e4:
 			max=9;
 			break;
+		case type_poly_water_tiled:
+			if(experimental)
+				max=9;
+			break;
 		case type_street_4_land:
 		case type_street_4_city:
 			max=10;

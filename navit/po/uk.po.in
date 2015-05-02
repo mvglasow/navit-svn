@@ -2034,10 +2034,29 @@ msgstr ""
 msgid "Map data (c) OpenStreetMap contributors, ODBL"
 msgstr ""
 
+msgid ""
+"Current map location %s is not available\n"
+"Please restart Navit after you attach an SD card or select a different map "
+"location."
+msgstr ""
+
 msgid "Downloaded maps"
 msgstr ""
 
+msgid ""
+"Sorry, we currently do not support maps above 3.8G on Android, please select "
+"a smaller one."
+msgstr ""
+
 msgid "Cancel"
+msgstr ""
+
+msgid "filenamePath"
+msgstr ""
+
+msgid ""
+"New location set to %s\n"
+"Restart Navit to apply the changes."
 msgstr ""
 
 msgid "Whole Planet"
@@ -2410,11 +2429,14 @@ msgstr ""
 msgid "ready"
 msgstr ""
 
-msgid "Error downloading map!"
+msgid "Media selected for map storage is not available"
 msgstr ""
 
 #. Android resource: @strings/map_download_not_enough_free_space
 msgid "Not enough free space"
+msgstr ""
+
+msgid "Error downloading map!"
 msgstr ""
 
 msgid "Error writing map!"
@@ -2581,6 +2603,10 @@ msgstr ""
 msgid "Backup / Restore"
 msgstr ""
 
+#. Android resource: @strings/optionsmenu_set_map_location
+msgid "Set map location"
+msgstr ""
+
 #. Android resource: @strings/map_delete
 msgid "Delete this map?"
 msgstr ""
@@ -2707,35 +2733,13 @@ msgstr ""
 msgid "Restore"
 msgstr ""
 
-#~ msgid "%sinto the street %s%s%s"
-#~ msgstr "%s на вулицю %s%s%s"
+#. Android resource: @strings/TTS_title_data_missing
+msgid "System text to speech engine data is missing"
+msgstr ""
 
-#~ msgid "%sinto the %s%s%s|male form"
-#~ msgstr "%s на %s%s%s"
-
-#~ msgid "%sinto the %s%s%s|female form"
-#~ msgstr "%s на %s%s%s"
-
-#~ msgid "%sinto the %s%s%s|neutral form"
-#~ msgstr "%s на %s%s%s"
-
-#~ msgid "really strongly "
-#~ msgstr "дуже круто "
-
-#~ msgid "unknown "
-#~ msgstr "невідомо "
-
-#~ msgid "then leave the roundabout at the %s"
-#~ msgstr "тоді виїдьте з кільця через %s"
-
-#~ msgid "Leave the roundabout at the %s"
-#~ msgstr "Виїдьте з кільця через %s"
-
-#~ msgid "then take the %1$s road to the %2$s"
-#~ msgstr "тоді виїдьте на доргу %1$s до %2$s"
-
-#~ msgid "error"
-#~ msgstr "помилка"
-
-#~ msgid "then turn %1$s%2$s %3$s%4$s"
-#~ msgstr "тоді поверніть на %1$s%2$s %3$s%4$s"
+#. Android resource: @strings/TTS_qery_install_data
+msgid ""
+"Navit can use any text to speech engine installed on your device. The "
+"currently selected engine reports it is unable to speak in your language. "
+"Should we ask the system to show voice download dialog?"
+msgstr ""

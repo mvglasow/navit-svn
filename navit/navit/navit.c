@@ -80,11 +80,20 @@
 #define TEXTFILE_COMMENT_NAVI_STOPPED "# navigation stopped\n"
 
 /**
- * @defgroup navit the navit core instance. navit is the object containing nearly everything: A set of maps, one or more vehicle, a graphics object for rendering the map, a gui object for displaying the user interface, a route object, a navigation object and so on. Be warned that it is theoretically possible to have more than one navit object
+ * @defgroup navit The navit core instance
+ * @brief navit is the object containing most global data structures.
+ *
+ * Among others:
+ * - a set of maps
+ * - one or more vehicles
+ * - a graphics object for rendering the map
+ * - a gui object for displaying the user interface
+ * - a route object
+ * - a navigation object
  * @{
  */
 
-//! The navit_vehicule
+//! The vehicle used for navigation.
 struct navit_vehicle {
 	int follow;
 	/*! Limit of the follow counter. See navit_add_vehicle */
@@ -236,7 +245,7 @@ navit_get_user_data_directory(int create) {
 		}
 	}
 	return dir;
-} /* end: navit_get_user_data_directory(gboolean create) */
+}
 
 
 void
@@ -535,9 +544,6 @@ navit_motion_timeout(struct navit *this_)
 		graphics_overlay_disable(this_->gra, 1);
 		tr=transform_dup(this_->trans);
 		update_transformation(tr, &this_->pressed, &this_->current);
-#if 0
-		graphics_displaylist_move(this_->displaylist, dx, dy);
-#endif
 		graphics_draw_cancel(this_->gra, this_->displaylist);
 		graphics_displaylist_draw(this_->gra, this_->displaylist, tr, this_->layout_current, this_->graphics_flags|512);
 		transform_destroy(tr);
@@ -1209,10 +1215,13 @@ static void
 navit_cmd_set_center(struct navit *this, char *function, struct attr **in, struct attr ***out, int *valid)
 {
 	struct pcoord pc;
+	int set_timeout=0;
 	in=navit_get_coord(this, in, &pc);
 	if (!in)
 		return;
-	navit_set_center(this, &pc, 0);
+	if(in[0] && ATTR_IS_INT(in[0]->type))
+		set_timeout=in[0]->u.num!=0;
+	navit_set_center(this, &pc, set_timeout);
 }
 
 
@@ -2121,19 +2130,7 @@ navit_init(struct navit *this_)
 	center_file = bookmarks_get_center_file(FALSE);
 	bookmarks_set_center_from_file(this_->bookmarks, center_file);
 	g_free(center_file);
-#if 0
-	if (this_->menubar) {
-		men=menu_add(this_->menubar, "Data", menu_type_submenu, NULL);
-		if (men) {
-			navit_add_menu_windows_items(this_, men);
-		}
-	}
-#endif
 	global_navit=this_;
-#if 0
-	navit_window_roadbook_new(this_);
-	navit_window_items_new(this_);
-#endif
 
 	messagelist_init(this_->messages);
 
@@ -2988,7 +2985,9 @@ coord_not_set(struct coord c){
 /**
  * Toggle the cursor update : refresh the map each time the cursor has moved (instead of only when it reaches a border)
  *
- * @param navit The navit instance
+ * @param this_ The navit instance
+ * @param nv vehicle to draw
+ * @param pnt Screen coordinates of the vehicle. If NULL, position stored in nv is used.
  * @returns nothing
  */
 
@@ -3008,20 +3007,7 @@ navit_vehicle_draw(struct navit *this_, struct navit_vehicle *nv, struct point *
 			return;
 		transform(this_->trans_cursor, pro, &nv->coord, &cursor_pnt, 1, 0, 0, NULL);
 	}
-	vehicle_draw(nv->vehicle, this_->gra, &cursor_pnt, pnt ? 0:1, nv->dir-transform_get_yaw(this_->trans_cursor), nv->speed);
-#if 0	
-	if (pnt)
-		pnt2=*pnt;
-	else {
-		pro=transform_get_projection(this_->trans);
-		transform(this_->trans, pro, &nv->coord, &pnt2, 1);
-	}
-#if 1
-	cursor_draw(nv->cursor, &pnt2, nv->dir-transform_get_angle(this_->trans, 0), nv->speed > 2, pnt == NULL);
-#else
-	cursor_draw(nv->cursor, &pnt2, nv->dir-transform_get_angle(this_->trans, 0), nv->speed > 2, 1);
-#endif
-#endif
+	vehicle_draw(nv->vehicle, this_->gra, &cursor_pnt, nv->dir-transform_get_yaw(this_->trans_cursor), nv->speed);
 }
 
 /**

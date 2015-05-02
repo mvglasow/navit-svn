@@ -35,6 +35,14 @@
          <xsl:apply-templates/>
       </xsl:copy>
    </xsl:template>
+   <xsl:template match="/config/navit/gui[2]/text()">
+		<xsl:value-of select="replace(/config/navit/gui[2]/text(),
+		    '&lt;a name=''Tools''>&lt;text>Tools&lt;/text>','&lt;a name=''Tools''>&lt;text>Tools&lt;/text>
+			&lt;img src=''gui_maps'' onclick=''navit.graphics.map_download_dialog();''>&lt;text>Map download&lt;/text>&lt;/img>
+			&lt;img src=''gui_rules'' onclick=''navit.graphics.set_map_location();''>&lt;text>Set map location&lt;/text>&lt;/img>
+			&lt;img src=''gui_rules'' onclick=''navit.graphics.backup_restore_dialog();''>&lt;text>Backup / Restore&lt;/text>&lt;/img>')"/>
+   </xsl:template>
+
    <xsl:template match="/config/navit[1]">
       <xsl:copy>
          <xsl:copy-of select="@*"/>
@@ -57,10 +65,60 @@
          <xsl:apply-templates/>
       </xsl:copy>
    </xsl:template>
-   <xsl:template match="/config/navit/layout[@name='Car-Android']">
+   <xsl:template match="/config/navit/layout/layer/itemgra/child::*">
+      <xsl:copy>
+         <xsl:copy-of select="@*[not(name()='text_size') and not(name()='width') and not(name()='radius') and not(name()='w') and not(name()='h') and not(name()='x') and not(name()='y') and not(name()='dash')]"/>
+         <xsl:if test="@text_size">
+		<xsl:attribute name="text_size"><xsl:value-of select="round(number(@text_size)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="@width">
+		<xsl:attribute name="width"><xsl:value-of select="round(number(@width)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="@radius">
+		<xsl:attribute name="radius"><xsl:value-of select="round(number(@radius)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="name()='icon'">
+		<xsl:attribute name="w"><xsl:value-of select="$ICON_SMALL"/></xsl:attribute>
+		<xsl:attribute name="h"><xsl:value-of select="$ICON_SMALL"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="@w and not(name()='icon')">
+		<xsl:attribute name="w"><xsl:value-of select="round(number(@w)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="@h and not(name()='icon')">
+		<xsl:attribute name="h"><xsl:value-of select="round(number(@h)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:apply-templates/>
+         <xsl:if test="@x">
+		<xsl:attribute name="x"><xsl:value-of select="round(number(@x)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="@y">
+		<xsl:attribute name="y"><xsl:value-of select="round(number(@y)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="@offset">
+		<xsl:attribute name="offset"><xsl:value-of select="round(number(@offset)*number($OSD_SIZE))"/></xsl:attribute>
+	 </xsl:if>
+	 <xsl:if test="@dash">
+	 	<xsl:attribute name="dash">
+		 	<xsl:for-each select="tokenize(@dash,',')">
+		 		<xsl:value-of select="round(number(.)*number($OSD_SIZE))"/>
+	 			<xsl:if test="not(position() eq last())"><xsl:text>,</xsl:text></xsl:if>
+		 	</xsl:for-each>
+ 		</xsl:attribute>
+	 </xsl:if>
+      </xsl:copy>
+   </xsl:template>
+   <xsl:template match="/config/navit/layout">
       <xsl:copy>
          <xsl:copy-of select="@*"/>
-         <xsl:attribute name="active">1</xsl:attribute>
+         <xsl:if test="@name='Car-Android'">
+		<xsl:attribute name="active">1</xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="number($OSD_SIZE)>3">
+		<xsl:attribute name="order_delta">-2</xsl:attribute>
+	 </xsl:if>
+         <xsl:if test="number($OSD_SIZE)>1.4 and 3>=number($OSD_SIZE)">
+		<xsl:attribute name="order_delta">-1</xsl:attribute>
+	 </xsl:if>
          <xsl:apply-templates/>
       </xsl:copy>
    </xsl:template>

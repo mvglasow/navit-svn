@@ -228,20 +228,26 @@ graphics_set_rect(struct graphics *gra, struct point_rect *pr)
 struct graphics * graphics_new(struct attr *parent, struct attr **attrs)
 {
 	struct graphics *this_;
-    	struct attr *type_attr;
+    	struct attr *type_attr, cbl_attr;
 	struct graphics_priv * (*graphicstype_new)(struct navit *nav, struct graphics_methods *meth, struct attr **attrs, struct callback_list *cbl);
 
         if (! (type_attr=attr_search(attrs, NULL, attr_type))) {
+		dbg(lvl_error,"Graphics plugin type is not set.\n");
                 return NULL;
         }
 
 	graphicstype_new=plugin_get_graphics_type(type_attr->u.str);
-	if (! graphicstype_new)
+	if (! graphicstype_new) {
+		dbg(lvl_error,"Failed to load graphics plugin %s.\n", type_attr->u.str);
 		return NULL;
+	}
 	this_=g_new0(struct graphics, 1);
-	this_->cbl=callback_list_new();
-	this_->priv=(*graphicstype_new)(parent->u.navit, &this_->meth, attrs, this_->cbl);
 	this_->attrs=attr_list_dup(attrs);
+	this_->cbl=callback_list_new();
+	cbl_attr.type=attr_callback_list;
+        cbl_attr.u.callback_list=this_->cbl;
+        this_->attrs=attr_generic_add_attr(this_->attrs, &cbl_attr);
+	this_->priv=(*graphicstype_new)(parent->u.navit, &this_->meth, this_->attrs, this_->cbl);
 	this_->brightness=0;
 	this_->contrast=65536;
 	this_->gamma=65536;
@@ -562,18 +568,6 @@ void graphics_gc_set_background(struct graphics_gc *gc, struct color *c)
  * @returns <>
  * @author Martin Schaller (04/2008)
 */
-void graphics_gc_set_stipple(struct graphics_gc *gc, struct graphics_image *img)
-{
-	gc->meth.gc_set_stipple(gc->priv, img ? img->priv : NULL);
-}
-
-
-/**
- * FIXME
- * @param <>
- * @returns <>
- * @author Martin Schaller (04/2008)
-*/
 void graphics_gc_set_linewidth(struct graphics_gc *gc, int width)
 {
 	gc->meth.gc_set_linewidth(gc->priv, width);
@@ -608,36 +602,85 @@ struct graphics_image * graphics_image_new_scaled(struct graphics *gra, char *pa
 static void
 image_new_helper(struct graphics *gra, struct graphics_image *this_, char *path, char *name, int width, int height, int rotate, int zip)
 {
-	int i;
-	for (i = 1 ; i <= 6 ; i++) {
+	int i=0;
+	int stdsizes[]={8,12,16,22,24,32,36,48,64,72,96,128,192,256};
+	const int numstdsizes=sizeof(stdsizes)/sizeof(int);
+	int sz;
+	int mode=1;
+	int bmstd=0;
+	sz=width>0?width:height;
+	while (mode<=8) {
 		char *new_name=NULL;
-		switch (i) {
+		int n;
+		switch (mode) {
 			case 1:
 				/* The best variant both for cpu usage and quality would be prescaled png of a needed size */
+				mode++;
 				if (width != -1 && height != -1) {
 					new_name=g_strdup_printf("%s_%d_%d.png", name, width, height);
 				}
 				break;
 			case 2:
+				mode++;
 				/* Try to load image by the exact name given by user. For example, if she wants to
 				  scale some prescaled png variant to a new size given as function params, or have
 				  default png image to be displayed unscaled. */
 				new_name=g_strdup(path);
 				break;
 			case 3:
+				mode++;
 				/* Next, try uncompressed and compressed svgs as they should give best quality but 
 				   rendering might take more cpu resources when the image is displayed for the first time */
 				new_name=g_strdup_printf("%s.svg", name);
 				break;
 			case 4:
+				mode++;
 				new_name=g_strdup_printf("%s.svgz", name);
 				break;
 			case 5:
-				/* Scaling the default png to the needed size may give some quality loss */
+				mode++;
+				i=0;
+				/* If we have no size specifiers, try the default png now */
+				if(sz<=0) {
+					new_name=g_strdup_printf("%s.png", name);
+					break;
+				}
+				/* Find best matching size from standard row */
+				for(bmstd=0;bmstd<numstdsizes;bmstd++)
+					if(stdsizes[bmstd]>sz)
+						break;
+				i=1;
+				/* Fall through */
+			case 6:
+				/* Select best matching image from standard row */
+				if(sz>0) {
+					/* If size were specified, start with bmstd and then try standard sizes in row
+					 * bmstd, bmstd+1, bmstd+2, .. numstdsizes-1, bmstd-1, bmstd-2, .., 0 */
+					n=bmstd+i;
+					if((bmstd+i)>=numstdsizes)
+						n=numstdsizes-i-1;
+					
+					if(++i==numstdsizes)
+						mode++;
+				} else {
+					/* If no size were specified, start with the smallest standard size and then try following ones */
+					n=i++;
+					if(i==numstdsizes)
+						mode+=2;
+				}
+				if(n<0||n>=numstdsizes)
+					break;
+				new_name=g_strdup_printf("%s_%d_%d.png", name, stdsizes[n],stdsizes[n]);
+				break;
+				
+			case 7:
+				/* Scaling the default prescaled png of unknown size to the needed size will give random quality loss */
+				mode++;
 				new_name=g_strdup_printf("%s.png", name);
 				break;
-			case 6: 
+			case 8: 
 				/* xpm format is used as a last resort, because its not widely supported and we are moving to svg and png formats */
+				mode++;
 				new_name=g_strdup_printf("%s.xpm", name);
 				break;
 		}
@@ -646,7 +689,7 @@ image_new_helper(struct graphics *gra, struct graphics_image *this_, char *path,
 
 		this_->width=width;
 		this_->height=height;
-		dbg(lvl_info,"Trying to load image '%s' for '%s' at %dx%d\n", new_name, path, width, height);
+		dbg(lvl_debug,"Trying to load image '%s' for '%s' at %dx%d\n", new_name, path, width, height);
 		if (zip) {
 			unsigned char *start;
 			int len;
@@ -662,7 +705,7 @@ image_new_helper(struct graphics *gra, struct graphics_image *this_, char *path,
 				this_->priv=gra->meth.image_new(gra->priv, &this_->meth, new_name, &this_->width, &this_->height, &this_->hot, rotate);
 		}
 		if (this_->priv) {
-			dbg(lvl_debug,"Using image '%s' for '%s' at %dx%d\n", new_name, path, width, height);
+			dbg(lvl_info,"Using image '%s' for '%s' at %dx%d\n", new_name, path, width, height);
 			g_free(new_name);
 			break;
 		}
@@ -794,17 +837,6 @@ struct graphics_image * graphics_image_new(struct graphics *gra, char *path)
 void graphics_image_free(struct graphics *gra, struct graphics_image *img)
 {
 	/* Image is cached inside gra->image_cache_hash. So it would be freed only when graphics is destroyed => Do nothing here. */
-}
-
-/**
- * FIXME
- * @param <>
- * @returns <>
- * @author Martin Schaller (04/2008)
-*/
-void graphics_draw_restore(struct graphics *this_, struct point *p, int w, int h)
-{
-	this_->meth.draw_restore(this_->priv, p, w, h);
 }
 
 /**
@@ -2493,7 +2525,7 @@ void graphics_displaylist_draw(struct graphics *gra, struct displaylist *display
 	graphics_background_gc(gra, gra->gc[0]);
 	if (flags & 1)
 		callback_list_call_attr_0(gra->cbl, attr_predraw);
-	gra->meth.draw_mode(gra->priv, (flags & 8)?draw_mode_begin_clear:draw_mode_begin);
+	gra->meth.draw_mode(gra->priv, draw_mode_begin);
 	if (!(flags & 2))
 		gra->meth.draw_rectangle(gra->priv, gra->gc[0]->priv, &gra->r.lu, gra->r.rl.x-gra->r.lu.x, gra->r.rl.y-gra->r.lu.y);
 	if (l)	{

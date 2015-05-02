@@ -63,8 +63,6 @@ struct graphics_priv {
 	GtkWidget *win;
 	struct window window;
 	GdkDrawable *drawable;
-	GdkDrawable *background;
-	int background_ready;
 	GdkColormap *colormap;
 	struct point p;
 	struct point pclean;
@@ -177,22 +175,12 @@ gc_set_background(struct graphics_gc_priv *gc, struct color *c)
 	gc_set_color(gc, c, 0);
 }
 
-static void
-gc_set_stipple(struct graphics_gc_priv *gc, struct graphics_image_priv *img)
-{
-	char data[2]={0x2,0x1};
-	gdk_gc_set_fill(gc->gc, GDK_STIPPLED);
-	gc->pixmap=gdk_bitmap_create_from_data(gc->gr->widget->window, data, 2, 2);
-	gdk_gc_set_stipple(gc->gc, gc->pixmap);
-}
-
 static struct graphics_gc_methods gc_methods = {
 	gc_destroy,
 	gc_set_linewidth,
 	gc_set_dashes,
 	gc_set_foreground,
 	gc_set_background,
-	gc_set_stipple,
 };
 
 static struct graphics_gc_priv *gc_new(struct graphics_priv *gr, struct graphics_gc_methods *meth)
@@ -292,19 +280,13 @@ image_free(struct graphics_priv *gr, struct graphics_image_priv *priv)
 static void
 draw_lines(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int count)
 {
-	if (gr->mode == draw_mode_begin || gr->mode == draw_mode_end)
-		gdk_draw_lines(gr->drawable, gc->gc, (GdkPoint *)p, count);
-	if (gr->mode == draw_mode_end || gr->mode == draw_mode_cursor)
-		gdk_draw_lines(gr->widget->window, gc->gc, (GdkPoint *)p, count);
+	gdk_draw_lines(gr->drawable, gc->gc, (GdkPoint *)p, count);
 }
 
 static void
 draw_polygon(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int count)
 {
-	if (gr->mode == draw_mode_begin || gr->mode == draw_mode_end)
-		gdk_draw_polygon(gr->drawable, gc->gc, TRUE, (GdkPoint *)p, count);
-	if (gr->mode == draw_mode_end || gr->mode == draw_mode_cursor)
-		gdk_draw_polygon(gr->widget->window, gc->gc, TRUE, (GdkPoint *)p, count);
+	gdk_draw_polygon(gr->drawable, gc->gc, TRUE, (GdkPoint *)p, count);
 }
 
 static void
@@ -316,10 +298,7 @@ draw_rectangle(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct poi
 static void
 draw_circle(struct graphics_priv *gr, struct graphics_gc_priv *gc, struct point *p, int r)
 {
-	if (gr->mode == draw_mode_begin || gr->mode == draw_mode_end)
-		gdk_draw_arc(gr->drawable, gc->gc, FALSE, p->x-r/2, p->y-r/2, r, r, 0, 64*360);
-	if (gr->mode == draw_mode_end || gr->mode == draw_mode_cursor)
-		gdk_draw_arc(gr->widget->window, gc->gc, FALSE, p->x-r/2, p->y-r/2, r, r, 0, 64*360);
+	gdk_draw_arc(gr->drawable, gc->gc, FALSE, p->x-r/2, p->y-r/2, r, r, 0, 64*360);
 }
 
 static void
@@ -612,17 +591,6 @@ overlay_draw(struct graphics_priv *parent, struct graphics_priv *overlay, GdkRec
 }
 
 static void
-draw_restore(struct graphics_priv *gr, struct point *p, int w, int h)
-{
-	GtkWidget *widget=gr->widget;
-	gdk_draw_drawable(widget->window,
-                        widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
-                        gr->drawable,
-                        p->x, p->y, p->x, p->y, w, h);
-
-}
-
-static void
 draw_drag(struct graphics_priv *gr, struct point *p)
 {
 	if (!gr->cleanup) {
@@ -672,13 +640,7 @@ draw_mode(struct graphics_priv *gr, enum draw_mode_num mode)
 {
 	GdkRectangle r;
 	struct graphics_priv *overlay;
-#if 0
-	if (mode == draw_mode_begin) {
-		if (! gr->parent && gr->background_gc)
-			gdk_draw_rectangle(gr->drawable, gr->background_gc->gc, TRUE, 0, 0, gr->width, gr->height);
-	}
-#endif
-	if (mode == draw_mode_end && gr->mode != draw_mode_cursor) {
+	if (mode == draw_mode_end) {
 		if (gr->parent) {
 			if (gr->cleanup) {
 				overlay_rect(gr->parent, gr, 1, &r);
@@ -714,10 +676,6 @@ configure(GtkWidget * widget, GdkEventConfigure * event, gpointer user_data)
 	if (gra->drawable != NULL) {
                 g_object_unref(gra->drawable);
         }
-	if(gra->background_ready && gra->background != NULL) {
-	       g_object_unref(gra->background);
-	       gra->background_ready = 0;
-	}
 #ifndef _WIN32
 	dbg(lvl_debug,"window=%lu\n", GDK_WINDOW_XID(widget->window));
 #endif
@@ -737,33 +695,8 @@ expose(GtkWidget * widget, GdkEventExpose * event, gpointer user_data)
 	if (! gra->drawable)
 		configure(widget, NULL, user_data);
 	gtk_drawing_area_draw(gra, &event->area);
-#if 0
-        gdk_draw_drawable(widget->window, widget->style->fg_gc[GTK_WIDGET_STATE(widget)],
-                        gra->drawable, event->area.x, event->area.y,
-                        event->area.x, event->area.y,
-                        event->area.width, event->area.height);
-#endif
-
 	return FALSE;
 }
-
-#if 0
-static gint
-button_timeout(gpointer user_data)
-{
-#if 0
-	struct container *co=user_data;
-	int x=co->gra->gra->button_event.x;
-	int y=co->gra->gra->button_event.y;
-	int button=co->gra->gra->button_event.button;
-
-	co->gra->gra->button_timeout=0;
-	popup(co, x, y, button);
-
-	return FALSE;
-#endif
-}
-#endif
 
 static int
 tv_delta(struct timeval *old, struct timeval *new)
@@ -1007,10 +940,8 @@ overlay_resize(struct graphics_priv *this, struct point *p, int w, int h, int al
 	if (changed) {
 		// Set the drawables to the right sizes
 		g_object_unref(this->drawable);
-		g_object_unref(this->background);
 
 		this->drawable=gdk_pixmap_new(this->parent->widget->window, w2, h2, -1);
-		this->background=gdk_pixmap_new(this->parent->widget->window, w2, h2, -1);
 
 		if ((w == 0) || (h == 0)) {
 			this->overlay_autodisabled = 1;
@@ -1087,7 +1018,6 @@ overlay_new(struct graphics_priv *gr, struct graphics_methods *meth, struct poin
 		w2 = w;
 	}
 
-	this->background=gdk_pixmap_new(gr->widget->window, w2, h2, -1);
 	this->drawable=gdk_pixmap_new(gr->widget->window, w2, h2, -1);
 
 	if ((w == 0) || (h == 0)) {
@@ -1179,7 +1109,6 @@ static struct graphics_methods graphics_methods = {
 #else
 	NULL,
 #endif
-	draw_restore,
 	draw_drag,
 	NULL, /* font_new */
 	gc_new,

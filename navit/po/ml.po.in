@@ -1,22 +1,21 @@
-# Malayalam translation for navit
-# Copyright (c) 2015 Rosetta Contributors and Canonical Ltd 2015
+# Malayalam translations for navit
+# Copyright (C) 2006-2014 The Navit Team
 # This file is distributed under the same license as the navit package.
-# Sunyl K https://launchpad.net/~sunilk
+# Many thanks to the contributors of this translation:
 # Faju https://launchpad.net/~gotoarunk
+# Sunil K https://launchpad.net/~sunilk
+
 msgid ""
 msgstr ""
-"Project-Id-Version: navit 0.5.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-02 18:43+0200\n"
+"Project-Id-Version: navit\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "PO-Revision-Date: 2015-03-18 13:32+0000\n"
 "Last-Translator: Sunil K <Unknown>\n"
 "Language-Team: Malayalam <ml@li.org>\n"
-"Language: ml\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Report-Errors: https://translations.launchpad.net/navit/trunk/+pots/navit\n"
 
 msgid "Running from source directory\n"
 msgstr "സോര്‍സ് ഡൈരക്ടറിയില് നിന്നും പ്രവര്ത്തിക്കുന്നു\n"
@@ -179,14 +178,6 @@ msgstr "ചെറുതായ് "
 #. TRANSLATORS: Don't forget the ending space
 msgid "strongly "
 msgstr "നന്നായി "
-
-#. TRANSLATORS: Don't forget the ending space
-msgid "really strongly "
-msgstr "കടുത്തതായ് "
-
-#. TRANSLATORS: Don't forget the ending space
-msgid "unknown "
-msgstr "പേരില്ലാത്ത "
 
 msgid "When possible, please turn around"
 msgstr "സാധിക്കുന്നിടത്ത് വച്ച്,തിരിച്ചു പോവുക"
@@ -1335,7 +1326,8 @@ msgstr "'%s' കോണ്‍ഫിഗറേഷന്‍ ഫയലില്‍ �
 
 msgid ""
 "Internal initialization failed, exiting. Check previous error messages.\n"
-msgstr "പിഴവ് സംഭവിച്ചു. നിര്‍ത്തുന്നു. ദയവായ് മുന് സന്ദേശങ്ങള്‍ പരിശോധിക്കുക\n"
+msgstr ""
+"പിഴവ് സംഭവിച്ചു. നിര്‍ത്തുന്നു. ദയവായ് മുന് സന്ദേശങ്ങള്‍ പരിശോധിക്കുക\n"
 
 msgid "unknown street"
 msgstr "പേരില്ലാത്ത തെരുവ്"
@@ -1904,7 +1896,10 @@ msgstr "ഇവിടെ വരെയുള്ള വഴി കാട്ടുക
 msgid "Map data (c) OpenStreetMap contributors, ODBL"
 msgstr "ഭൂപട വിവരങ്ങള്‍ (3) ഓപ്പണ്‍സ്റ്റ്രീറ്റ് മാപ്"
 
-msgid "Please attach your SD card to enable map download."
+msgid ""
+"Current map location %s is not available\n"
+"Please restart Navit after you attach an SD card or select a different map "
+"location."
 msgstr ""
 
 msgid "Downloaded maps"
@@ -1917,6 +1912,14 @@ msgstr ""
 
 msgid "Cancel"
 msgstr "റദ്ദാക്കുക"
+
+msgid "filenamePath"
+msgstr ""
+
+msgid ""
+"New location set to %s\n"
+"Restart Navit to apply the changes."
+msgstr ""
 
 msgid "Whole Planet"
 msgstr "ഭൂലോകം മുഴുവന്‍"
@@ -2288,12 +2291,15 @@ msgstr "ഡൌണ്‍ലോഡ്‌ ചെയ്തുകൊണ്ടിര�
 msgid "ready"
 msgstr "തയ്യാര്‍"
 
-msgid "Error downloading map!"
-msgstr "ഭൂപടം ഡൗണ്‍ലോഡ് ചെയ്തപ്പോള്‍ തെറ്റിപ്പോയ് !"
+msgid "Media selected for map storage is not available"
+msgstr ""
 
 #. Android resource: @strings/map_download_not_enough_free_space
 msgid "Not enough free space"
 msgstr "ആവശ്യത്തിന് സ്ഥലമില്ലാ"
+
+msgid "Error downloading map!"
+msgstr "ഭൂപടം ഡൗണ്‍ലോഡ് ചെയ്തപ്പോള്‍ തെറ്റിപ്പോയ് !"
 
 msgid "Error writing map!"
 msgstr "ഫയല്‍ (ഭൂപടം) എഴുതാന്‍ സ്ഥലമില്ലാ"
@@ -2434,8 +2440,8 @@ msgid ""
 msgstr ""
 "നാവിറ്റ് ഉപയോഗിക്കുന്നതിനു നന്നീ\n"
 "\n"
-"തുടങ്ങുവാന്‍ നാവിറ്റ് മെനുവില്‍ നിന്നും ഭൂപടം ഡൗണ്‍ലോഡ് ചെയ്യാനുള്ള ഓപ്ഷ്ന്‍ തെരഞ്ഞെടുക്കുക, (ഫയല്‍ വളരെ "
-"വലുതായതിനാല്‍ വൈഫൈ \n"
+"തുടങ്ങുവാന്‍ നാവിറ്റ് മെനുവില്‍ നിന്നും ഭൂപടം ഡൗണ്‍ലോഡ് ചെയ്യാനുള്ള ഓപ്ഷ്ന്‍ "
+"തെരഞ്ഞെടുക്കുക, (ഫയല്‍ വളരെ വലുതായതിനാല്‍ വൈഫൈ \n"
 "\n"
 "കണക്ഷന്‍ ഉപയോഗിക്കുന്നത് ഉചിതമായിരിക്കും)\n"
 "\n"
@@ -2474,6 +2480,10 @@ msgstr "നാവിറ്റില്‍ നിന്നും പുറത്�
 #. Android resource: @strings/optionsmenu_backup_restore
 msgid "Backup / Restore"
 msgstr "സൂക്ഷിക്കുക/പുനസ്ഥാപിക്കുക"
+
+#. Android resource: @strings/optionsmenu_set_map_location
+msgid "Set map location"
+msgstr ""
 
 #. Android resource: @strings/map_delete
 msgid "Delete this map?"
@@ -2611,20 +2621,3 @@ msgid ""
 "currently selected engine reports it is unable to speak in your language. "
 "Should we ask the system to show voice download dialog?"
 msgstr ""
-
-#~ msgid ""
-#~ "navit usage:\n"
-#~ "navit [options] [configfile]\n"
-#~ "\t-c <file>: use <file> as config file\n"
-#~ "\t-d <n>: set the global debug output level to <n> (0-3). Overrides "
-#~ "setting from config file.\n"
-#~ "\t-h: print this usage info and exit.\n"
-#~ "\t-v: Print the version and exit.\n"
-#~ msgstr ""
-#~ "നാവിറ്റ് ഉപയോഗിക്കുന്ന വിധം\n"
-#~ "നാവിറ്റ് [ഓപ്ഷന്‍] കോണ്‍ഫിഗ് ഫയല്‍\n"
-#~ "\t-c <file>: use <file> as config file\n"
-#~ "\t-d <n>: set the global debug output level to <n> (0-3). Overrides "
-#~ "setting from config file.\n"
-#~ "\t-h: print this usage info and exit.\n"
-#~ "\t-v: Print the version and exit.\n"

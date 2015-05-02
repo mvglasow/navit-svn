@@ -252,6 +252,7 @@ graphics_destroy(struct graphics_priv *gr)
 {
 	/*FIXME graphics_destroy is never called */
 	/*TODO add destroy code for image cache(delete entries in hImageData) */
+	gr->freetype_methods.destroy();
 	g_free(gr);
 	gr = NULL;
 }
@@ -259,7 +260,6 @@ graphics_destroy(struct graphics_priv *gr)
 static void
 gc_destroy(struct graphics_gc_priv *gc)
 {
-	gc->gr->freetype_methods.destroy();
 	g_free(gc);
 	gc = NULL;
 }
@@ -1084,11 +1084,6 @@ draw_image(struct graphics_priv *gr, struct graphics_gc_priv *fg,
 }
 
 static void
-draw_restore(struct graphics_priv *gr, struct point *p, int w, int h)
-{
-}
-
-static void
 draw_drag(struct graphics_priv *gr, struct point *p)
 {
 
@@ -1210,7 +1205,7 @@ draw_mode(struct graphics_priv *gr, enum draw_mode_num mode)
 			glNewList(gr->DLid, GL_COMPILE);
 		}
 
-		if (mode == draw_mode_end || mode == draw_mode_end_lazy) {
+		if (mode == draw_mode_end) {
 			glEndList();
 		}
 #endif
@@ -1427,7 +1422,6 @@ static struct graphics_methods graphics_methods = {
 	draw_text,
 	draw_image,
 	NULL,
-	draw_restore,
 	draw_drag,
 	NULL,
 	gc_new,

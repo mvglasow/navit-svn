@@ -39,7 +39,7 @@ struct osd_item_methods {
 struct osd_item {
 	struct point p;
 	struct osd_item_methods meth;
-	int flags, attr_flags, w, h, fg_line_width, font_size, osd_configuration, configured;
+	int flags, w, h, fg_line_width, font_size, osd_configuration, configured;
 	int rel_w, rel_h, rel_x, rel_y;
 	struct color color_bg, color_white, text_color;
 	struct navit *navit;
@@ -73,7 +73,7 @@ void osd_set_std_config(struct navit *nav, struct osd_item *item);
 void osd_set_std_graphic(struct navit *nav, struct osd_item *item, struct osd_priv *priv);
 void osd_std_resize(struct osd_item *item);
 void osd_std_calculate_sizes(struct osd_item *item, int w, int h);
-void osd_std_draw(struct osd_item *item);
+void osd_fill_with_bgcolor(struct osd_item *item);
 int osd_set_attr(struct osd *osd, struct attr* attr);
 int osd_get_attr(struct osd *this_, enum attr_type type, struct attr *attr, struct attr_iter *iter);
 /* end of prototypes */

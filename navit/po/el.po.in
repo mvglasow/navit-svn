@@ -12,9 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navit 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-24 16:14+0200\n"
-"PO-Revision-Date: 2013-09-28 01:41+0000\n"
-"Last-Translator: KaZeR <Unknown>\n"
+"PO-Revision-Date: 2014-12-07 10:54+0000\n"
+"Last-Translator: aitolos <Unknown>\n"
 "Language-Team: Greek <el@li.org>\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
@@ -84,11 +83,11 @@ msgstr "σε %d μ"
 
 #, c-format
 msgid "%d feet"
-msgstr ""
+msgstr "%d πόδια"
 
 #, c-format
 msgid "in %d feet"
-msgstr ""
+msgstr "σε %d πόδια"
 
 #, c-format
 msgid "%d meters"
@@ -100,11 +99,11 @@ msgstr "σε %d μέτρα"
 
 #, c-format
 msgid "%d.%d miles"
-msgstr ""
+msgstr "%d.%d μίλια"
 
 #, c-format
 msgid "in %d.%d miles"
-msgstr ""
+msgstr "σε %d.%d μίλια"
 
 #, c-format
 msgid "%d.%d kilometers"
@@ -117,14 +116,14 @@ msgstr "σε %d %d χιλιόμετρα"
 #, c-format
 msgid "one mile"
 msgid_plural "%d miles"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "ένα μίλι"
+msgstr[1] "%d μίλια"
 
 #, c-format
 msgid "in one mile"
 msgid_plural "in %d miles"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "σε ένα μίλι"
+msgstr[1] "σε %d μίλια"
 
 #, c-format
 msgid "one kilometer"
@@ -977,7 +976,7 @@ msgstr "Λεττονία"
 
 #. 434
 msgid "Libya"
-msgstr ""
+msgstr "Λιβύη"
 
 #. 504
 msgid "Morocco"
@@ -1265,7 +1264,7 @@ msgstr "Σουρινάμ"
 
 #. 728
 msgid "South Sudan"
-msgstr ""
+msgstr "Νότιο Σουδάν"
 
 #. 678
 msgid "Sao Tome and Principe"
@@ -1467,7 +1466,7 @@ msgid ""
 msgstr ""
 
 msgid "unknown street"
-msgstr ""
+msgstr "άγνωστος δρόμος"
 
 #. Safe cast: attr_generic_set_attr does not modify its parameter.
 msgid "Unnamed vehicle"
@@ -1629,49 +1628,49 @@ msgid "Data"
 msgstr "Δεδομένα"
 
 msgid "Pharmacy"
-msgstr ""
+msgstr "Φαρμακείο"
 
 msgid "Restaurant"
-msgstr ""
+msgstr "Εστιατόριο"
 
 msgid "Restaurant. Fast food"
 msgstr ""
 
 msgid "Hotel"
-msgstr ""
+msgstr "Ξενοδοχείο"
 
 msgid "Car parking"
 msgstr ""
 
 msgid "Fuel station"
-msgstr ""
+msgstr "Βενζινάδικο"
 
 msgid "Bank"
-msgstr ""
+msgstr "Τράπεζα"
 
 msgid "Hospital"
-msgstr ""
+msgstr "Νοσοκομείο"
 
 msgid "Cinema"
-msgstr ""
+msgstr "Κινηματογράφος"
 
 msgid "Train station"
-msgstr ""
+msgstr "Σταθμός τρένου"
 
 msgid "School"
-msgstr ""
+msgstr "Σχολείο"
 
 msgid "Police"
-msgstr ""
+msgstr "Αστυνομία"
 
 msgid "Justice"
 msgstr ""
 
 msgid "Taxi"
-msgstr ""
+msgstr "Ταξί"
 
 msgid "Shopping"
-msgstr ""
+msgstr "Αγορές"
 
 msgid "Distance from screen center (km)"
 msgstr ""
@@ -1696,7 +1695,7 @@ msgid "POI search"
 msgstr ""
 
 msgid "Select a category"
-msgstr ""
+msgstr "Επιλέξτε μια κατηγορία"
 
 msgid "Select a distance to look for (km)"
 msgstr ""
@@ -2033,10 +2032,29 @@ msgstr ""
 msgid "Map data (c) OpenStreetMap contributors, ODBL"
 msgstr ""
 
+msgid ""
+"Current map location %s is not available\n"
+"Please restart Navit after you attach an SD card or select a different map "
+"location."
+msgstr ""
+
 msgid "Downloaded maps"
 msgstr ""
 
+msgid ""
+"Sorry, we currently do not support maps above 3.8G on Android, please select "
+"a smaller one."
+msgstr ""
+
 msgid "Cancel"
+msgstr ""
+
+msgid "filenamePath"
+msgstr ""
+
+msgid ""
+"New location set to %s\n"
+"Restart Navit to apply the changes."
 msgstr ""
 
 msgid "Whole Planet"
@@ -2409,11 +2427,14 @@ msgstr ""
 msgid "ready"
 msgstr ""
 
-msgid "Error downloading map!"
+msgid "Media selected for map storage is not available"
 msgstr ""
 
 #. Android resource: @strings/map_download_not_enough_free_space
 msgid "Not enough free space"
+msgstr ""
+
+msgid "Error downloading map!"
 msgstr ""
 
 msgid "Error writing map!"
@@ -2578,6 +2599,10 @@ msgstr ""
 msgid "Backup / Restore"
 msgstr ""
 
+#. Android resource: @strings/optionsmenu_set_map_location
+msgid "Set map location"
+msgstr ""
+
 #. Android resource: @strings/map_delete
 msgid "Delete this map?"
 msgstr ""
@@ -2704,35 +2729,13 @@ msgstr ""
 msgid "Restore"
 msgstr ""
 
-#~ msgid "%sinto the street %s%s%s"
-#~ msgstr "%s στην οδό %s%s%s"
+#. Android resource: @strings/TTS_title_data_missing
+msgid "System text to speech engine data is missing"
+msgstr ""
 
-#~ msgid "%sinto the %s%s%s|male form"
-#~ msgstr "%sστον %s%s%s"
-
-#~ msgid "%sinto the %s%s%s|female form"
-#~ msgstr "%sστην %s%s%s"
-
-#~ msgid "%sinto the %s%s%s|neutral form"
-#~ msgstr "%sστο %s%s%s"
-
-#~ msgid "really strongly "
-#~ msgstr "πολύ κλειστά "
-
-#~ msgid "unknown "
-#~ msgstr "άγνωστο "
-
-#~ msgid "then leave the roundabout at the %s"
-#~ msgstr "και βγείτε απο την κυκλική πορεία στην %s"
-
-#~ msgid "Leave the roundabout at the %s"
-#~ msgstr "Εξοδος απο την κυκλική πορεία στην %s"
-
-#~ msgid "then take the %1$s road to the %2$s"
-#~ msgstr "στη συνέχεια πάρτε το %1$s δρόμο για το %2$s"
-
-#~ msgid "error"
-#~ msgstr "σφάλμα"
-
-#~ msgid "then turn %1$s%2$s %3$s%4$s"
-#~ msgstr "και στρίψτε %1$s%2$s %3$s%4$s"
+#. Android resource: @strings/TTS_qery_install_data
+msgid ""
+"Navit can use any text to speech engine installed on your device. The "
+"currently selected engine reports it is unable to speak in your language. "
+"Should we ask the system to show voice download dialog?"
+msgstr ""
