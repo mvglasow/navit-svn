@@ -8,14 +8,15 @@
 # momcilo https://launchpad.net/~momcilo-majic
 # Мирослав Николић https://launchpad.net/~lipek
 # Саша Петровић https://launchpad.net/~salepetronije
-
 msgid ""
 msgstr ""
 "Project-Id-Version: navit 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-05-03 02:23+0200\n"
 "PO-Revision-Date: 2015-02-08 21:50+0000\n"
 "Last-Translator: Саша Петровић <salepetronije@gmail.com>\n"
 "Language-Team: српски <xfce4@xfce4.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -167,6 +168,7 @@ msgstr ""
 msgid "%1$sonto %2$s|neuter form"
 msgstr ""
 
+#. TRANSLATORS: motorway ramp refers to the slip road for entering a motorway.
 msgid "onto the motorway ramp"
 msgstr "на нагибу"
 
@@ -270,6 +272,7 @@ msgstr ""
 msgid "Take the exit %1$s %2$s%3$s"
 msgstr ""
 
+#. TRANSLATORS: as in "Keep right at interchange 42 Greenmond-West"
 msgid "at interchange"
 msgstr ""
 
@@ -377,11 +380,12 @@ msgstr "потом сте стигли на своје одредиште."
 msgid "You have reached your destination %s"
 msgstr "Стигли сте на одредиште %s"
 
-msgid "Exit"
-msgstr "Излаз"
-
+#. TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East"
 msgid "Interchange"
 msgstr ""
+
+msgid "Exit"
+msgstr "Излаз"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -1452,13 +1456,11 @@ msgstr ""
 
 #. We have not found an existing config file from all possibilities
 msgid "No config file navit.xml, navit.xml.local found\n"
-msgstr ""
-"Нема датотеке подешавања navit.xml, navit.xml.сопствени је пронађен\n"
+msgstr "Нема датотеке подешавања navit.xml, navit.xml.сопствени је пронађен\n"
 
 #, c-format
 msgid "Error parsing config file '%s': %s\n"
-msgstr ""
-"Десила се грешка приликом рашчлањивања датотеке подешавања „%s“: %s\n"
+msgstr "Десила се грешка приликом рашчлањивања датотеке подешавања „%s“: %s\n"
 
 #, c-format
 msgid "Using config file '%s'\n"

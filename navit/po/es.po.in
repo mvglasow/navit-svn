@@ -23,7 +23,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navit 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-04-24 16:14+0200\n"
+"POT-Creation-Date: 2015-05-03 02:23+0200\n"
 "PO-Revision-Date: 2013-12-18 16:54+0000\n"
 "Last-Translator: iceman75 <Unknown>\n"
 "Language-Team: Chris Eubank <cteubank@gmail.com>\n"
@@ -173,6 +173,7 @@ msgstr "%1$sen la %2$s"
 msgid "%1$sonto %2$s|neuter form"
 msgstr "%1$sen la carretera %2$s"
 
+#. TRANSLATORS: motorway ramp refers to the slip road for entering a motorway.
 msgid "onto the motorway ramp"
 msgstr "en el carril de entrada"
 
@@ -276,6 +277,7 @@ msgstr "Tome la salida %1$s %2$s %3$s"
 msgid "Take the exit %1$s %2$s%3$s"
 msgstr "Tome la salida %1$s %2$s%3$s"
 
+#. TRANSLATORS: as in "Keep right at interchange 42 Greenmond-West"
 msgid "at interchange"
 msgstr "al enlace"
 
@@ -383,11 +385,12 @@ msgstr "entonces ha llegado a su destino."
 msgid "You have reached your destination %s"
 msgstr "Ha llegado a su destino %s"
 
-msgid "Exit"
-msgstr "Salida"
-
+#. TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East"
 msgid "Interchange"
 msgstr "Enlace"
+
+msgid "Exit"
+msgstr "Salida"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

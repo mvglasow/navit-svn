@@ -18,11 +18,11 @@
 # hvera https://launchpad.net/~hamilton-listas
 # paulohm https://launchpad.net/~paulohm
 # pingflood https://launchpad.net/~pingflood
-
 msgid ""
 msgstr ""
 "Project-Id-Version: navit 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-05-03 02:23+0200\n"
 "PO-Revision-Date: 2015-04-03 01:58+0000\n"
 "Last-Translator: Jairo Roberto Duarte <Unknown>\n"
 "Language-Team: Brazilian Portuguese <pt_BR@li.org>\n"
@@ -173,6 +173,7 @@ msgstr ""
 msgid "%1$sonto %2$s|neuter form"
 msgstr ""
 
+#. TRANSLATORS: motorway ramp refers to the slip road for entering a motorway.
 msgid "onto the motorway ramp"
 msgstr "na rampa"
 
@@ -276,6 +277,7 @@ msgstr ""
 msgid "Take the exit %1$s %2$s%3$s"
 msgstr ""
 
+#. TRANSLATORS: as in "Keep right at interchange 42 Greenmond-West"
 msgid "at interchange"
 msgstr ""
 
@@ -383,11 +385,12 @@ msgstr "então você chegará ao destino."
 msgid "You have reached your destination %s"
 msgstr "Você chegará ao destino %s"
 
-msgid "Exit"
-msgstr "Saída"
-
+#. TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East"
 msgid "Interchange"
 msgstr "Trevo"
+
+msgid "Exit"
+msgstr "Saída"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"

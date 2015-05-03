@@ -11,6 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navit 0.5.0\n"
 "Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-05-03 02:23+0200\n"
 "PO-Revision-Date: 2015-04-15 00:07+0000\n"
 "Last-Translator: KaZeR <Unknown>\n"
 "Language-Team: Lithuanian <lt@li.org>\n"
@@ -82,32 +83,20 @@ msgid "in %d m"
 msgstr "už %d m"
 
 #, c-format
-msgid "%d foot"
-msgid_plural "%d feet"
-msgstr[0] "%d pėda"
-msgstr[1] "%d pėdos"
-msgstr[2] "%d pėdų"
+msgid "%d feet"
+msgstr ""
 
 #, c-format
-msgid "in %d foot"
-msgid_plural "in %d feet"
-msgstr[0] "už %d pėdos"
-msgstr[1] "už %d pėdų"
-msgstr[2] "už %d pėdų"
+msgid "in %d feet"
+msgstr ""
 
 #, c-format
-msgid "%d meter"
-msgid_plural "%d meters"
-msgstr[0] "%d metras"
-msgstr[1] "%d metrai"
-msgstr[2] "%d metrų"
+msgid "%d meters"
+msgstr ""
 
 #, c-format
-msgid "in %d meter"
-msgid_plural "in %d meters"
-msgstr[0] "už %d metro"
-msgstr[1] "už %d metrų"
-msgstr[2] "už %d metrų"
+msgid "in %d meters"
+msgstr ""
 
 #, c-format
 msgid "%d.%d miles"
@@ -178,6 +167,7 @@ msgstr "%1$sį %2$s"
 msgid "%1$sonto %2$s|neuter form"
 msgstr "%1$sį %2$s"
 
+#. TRANSLATORS: motorway ramp refers to the slip road for entering a motorway.
 msgid "onto the motorway ramp"
 msgstr "į rampą"
 
@@ -281,6 +271,7 @@ msgstr "Išvažiuokite per išvažiavimą %1$s %2$s %3$s"
 msgid "Take the exit %1$s %2$s%3$s"
 msgstr "Išvažiuokite per išvažiavimą %1$s %2$s%3$s"
 
+#. TRANSLATORS: as in "Keep right at interchange 42 Greenmond-West"
 msgid "at interchange"
 msgstr "sankryžoje"
 
@@ -388,11 +379,12 @@ msgstr "tada jūs pasiekėte kelionės tikslą."
 msgid "You have reached your destination %s"
 msgstr "Jūs pasiekėte tikslą %s"
 
-msgid "Exit"
-msgstr "Išvažiavimas"
-
+#. TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East"
 msgid "Interchange"
 msgstr "Sankryža"
+
+msgid "Exit"
+msgstr "Išvažiavimas"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -2759,3 +2751,27 @@ msgid ""
 "currently selected engine reports it is unable to speak in your language. "
 "Should we ask the system to show voice download dialog?"
 msgstr ""
+
+#~ msgid "%d foot"
+#~ msgid_plural "%d feet"
+#~ msgstr[0] "%d pėda"
+#~ msgstr[1] "%d pėdos"
+#~ msgstr[2] "%d pėdų"
+
+#~ msgid "in %d foot"
+#~ msgid_plural "in %d feet"
+#~ msgstr[0] "už %d pėdos"
+#~ msgstr[1] "už %d pėdų"
+#~ msgstr[2] "už %d pėdų"
+
+#~ msgid "%d meter"
+#~ msgid_plural "%d meters"
+#~ msgstr[0] "%d metras"
+#~ msgstr[1] "%d metrai"
+#~ msgstr[2] "%d metrų"
+
+#~ msgid "in %d meter"
+#~ msgid_plural "in %d meters"
+#~ msgstr[0] "už %d metro"
+#~ msgstr[1] "už %d metrų"
+#~ msgstr[2] "už %d metrų"
