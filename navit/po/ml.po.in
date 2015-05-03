@@ -165,22 +165,22 @@ msgstr ""
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name
 #, c-format
 msgid "%sinto %s%s%s"
-msgstr ""
+msgstr "%sകഴിഞ്ഞു %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Masculine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|masculine form"
-msgstr ""
+msgstr "%sകഴിഞ്ഞു %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Feminine form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|feminine form"
-msgstr ""
+msgstr "%sകഴിഞ്ഞു %s%s%s"
 
 #. TRANSLATORS: Arguments: 1: Prefix (Space if required) 2: Street Name 3: Separator (Space if required), 4: Systematic Street Name. Neuter form. The stuff after | doesn't have to be included
 #, c-format
 msgid "%sinto %s%s%s|neuter form"
-msgstr ""
+msgstr "%sകഴിഞ്ഞു %s%s%s"
 
 #. TRANSLATORS: gives the name of the next road to turn into (into the E17)
 #, c-format
@@ -210,12 +210,12 @@ msgstr "%s റൗണ്ടാനയിലേക്ക് കേറുക"
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "then leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "%1$s- ല്‍ റൗണ്ടാനയില്‍ നിന്നും പുറത്തോട്ട് പോവുക %2$s"
 
 #. TRANSLATORS: first arg. is the manieth exit, second arg. is the destination to follow
 #, c-format
 msgid "Leave the roundabout at the %1$s %2$s"
-msgstr ""
+msgstr "%1$s-ലൂടെ റൗണ്ടാനയില്‍ നിന്നും പുറത്തു പോവുകാ %2$s"
 
 msgid "soon"
 msgstr "അല്പസമയത്തിനുള്ളില്‍"
@@ -375,7 +375,7 @@ msgid "Interchange"
 msgstr ""
 
 msgid "Exit"
-msgstr ""
+msgstr "പുറത്തേക്ക്"
 
 #. Android resource: @strings/position_popup_title
 msgid "Position"
@@ -2756,36 +2756,3 @@ msgid ""
 "currently selected engine reports it is unable to speak in your language. "
 "Should we ask the system to show voice download dialog?"
 msgstr ""
-
-#~ msgid "exit"
-#~ msgstr "പുറത്തേക്ക്"
-
-#~ msgid "into the ramp"
-#~ msgstr "ചരുവിലേക്ക് പോവുക"
-
-#~ msgid "%sinto the street %s%s%s"
-#~ msgstr "%s തെരുവിലേക്ക് %s%s%s"
-
-#~ msgid "%sinto the %s%s%s|male form"
-#~ msgstr "%s കഴിഞ്ഞു %s %s %s"
-
-#~ msgid "%sinto the %s%s%s|female form"
-#~ msgstr "%sകഴിഞ്ഞു  %s %s %s"
-
-#~ msgid "%sinto the %s%s%s|neutral form"
-#~ msgstr "%sകഴിഞ്ഞു %s %s %s"
-
-#~ msgid "then leave the roundabout at the %s"
-#~ msgstr "%s- ല്‍ റൗണ്ടാനയില്‍ നിന്നും പുറത്തോട്ട് പോവുക"
-
-#~ msgid "Leave the roundabout at the %s"
-#~ msgstr "%s-ലൂടെ റൗണ്ടാനയില്‍ നിന്നും പുറത്തു പോവുകാ"
-
-#~ msgid "then take the %1$s road to the %2$s"
-#~ msgstr "അതിനു ശേഷം %2$s ഉള്ള %1$s വഴിയെ പോവുക"
-
-#~ msgid "error"
-#~ msgstr "പിശക്"
-
-#~ msgid "then turn %1$s%2$s %3$s%4$s"
-#~ msgstr "അതിനു ശേഷം %4$s ലേക്ക്  %3$s ശേഷം %2$s %1$s തിരിയുക"

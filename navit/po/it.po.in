@@ -387,7 +387,7 @@ msgstr "Siete arrivati a destinazione %s"
 
 #. TRANSLATORS: Exit as a noun, as in "Exit 43 Greenmound-East"
 msgid "Interchange"
-msgstr ""
+msgstr "Intersezione"
 
 msgid "Exit"
 msgstr "Uscita"
@@ -2774,6 +2774,3 @@ msgid ""
 "currently selected engine reports it is unable to speak in your language. "
 "Should we ask the system to show voice download dialog?"
 msgstr ""
-
-#~ msgid "interchange"
-#~ msgstr "intersezione"

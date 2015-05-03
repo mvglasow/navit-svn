@@ -84,19 +84,19 @@ msgstr "už %d m"
 
 #, c-format
 msgid "%d feet"
-msgstr ""
+msgstr "%d pėdos"
 
 #, c-format
 msgid "in %d feet"
-msgstr ""
+msgstr "už %d pėdų"
 
 #, c-format
 msgid "%d meters"
-msgstr ""
+msgstr "%d metrai"
 
 #, c-format
 msgid "in %d meters"
-msgstr ""
+msgstr "už %d metrų"
 
 #, c-format
 msgid "%d.%d miles"
@@ -2751,27 +2751,3 @@ msgid ""
 "currently selected engine reports it is unable to speak in your language. "
 "Should we ask the system to show voice download dialog?"
 msgstr ""
-
-#~ msgid "%d foot"
-#~ msgid_plural "%d feet"
-#~ msgstr[0] "%d pėda"
-#~ msgstr[1] "%d pėdos"
-#~ msgstr[2] "%d pėdų"
-
-#~ msgid "in %d foot"
-#~ msgid_plural "in %d feet"
-#~ msgstr[0] "už %d pėdos"
-#~ msgstr[1] "už %d pėdų"
-#~ msgstr[2] "už %d pėdų"
-
-#~ msgid "%d meter"
-#~ msgid_plural "%d meters"
-#~ msgstr[0] "%d metras"
-#~ msgstr[1] "%d metrai"
-#~ msgstr[2] "%d metrų"
-
-#~ msgid "in %d meter"
-#~ msgid_plural "in %d meters"
-#~ msgstr[0] "už %d metro"
-#~ msgstr[1] "už %d metrų"
-#~ msgstr[2] "už %d metrų"
